@@ -21,7 +21,7 @@ To get started with Chess-GUI-for-UCI, follow these installation steps:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/imzzzzzz/Chess-GUI-for-UCI.git
+   git clone https://github.com/iman-zamani/Chess-GUI-for-UCI.git
    ```
 2. Navigate to the cloned directory:
    ```bash
