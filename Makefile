@@ -9,17 +9,21 @@ LIBS = -lsfml-graphics -lsfml-window -lsfml-system
 
 # Source files and their corresponding object files
 SRC = ./src/main.cpp ./src/piece.cpp
-OBJ = $(SRC:.cpp=.o)
+OBJ_DIR = ./objectFiles
+OBJ = $(SRC:./src/%.cpp=$(OBJ_DIR)/%.o)
 
 # Output executable
 TARGET = chess-gui
+
+# Ensure the object files directory exists
+$(shell mkdir -p $(OBJ_DIR))
 
 # Build target
 $(TARGET): $(OBJ)
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LIBS)
 
-# Rule to convert each .cpp file into an .o file
-%.o: %.cpp
+# Rule to convert each .cpp file into an .o file in the objectFiles directory
+$(OBJ_DIR)/%.o: ./src/%.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Clean up

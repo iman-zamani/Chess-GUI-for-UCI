@@ -8,11 +8,14 @@ private:
     sf::Sprite  sprite;
     // from 0 to 7 
     int x , y ;
-    bool exists ;
+    // the coordination of  piece in pixels 
+    int pixelX , pixelY;
+    bool exists ,isDragging; 
+    int windowWidth ,  windowHeight;
 public:
+    piece() = default;
     piece(int pieceType,int x , int y);
     ~piece(){};
-    void draw();
-
-    
+    void draw(sf::RenderWindow &window);    
+    void updateGraphicalPosition(int windowWidth , int windowHeight);
 };

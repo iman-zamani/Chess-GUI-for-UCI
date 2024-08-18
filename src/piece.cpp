@@ -1,11 +1,11 @@
 #include <SFML/Graphics.hpp>
-#include "pieceValues.hpp"
+#include "values.hpp"
 #include "piece.hpp"
 #include <cmath>
 
-#define pieceToBoardScale 0.7
+
 // it will take the type of the piece that we want to create and it's position in the board 
-piece::piece (int pieceType,int x , int y){
+piece::piece (int pieceType ,int x , int y){
     // set x and y 
     // is it in the boundaries of the board 
     if (x<8 and y < 8 and x > -1 and y > -1){
@@ -57,16 +57,30 @@ piece::piece (int pieceType,int x , int y){
     }
     sf::IntRect rect(i * 333,j * 333,333,333);
      // loading texture from file 
-    if (!this->texture.loadFromFile("Pieces.png", rect)) {
+    if (!this->texture.loadFromFile("./Resources/piceTexture.png", rect)) {
         throw std::invalid_argument("Error loading texture from file.");
     }
     this->texture.setSmooth(true);
     this->sprite.setTexture(this->texture);
     this->sprite.setScale(pieceToBoardScale,pieceToBoardScale);
-
+    this->isDragging = false ;
     
 }
+void piece::updateGraphicalPosition(int windowWidth , int windowHeight){
+    int chunksWidth = windowWidth / 16;
+    int chunksHeight = windowHeight / 9;
+    this->pixelX = (this->x * chunksWidth ) + chunksWidth * 4;
+    this->pixelY = (this->y * chunksHeight) + (chunksHeight/2);
+    return ;
+}
 
-void piece::draw(){
-    
+void piece::draw(sf::RenderWindow &window){
+    sf::Vector2u size = window.getSize();
+    int windowWidth = size.x;
+    int windowHeight = size.y;
+    if (this->windowWidth != windowWidth || this->windowHeight != windowHeight){
+        this->updateGraphicalPosition(windowWidth,windowHeight);
+    }
+    this->sprite.setPosition(pixelX,pixelY);
+    window.draw(this->sprite);
 }
