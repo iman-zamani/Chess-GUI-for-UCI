@@ -10,9 +10,11 @@ board::board(sf::RenderWindow &window,std::string FEN){
     
     int windowWidth = size.x;
     int windowHeight = size.y; 
+    // int windowWidth = 3840;
+    // int windowHeight = 2160; 
     int x = windowWidth / WINDOW_WIDTH_RATIO;
     int y = windowHeight / WINDOW_HEIGHT_RATIO;
-    
+    std::cout <<"X: "<<windowWidth<<" Y: "<<windowHeight<<std::endl;
     //----------------------------------------------------------------------------------------
     // loading the texture of light and dark squares and loading the Sprite of each piece base on it  
     sf::IntRect rectLight(0,0,x,y);
@@ -29,26 +31,33 @@ board::board(sf::RenderWindow &window,std::string FEN){
 
     this->lightSquaresTexture.setSmooth(true);
     this->SpriteSquares.resize(64);
-    for (int i=0;i<64;i++){
-        if (i%2==0){
-            this->SpriteSquares[i].setTexture(this->lightSquaresTexture);
-        }
-        else {
-            this->SpriteSquares[i].setTexture(this->darkSquaresTexture);
+    int H = 0;
+    for (int L = 0; L < 8; ++L)
+    {
+
+        for (int M = 0; M < 8; ++M)
+        {
+            if ((L + M) % 2 == 1){
+                this->SpriteSquares[H].setTexture(this->lightSquaresTexture);
+            }
+            else {
+                this->SpriteSquares[H].setTexture(this->darkSquaresTexture);
+            }
+            H++;
         }
     }
-    
     //--------------------------------------------------------------------------------------
     // this part is for setting the position of squares 
     int i = x * (WINDOW_WIDTH_RATIO/4);
     int j = y / 2 ;// leave half of a square from top and bottom 
-    for (sf::Sprite sp : SpriteSquares){
-        sp.setPosition(i,j);
+    for (int k=0;k<64;k++){
+        std::cout <<"X: "<<i<<" Y: "<<j<<std::endl;
+        SpriteSquares[k].setPosition(i,j);
         i += x;
         // we divided the width of the window to three parts the first 1/4 of it is black , from the end of 1/4 to start of 4/4 we will show the board 
         // and the last 1/4 is black as well
-        if (i> (x*((WINDOW_WIDTH_RATIO/4) * 3) )){
-            j++;
+        if (i>= (x*((WINDOW_WIDTH_RATIO/4) * 3) )){
+            j+=y;
             i = x * (WINDOW_WIDTH_RATIO/4);
         }
     }
