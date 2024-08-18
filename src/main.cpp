@@ -1,5 +1,5 @@
 #include <SFML/Graphics.hpp>
-
+#include "piece.hpp"
 int main()
 {
     // Create the main window
