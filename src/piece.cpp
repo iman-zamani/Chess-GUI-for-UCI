@@ -6,7 +6,7 @@
 
 
 // it will take the type of the piece that we want to create and it's position in the board 
-piece::piece (int pieceType ,int x , int y){
+Piece::Piece (int pieceType ,int x , int y){
     // set x and y 
     // check if it is in the boundaries of the board 
     if (x<8 and y < 8 and x > -1 and y > -1){
@@ -70,7 +70,7 @@ piece::piece (int pieceType ,int x , int y){
     this->isDragging = false ;
     
 }
-void piece::updateGraphicalPosition(int windowWidth , int windowHeight){
+void Piece::updateGraphicalPosition(int windowWidth , int windowHeight){
     int chunksWidth = windowWidth / 16;
     int chunksHeight = windowHeight / 9;
     this->pixelX = (this->x * chunksWidth ) + chunksWidth * 4;
@@ -78,7 +78,7 @@ void piece::updateGraphicalPosition(int windowWidth , int windowHeight){
     return ;
 }
 
-void piece::draw(sf::RenderWindow &window){
+void Piece::draw(sf::RenderWindow &window){
     sf::Vector2u size = window.getSize();
     int windowWidth = size.x;
     int windowHeight = size.y;
@@ -86,12 +86,11 @@ void piece::draw(sf::RenderWindow &window){
         this->updateGraphicalPosition(windowWidth,windowHeight);
         this->sprite.setPosition(pixelX,pixelY);
     }
-   
     window.draw(this->sprite);
 }
 
 
-piece::piece(const piece& other) {
+Piece::Piece(const Piece& other) {
     this->pieceType = other.pieceType;
     this->x = other.x;
     this->y = other.y;
@@ -112,4 +111,14 @@ piece::piece(const piece& other) {
     this->sprite.setScale(other.sprite.getScale());
     this->sprite.setRotation(other.sprite.getRotation());
     this->sprite.setColor(other.sprite.getColor());
+}
+sf::Vector2i Piece::getPiecePosition(){
+    return sf::Vector2(this->x,this->y);
+}
+void Piece::setGraphicalPositionWhileDragging(int mouseX, int  mouseY){
+    // if we draw it hear . it will  be a temporary fix
+    this->pixelX = mouseX;
+    this->pixelY = mouseY;
+    this->sprite.setPosition(pixelX,pixelY);
+    return ;
 }

@@ -4,7 +4,11 @@
 #include "values.hpp"
 #include "board.hpp"
 
-board::board(sf::RenderWindow &window,std::string FEN){
+Board::Board(sf::RenderWindow &window,std::string FEN){
+    // there is no piece selected at start
+    this->pieceSelected = -1;
+    // no piece is dragging at start 
+    this->isDragging = false;
     // the board is going to be set for x: WINDOW_WIDTH_RATIO to y: WINDOW_HEIGHT_RATIO windows
     sf::Vector2u size = window.getSize();
     
@@ -92,9 +96,16 @@ board::board(sf::RenderWindow &window,std::string FEN){
     
 }
 
-void board::draw(sf::RenderWindow &window){
+void Board::draw(sf::RenderWindow &window){
+    
     for (sf::Sprite sp : SpriteSquares){
         window.draw(sp);
+    }
+    if(isDragging && this->pieceSelected != -1){
+        // the position of the mouse
+        sf::Vector2i position = sf::Mouse::getPosition(window);
+
+        this->pieces[this->pieceSelected].setGraphicalPositionWhileDragging(position.x,position.y);
     }
     int n = pieces.size();
     for (int i=0;i<n;i++){
@@ -102,4 +113,42 @@ void board::draw(sf::RenderWindow &window){
     }
     return ;
 }
+// this is for selecting a piece so so the legal moves for that piece gets displayed 
+void Board::selectTargetPiece(sf::RenderWindow &window, int mouseX, int mouseY){
+    sf::Vector2u size = window.getSize();
+    int chunksWidth = size.x / WINDOW_WIDTH_RATIO;
+    int chunksHeight = size.y / WINDOW_HEIGHT_RATIO;
+    // converting pixel position to board indexes 
+    int x = (mouseX - (chunksWidth*4) )/ (chunksWidth);
+    int y = (mouseY - (chunksHeight/2)) / chunksHeight;
 
+
+    int n = pieces.size();
+    for (int i=0;i<n;i++){
+        
+        if (pieces[i].getPiecePosition().x == x and pieces[i].getPiecePosition().y == y ){
+            // ther is no need to declare a new variable 
+            // the n variable is not going to be used ever again  
+            n = i;
+        }
+    }
+    // this will save the index of the selected piece 
+    // and if the user clicked on a place with no piece it 
+    //  will deselect the selected piece 
+    if (n == pieces.size()){
+        this->pieceSelected -1;
+        return ;
+    }
+    else {
+        this->pieceSelected = n;
+        return ;
+    } 
+}
+// if a piece in board is getting dragged (in the moment)
+bool Board::getIsPieceDragging(){
+    return isDragging;
+}
+
+void Board::setIsPieceDragging(bool setIsPieceDragging){
+    this->isDragging = setIsPieceDragging;
+}

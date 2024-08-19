@@ -1,3 +1,6 @@
+#include<iostream>
+#include<vector>
+#include<string>
 #include <SFML/Graphics.hpp>
 #include "board.hpp"
 int main()
@@ -5,7 +8,7 @@ int main()
     // Create the main window
     sf::RenderWindow window(sf::VideoMode(3840, 2160), "chess-gui");
     window.setFramerateLimit(60);
-    board chessBoard(window,"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    Board chessBoard(window);
     // Start the game loop
     while (window.isOpen())
     {
@@ -16,6 +19,16 @@ int main()
             // Close window: exit
             if (event.type == sf::Event::Closed)
                 window.close();
+
+            if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
+                // Get the position of the click
+                sf::Vector2i position = sf::Mouse::getPosition(window);
+                chessBoard.selectTargetPiece(window,position.x,position.y);
+                chessBoard.setIsPieceDragging(true);
+            }
+            if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left ) {
+                chessBoard.setIsPieceDragging(false);
+            }
         }
 
         // Clear screen

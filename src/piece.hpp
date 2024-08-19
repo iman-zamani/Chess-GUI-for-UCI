@@ -1,7 +1,7 @@
 #pragma once 
 
 
-class piece{
+class Piece{
 private:
     int pieceType;
     sf::Texture texture;
@@ -13,12 +13,15 @@ private:
     bool exists ,isDragging; 
     int windowWidth ,  windowHeight;
 public:
-    piece() = default;
-    piece(int pieceType,int x , int y);
-    ~piece(){};
+    Piece() = default;
+    Piece(int pieceType,int x , int y);
+    ~Piece(){};
     // Copy constructor
-    piece(const piece& other);
+    Piece(const Piece& other);
 
     void draw(sf::RenderWindow &window);    
     void updateGraphicalPosition(int windowWidth , int windowHeight);
+    sf::Vector2i getPiecePosition();
+    void setGraphicalPositionWhileDragging(int mouseX, int  mouseY);
+    void draggingReleased();
 };
