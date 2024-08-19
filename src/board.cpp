@@ -14,7 +14,6 @@ board::board(sf::RenderWindow &window,std::string FEN){
     // int windowHeight = 2160; 
     int x = windowWidth / WINDOW_WIDTH_RATIO;
     int y = windowHeight / WINDOW_HEIGHT_RATIO;
-    std::cout <<"X: "<<windowWidth<<" Y: "<<windowHeight<<std::endl;
     //----------------------------------------------------------------------------------------
     // loading the texture of light and dark squares and loading the Sprite of each piece base on it  
     sf::IntRect rectLight(0,0,x,y);
@@ -38,10 +37,10 @@ board::board(sf::RenderWindow &window,std::string FEN){
         for (int M = 0; M < 8; ++M)
         {
             if ((L + M) % 2 == 1){
-                this->SpriteSquares[H].setTexture(this->lightSquaresTexture);
+                this->SpriteSquares[H].setTexture(this->darkSquaresTexture);
             }
             else {
-                this->SpriteSquares[H].setTexture(this->darkSquaresTexture);
+                this->SpriteSquares[H].setTexture(this->lightSquaresTexture);
             }
             H++;
         }
@@ -51,7 +50,6 @@ board::board(sf::RenderWindow &window,std::string FEN){
     int i = x * (WINDOW_WIDTH_RATIO/4);
     int j = y / 2 ;// leave half of a square from top and bottom 
     for (int k=0;k<64;k++){
-        std::cout <<"X: "<<i<<" Y: "<<j<<std::endl;
         SpriteSquares[k].setPosition(i,j);
         i += x;
         // we divided the width of the window to three parts the first 1/4 of it is black , from the end of 1/4 to start of 4/4 we will show the board 
@@ -65,30 +63,30 @@ board::board(sf::RenderWindow &window,std::string FEN){
     // this part is coping the piece object . right now there is no need for writing a custom one myself but if the classes changes over time 
     // this may become necessary  
     i = 0, j = 0;
-    piece tempPiece;
     for (char c : FEN) {
         //end of the piece position part of the FEN string 
         if (c == ' '){break;}
         switch (c) {
-        case 'p': tempPiece = piece(BLACK_PAWN, i, j); break;
-        case 'P': tempPiece = piece(WHITE_PAWN, i, j); break;
-        case 'b': tempPiece = piece(BLACK_BISHOP, i, j); break;
-        case 'B': tempPiece = piece(WHITE_BISHOP, i, j); break;
-        case 'n': tempPiece = piece(BLACK_KNIGHT, i, j); break;
-        case 'N': tempPiece = piece(WHITE_KNIGHT, i, j); break;
-        case 'r': tempPiece = piece(BLACK_ROOK, i, j); break;
-        case 'R': tempPiece = piece(WHITE_ROOK, i, j); break;
-        case 'q': tempPiece = piece(BLACK_QUEEN, i, j); break;
-        case 'Q': tempPiece = piece(WHITE_QUEEN, i, j); break;
-        case 'k': tempPiece = piece(BLACK_KING, i, j); break;
-        case 'K': tempPiece = piece(WHITE_KING, i, j); break;
+        case 'p': pieces.emplace_back(BLACK_PAWN, i, j); break;
+        case 'P': pieces.emplace_back(WHITE_PAWN, i, j); break;
+        case 'b': pieces.emplace_back(BLACK_BISHOP, i, j); break;
+        case 'B': pieces.emplace_back(WHITE_BISHOP, i, j); break;
+        case 'n': pieces.emplace_back(BLACK_KNIGHT, i, j); break;
+        case 'N': pieces.emplace_back(WHITE_KNIGHT, i, j); break;
+        case 'r': pieces.emplace_back(BLACK_ROOK, i, j); break;
+        case 'R': pieces.emplace_back(WHITE_ROOK, i, j); break;
+        case 'q': pieces.emplace_back(BLACK_QUEEN, i, j); break;
+        case 'Q': pieces.emplace_back(WHITE_QUEEN, i, j); break;
+        case 'k': pieces.emplace_back(BLACK_KING, i, j); break;
+        case 'K': pieces.emplace_back(WHITE_KING, i, j); break;
         case '/':
             j++; i = 0;
             continue;
         default:
+            i+=c-'0';
             continue;
         }
-        this->pieces.push_back(tempPiece);
+        
         i++;
     }
     
@@ -98,8 +96,9 @@ void board::draw(sf::RenderWindow &window){
     for (sf::Sprite sp : SpriteSquares){
         window.draw(sp);
     }
-    for (piece pieceIt : pieces){
-        pieceIt.draw(window);
+    int n = pieces.size();
+    for (int i=0;i<n;i++){
+        this->pieces[i].draw(window);
     }
     return ;
 }

@@ -16,6 +16,9 @@ public:
     piece() = default;
     piece(int pieceType,int x , int y);
     ~piece(){};
+    // Copy constructor
+    piece(const piece& other);
+
     void draw(sf::RenderWindow &window);    
     void updateGraphicalPosition(int windowWidth , int windowHeight);
 };
