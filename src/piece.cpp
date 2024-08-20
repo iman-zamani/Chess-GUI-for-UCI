@@ -120,3 +120,6 @@ void Piece::setGraphicalPositionWhileDragging(int mouseX, int mouseY){
     this->pixelY = mouseY - (sprite.getLocalBounds().height / 3);
     this->sprite.setPosition(pixelX, pixelY);
 }
+int Piece::getPieceType(){
+    return this->pieceType;
+}

@@ -24,4 +24,5 @@ public:
     sf::Vector2i getPiecePosition();
     void setGraphicalPositionWhileDragging(int mouseX, int  mouseY);
     void draggingReleased();
+    int getPieceType();
 };

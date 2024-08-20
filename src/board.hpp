@@ -6,7 +6,8 @@ private:
     std::vector<Piece> pieces;
     sf::Texture lightSquaresTexture;
     sf::Texture darkSquaresTexture;
-    std::vector<sf::Sprite> SpriteSquares;
+    std::vector<sf::Sprite> spriteSquares;
+    sf::Texture targetSquaresTexture;
     // this is the piece that the user selected with the mouse . if it is -1 it means there is no piece selected
     int pieceSelected;
     //
@@ -20,9 +21,30 @@ private:
     // if -1 there is no Ee passant available 
     //and if it is available the position of where the pawn would go if Ee passant happens 
     int enPassantX , enPassantY;
-    // 
+    // the number of half moves that have been passed from last paw movement or capture 
     int halfMovesFromLastCaptureOrPawnMove;
     int moveNumber;
+    // this vector has a size of 64 (for each square) and it will hold the pieceType that exist in each square 
+    //and if no piece is in that square it will store 0
+    std::vector<int> piecePositions;
+    // methods to get legal moves for each piece type
+    // white pieces 
+    void findLegalMovesWhitePawn();
+    void findLegalMovesWhiteRook();
+    void findLegalMovesWhiteKnight();
+    void findLegalMovesWhiteBishop();
+    void findLegalMovesWhiteQueen();
+    void findLegalMovesWhiteKing();
+    // black pieces 
+    void findLegalMovesBlackPawn();
+    void findLegalMovesBlackRook();
+    void findLegalMovesBlackKnight();
+    void findLegalMovesBlackBishop();
+    void findLegalMovesBlackQueen();
+    void findLegalMovesBlackKing();
+    // this vectors stores the legal squares that the selected piece can go 
+    // for each square if it is true that piece can go to that square 
+    std::vector<bool> legalSquaresForTargetPiece;
 public:
 
     Board(sf::RenderWindow &window,const std::string &FEN);
@@ -35,5 +57,7 @@ public:
     void setIsPieceDragging(bool setIsPieceDragging);
     sf::Vector2i squareNameToXY(const std::string &square);
     void printBoardState();
+    // this method will find the legal moves for the selected piece 
+    void findLegalMoves();
 };
 
