@@ -4,7 +4,7 @@
 #include "values.hpp"
 #include "board.hpp"
 
-Board::Board(sf::RenderWindow &window,std::string FEN){
+Board::Board(sf::RenderWindow &window,const std::string &FEN){
     // there is no piece selected at start
     this->pieceSelected = -1;
     // no piece is dragging at start 
@@ -93,7 +93,81 @@ Board::Board(sf::RenderWindow &window,std::string FEN){
         
         i++;
     }
-    
+    size_t pos = FEN.find(' ');
+    if (FEN[pos+1] == 'w'){
+        this->isWhiteTurn = true;
+    }
+    else {
+        this->isWhiteTurn = false;
+    }
+    pos+=3;
+    this-> whiteKingSideCastle = false;
+    this-> whiteQueenSideCastle = false;
+    this-> blackKingSideCastle = false;
+    this-> blackQueenSideCastle = false;
+    while(FEN[pos]!=' '){
+        switch (FEN[pos])
+        {
+        case 'K':
+            this-> whiteKingSideCastle = true;
+            break;
+        case 'Q':
+            this-> whiteQueenSideCastle = true;
+            break;
+        case 'k':
+            this-> blackKingSideCastle = true;
+            break;
+        case 'q':
+            this-> blackQueenSideCastle = true;
+            break;
+        case '-':
+            break;
+        default:
+        throw std::invalid_argument("Error invalid FEN.");
+            break;
+        }
+        pos++;
+    }
+    // if En passant is available or not 
+    pos++;
+    if (FEN[pos] == '-'){
+        this->enPassantX = -1, this-> enPassantY = -1;
+    }
+    else {
+        std::string temp(FEN, pos, 2);
+        sf::Vector2i square = this->squareNameToXY(temp);
+        this->enPassantX = square.x , this->enPassantY = square.y;
+    }
+    // the number of half moves from when last capture or pawn move happened 
+    pos = FEN.find(' ', pos) + 1;
+    int endPos = FEN.find(' ', pos);
+    std::string t1(FEN, pos, endPos - pos);
+    this->halfMovesFromLastCaptureOrPawnMove = std::stoi(t1);
+    // the number of moves happened in  game. starts from 1 and after each black move it will be increased
+    std::string t2;
+    pos = endPos;
+    endPos = FEN.size();
+    for (int i=pos+1;i<endPos;i++){
+        t2 += FEN[i];
+    }
+    this->moveNumber = std::stoi(t2);
+    // this part only for checking if the FEN is loaded correctly 
+    this->printBoardState();
+
+}
+// Method to print the current state of the board
+void Board::printBoardState() {
+    std::cout << "Current Board State:\n";
+    std::cout << "Piece Selected: " << (pieceSelected == -1 ? "None" : std::to_string(pieceSelected)) << std::endl;
+    std::cout << "Is Dragging: " << (isDragging ? "Yes" : "No") << std::endl;
+    std::cout << "Is White's Turn: " << (isWhiteTurn ? "Yes" : "No") << std::endl;
+    std::cout << "White King-side Castle: " << (whiteKingSideCastle ? "Available" : "Not available") << std::endl;
+    std::cout << "White Queen-side Castle: " << (whiteQueenSideCastle ? "Available" : "Not available") << std::endl;
+    std::cout << "Black King-side Castle: " << (blackKingSideCastle ? "Available" : "Not available") << std::endl;
+    std::cout << "Black Queen-side Castle: " << (blackQueenSideCastle ? "Available" : "Not available") << std::endl;
+    std::cout << "En Passant Target Square: " << (enPassantX == -1 && enPassantY == -1 ? "None" : std::to_string(enPassantX) + ", " + std::to_string(enPassantY)) << std::endl;
+    std::cout << "Half Moves Since Last Capture Or Pawn Move: " << halfMovesFromLastCaptureOrPawnMove << std::endl;
+    std::cout << "Move Number: " << moveNumber << std::endl;
 }
 
 void Board::draw(sf::RenderWindow &window){
@@ -151,4 +225,13 @@ bool Board::getIsPieceDragging(){
 
 void Board::setIsPieceDragging(bool setIsPieceDragging){
     this->isDragging = setIsPieceDragging;
+}
+
+
+sf::Vector2i Board::squareNameToXY(const std::string &square){
+    if (square.size() != 2){throw std::invalid_argument("Error invalid square.");}
+    // in the board we store the y in opposite order so we need to ( 8 - value )
+    int x = square[0] - 'a';
+    int y = 8 - (square[1] - '0');
+    return sf::Vector2(x,y);
 }
