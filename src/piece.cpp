@@ -80,10 +80,9 @@ void Piece::updateGraphicalPosition(int windowWidth , int windowHeight){
 
 void Piece::draw(sf::RenderWindow &window){
     sf::Vector2u size = window.getSize();
-    int windowWidth = size.x;
-    int windowHeight = size.y;
-    if (this->windowWidth != windowWidth || this->windowHeight != windowHeight){
-        this->updateGraphicalPosition(windowWidth,windowHeight);
+    if (this->windowWidth != size.x || this->windowHeight != size.y){
+        this->windowHeight = size.y, this->windowWidth = size.x;
+        this->updateGraphicalPosition(size.x,size.y);
         this->sprite.setPosition(pixelX,pixelY);
     }
     window.draw(this->sprite);
@@ -103,6 +102,7 @@ Piece::Piece(const Piece& other) {
 
     // Copy the texture
     this->texture = other.texture;
+    this->texture.setSmooth(true);
     // Set the texture to the sprite
     this->sprite.setTexture(this->texture);
     
@@ -115,10 +115,8 @@ Piece::Piece(const Piece& other) {
 sf::Vector2i Piece::getPiecePosition(){
     return sf::Vector2(this->x,this->y);
 }
-void Piece::setGraphicalPositionWhileDragging(int mouseX, int  mouseY){
-    // if we draw it hear . it will  be a temporary fix
-    this->pixelX = mouseX;
-    this->pixelY = mouseY;
-    this->sprite.setPosition(pixelX,pixelY);
-    return ;
+void Piece::setGraphicalPositionWhileDragging(int mouseX, int mouseY){
+    this->pixelX = mouseX - (sprite.getLocalBounds().width / 3);
+    this->pixelY = mouseY - (sprite.getLocalBounds().height / 3);
+    this->sprite.setPosition(pixelX, pixelY);
 }
