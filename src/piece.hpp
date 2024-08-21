@@ -11,7 +11,7 @@ private:
     // the coordination of  piece in pixels 
     int pixelX , pixelY;
     bool exists ,isDragging; 
-    int windowWidth ,  windowHeight;
+    size_t windowWidth ,  windowHeight;
 public:
     Piece() = default;
     Piece(int pieceType,int x , int y);

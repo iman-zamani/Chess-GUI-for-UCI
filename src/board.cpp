@@ -261,8 +261,8 @@ void Board::selectTargetPiece(sf::RenderWindow &window, int mouseX, int mouseY){
     // this will save the index of the selected piece 
     // and if the user clicked on a place with no piece it 
     //  will deselect the selected piece 
-    if (n == pieces.size()){
-        this->pieceSelected -1;
+    if (n == (int)pieces.size()){
+        this->pieceSelected = -1;
         return ;
     }
     else {

@@ -15,7 +15,7 @@ To get started with Chess-GUI-for-UCI, follow these installation steps:
 
 ### Prerequisites
 
-- Ensure you have SFML 2.6 or newer and g++ installed on your system.
+- Ensure you have SFML 2.6 or newer, g++, and CMake installed on your system.
 
 ### Steps
 
@@ -27,14 +27,20 @@ To get started with Chess-GUI-for-UCI, follow these installation steps:
    ```bash
    cd Chess-GUI-for-UCI
    ```
-3. Compile the program:
+3. Create and navigate to the build directory (the resources folder is located here, so you need to be in this directory):
    ```bash
-   make
+   mkdir build
+   cd build
+   ```
+4. Generate the makefile and build the project:
+   ```bash
+   cmake ..
+   cmake --build .
    ```
 
 ## Usage
 
-To launch the Chess-GUI-for-UCI, run the following command in the terminal:
+To launch the Chess-GUI-for-UCI, run the following command from the build directory:
 ```bash
 ./chess-gui
 ```
