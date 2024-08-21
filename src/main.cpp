@@ -24,10 +24,11 @@ int main()
                 // Get the position of the click
                 sf::Vector2i position = sf::Mouse::getPosition(window);
                 chessBoard.selectTargetPiece(window,position.x,position.y);
-                chessBoard.setIsPieceDragging(true,window);
+                chessBoard.setIsPieceDragging(true,position.x,position.y);
             }
             if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left ) {
-                chessBoard.setIsPieceDragging(false,window);
+                sf::Vector2i position = sf::Mouse::getPosition(window);
+                chessBoard.setIsPieceDragging(false,position.x,position.y);
             }
         }
 

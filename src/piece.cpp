@@ -77,15 +77,14 @@ void Piece::updateGraphicalPosition(int windowWidth , int windowHeight){
     this->pixelY = (this->y * chunksHeight) + (chunksHeight/2);
     return ;
 }
-void Piece::draggingReleased(sf::RenderWindow &window){
-    sf::Vector2u size = window.getSize();
+void Piece::draggingReleased(int mouseX,int mouseY){
 
-    int chunksWidth = size.x / 16;
-    int chunksHeight = size.y / 9;
+    int chunksWidth = 150;
+    int chunksHeight =150;
     
     //std::cout<<chunksWidth << " "<< chunksHeight<<std::endl;
-    this->x  = (this->pixelX - (chunksWidth * 4))/ chunksWidth;
-    this->y =  (this->pixelY -  (chunksHeight/2)) / chunksHeight;
+    this->x  = (mouseX - (chunksWidth * 4))/ chunksWidth;
+    this->y =  (mouseY -  (chunksHeight/2)) / chunksHeight;
 
 
     this->pixelX = (this->x * chunksWidth ) + chunksWidth * 4;

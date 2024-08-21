@@ -57,7 +57,7 @@ public:
     void draw(sf::RenderWindow &window); 
     void selectTargetPiece(sf::RenderWindow &window, int mouseX, int mouseY);
     bool getIsPieceDragging();
-    void setIsPieceDragging(bool setIsPieceDragging,sf::RenderWindow &window);
+    void setIsPieceDragging(bool setIsPieceDragging,int mouseX,int mouseY);
     sf::Vector2i squareNameToXY(const std::string &square);
     void printBoardState();
     // this method will find the legal moves for the selected piece 

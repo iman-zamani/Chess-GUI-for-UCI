@@ -282,11 +282,10 @@ bool Board::getIsPieceDragging(){
     return isDragging;
 }
 
-void Board::setIsPieceDragging(bool setIsPieceDragging,sf::RenderWindow &window){
+void Board::setIsPieceDragging(bool setIsPieceDragging,int mouseX,int mouseY){
     this->isDragging = setIsPieceDragging;
     if (!setIsPieceDragging){
-        this->pieces[pieceSelected].draggingReleased(window);
-        std::fill(this->legalSquaresForTargetPiece.begin(),this-> legalSquaresForTargetPiece.end(), false);
+        this->pieces[pieceSelected].draggingReleased(mouseX,mouseY);
     }
     return ;
 }
