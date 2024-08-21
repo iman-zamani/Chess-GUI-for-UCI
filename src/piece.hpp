@@ -25,4 +25,5 @@ public:
     void setGraphicalPositionWhileDragging(int mouseX, int  mouseY);
     void draggingReleased(int mouseX,int mouseY);
     int getPieceType();
+    
 };

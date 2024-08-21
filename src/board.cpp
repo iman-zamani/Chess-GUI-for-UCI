@@ -285,7 +285,30 @@ bool Board::getIsPieceDragging(){
 void Board::setIsPieceDragging(bool setIsPieceDragging,int mouseX,int mouseY){
     this->isDragging = setIsPieceDragging;
     if (!setIsPieceDragging){
-        this->pieces[pieceSelected].draggingReleased(mouseX,mouseY);
+        //this will set the graphical position of the piece and coordinations of the piece 
+        sf::Vector2i oldPosPieceSelected =  this->pieces[this->pieceSelected].getPiecePosition();
+        piecePositions[oldPosPieceSelected.x + (oldPosPieceSelected.y*8)] = 0;
+        this->pieces[this->pieceSelected].draggingReleased(mouseX,mouseY);
+        //this will check if it is a capture 
+        // and if so deletes the other piece
+        sf::Vector2i posPieceSelected =  this->pieces[this->pieceSelected].getPiecePosition();
+        int n = pieces.size();
+        for (int i=0;i<n;i++){
+            
+            if (i == this->pieceSelected){continue;}
+            sf::Vector2i pos= this->pieces[i].getPiecePosition();
+            if (pos.x == posPieceSelected.x && pos.y == posPieceSelected.y){
+                 piecePositions[pos.x + (pos.y*8)] = this->pieces[this->pieceSelected].getPieceType();
+                 
+               std::vector<Piece> copyVector1(pieces);
+               pieces.resize(i);
+               for (int j=i+1;j<n;j++){
+                pieces.push_back(copyVector1[j]);
+               }
+               pieceSelected = -1;
+                break;
+            }
+        }
     }
     return ;
 }
