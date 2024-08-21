@@ -6,7 +6,7 @@
 int main()
 {
     // Create the main window
-    sf::RenderWindow window(sf::VideoMode(3840, 2160), "chess-gui");
+    sf::RenderWindow window(sf::VideoMode(2400, 1350), "chess-gui");
     window.setFramerateLimit(60);
     Board chessBoard(window,"5k2/pp3b1p/2pp2pP/2q1n1P1/3BPQ2/8/2PR4/2K5 b - - 0 34");
     // Start the game loop
@@ -24,10 +24,10 @@ int main()
                 // Get the position of the click
                 sf::Vector2i position = sf::Mouse::getPosition(window);
                 chessBoard.selectTargetPiece(window,position.x,position.y);
-                chessBoard.setIsPieceDragging(true);
+                chessBoard.setIsPieceDragging(true,window);
             }
             if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left ) {
-                chessBoard.setIsPieceDragging(false);
+                chessBoard.setIsPieceDragging(false,window);
             }
         }
 

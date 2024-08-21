@@ -59,7 +59,7 @@ Piece::Piece (int pieceType ,int x , int y){
         break;
     }
     
-    sf::IntRect rect(i * 333,j * 333,333,333);// (left, top, width, height)
+    sf::IntRect rect(i * 150,j * 150,150,150);// (left, top, width, height)
      // loading texture from file 
     if (!this->texture.loadFromFile("./Resources/piceTexture.png", rect)) {
         throw std::invalid_argument("Error loading texture from file.");
@@ -75,6 +75,22 @@ void Piece::updateGraphicalPosition(int windowWidth , int windowHeight){
     int chunksHeight = windowHeight / 9;
     this->pixelX = (this->x * chunksWidth ) + chunksWidth * 4;
     this->pixelY = (this->y * chunksHeight) + (chunksHeight/2);
+    return ;
+}
+void Piece::draggingReleased(sf::RenderWindow &window){
+    sf::Vector2u size = window.getSize();
+
+    int chunksWidth = size.x / 16;
+    int chunksHeight = size.y / 9;
+    
+    //std::cout<<chunksWidth << " "<< chunksHeight<<std::endl;
+    this->x  = (this->pixelX - (chunksWidth * 4))/ chunksWidth;
+    this->y =  (this->pixelY -  (chunksHeight/2)) / chunksHeight;
+
+
+    this->pixelX = (this->x * chunksWidth ) + chunksWidth * 4;
+    this->pixelY = (this->y * chunksHeight) + (chunksHeight/2);
+    this->sprite.setPosition(pixelX,pixelY);
     return ;
 }
 
@@ -116,9 +132,10 @@ sf::Vector2i Piece::getPiecePosition(){
     return sf::Vector2(this->x,this->y);
 }
 void Piece::setGraphicalPositionWhileDragging(int mouseX, int mouseY){
-    this->pixelX = mouseX - (sprite.getLocalBounds().width / 3);
-    this->pixelY = mouseY - (sprite.getLocalBounds().height / 3);
-    this->sprite.setPosition(pixelX, pixelY);
+    this->pixelX = mouseX - (sprite.getLocalBounds().width / 2);
+    this->pixelY = mouseY - (sprite.getLocalBounds().height / 2);
+    this->sprite.setPosition(this->pixelX, this->pixelY);
+    return ;
 }
 int Piece::getPieceType(){
     return this->pieceType;

@@ -45,22 +45,7 @@ Board::Board(sf::RenderWindow &window,const std::string &FEN){
 
     this->lightSquaresTexture.setSmooth(true);
     this->spriteSquares.resize(64);
-    int H = 0;
-    for (int L = 0; L < 8; ++L)
-    {
-
-        for (int M = 0; M < 8; ++M)
-        {
-            if ((L + M) % 2 == 1){
-                this->spriteSquares[H].setTexture(this->darkSquaresTexture);
-            }
-            else {
-                this->spriteSquares[H].setTexture(this->lightSquaresTexture);
-            }
-            H++;
-        }
-    }
-
+    this->squareTextureSetToNormal();
 
     //////////////////////////////////////////////////////////////////////////////////////////
     // loading the texture for target pieces 
@@ -89,7 +74,7 @@ Board::Board(sf::RenderWindow &window,const std::string &FEN){
     // resizing the vector to fit all the squares 
     int piecePositionIndex = 0;
     this->piecePositions.resize(64);
-    
+    squareTextureSetToNormal();
     
     // this part is coping the piece object . right now there is no need for writing a custom one myself but if the classes changes over time 
     // this may become necessary  
@@ -201,6 +186,23 @@ Board::Board(sf::RenderWindow &window,const std::string &FEN){
     this->printBoardState();
 
 }
+// set texture for sprite of each square to normal 
+void Board::squareTextureSetToNormal(){
+int H = 0;
+    for (int L = 0; L < 8; ++L)
+    {
+
+        for (int M = 0; M < 8; ++M)
+        {
+            if ((L + M) % 2 == 1){
+                this->spriteSquares[H].setTexture(this->darkSquaresTexture);
+            }
+            else {
+                this->spriteSquares[H].setTexture(this->lightSquaresTexture);
+            }
+            H++;
+        }
+    }}
 // Method to print the current state of the board
 void Board::printBoardState() {
     std::cout << "Current Board State:\n";
@@ -223,6 +225,7 @@ void Board::draw(sf::RenderWindow &window){
             if (legalSquaresForTargetPiece[i]){spriteSquares[i].setTexture(targetSquaresTexture);}
         }
     }
+    
     for (sf::Sprite sp : spriteSquares){
         window.draw(sp);
     }
@@ -232,6 +235,9 @@ void Board::draw(sf::RenderWindow &window){
 
         this->pieces[this->pieceSelected].setGraphicalPositionWhileDragging(position.x,position.y);
         
+    }
+    else {
+        this->squareTextureSetToNormal();
     }
     int n = pieces.size();
     for (int i=0;i<n;i++){
@@ -256,6 +262,7 @@ void Board::selectTargetPiece(sf::RenderWindow &window, int mouseX, int mouseY){
             // ther is no need to declare a new variable 
             // the n variable is not going to be used ever again  
             n = i;
+            break;
         }
     }
     // this will save the index of the selected piece 
@@ -275,9 +282,16 @@ bool Board::getIsPieceDragging(){
     return isDragging;
 }
 
-void Board::setIsPieceDragging(bool setIsPieceDragging){
+void Board::setIsPieceDragging(bool setIsPieceDragging,sf::RenderWindow &window){
     this->isDragging = setIsPieceDragging;
+    if (!setIsPieceDragging){
+        this->pieces[pieceSelected].draggingReleased(window);
+        std::fill(this->legalSquaresForTargetPiece.begin(),this-> legalSquaresForTargetPiece.end(), false);
+    }
+    return ;
 }
+
+
 
 // it will get the square name in string like (f6 or d2) and it will convert it to x and y 
 sf::Vector2i Board::squareNameToXY(const std::string &square){
@@ -336,7 +350,6 @@ void Board::findLegalMoves(){
         break;
     }
 }
-
 
 // white pieces 
 void Board::findLegalMovesWhitePawn(){

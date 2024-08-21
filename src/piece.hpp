@@ -23,6 +23,6 @@ public:
     void updateGraphicalPosition(int windowWidth , int windowHeight);
     sf::Vector2i getPiecePosition();
     void setGraphicalPositionWhileDragging(int mouseX, int  mouseY);
-    void draggingReleased();
+    void draggingReleased(sf::RenderWindow &window);
     int getPieceType();
 };

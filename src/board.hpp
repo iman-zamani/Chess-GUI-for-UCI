@@ -45,6 +45,9 @@ private:
     // this vectors stores the legal squares that the selected piece can go 
     // for each square if it is true that piece can go to that square 
     std::vector<bool> legalSquaresForTargetPiece;
+    //
+    void squareTextureSetToNormal();
+    
 public:
 
     Board(sf::RenderWindow &window,const std::string &FEN);
@@ -54,7 +57,7 @@ public:
     void draw(sf::RenderWindow &window); 
     void selectTargetPiece(sf::RenderWindow &window, int mouseX, int mouseY);
     bool getIsPieceDragging();
-    void setIsPieceDragging(bool setIsPieceDragging);
+    void setIsPieceDragging(bool setIsPieceDragging,sf::RenderWindow &window);
     sf::Vector2i squareNameToXY(const std::string &square);
     void printBoardState();
     // this method will find the legal moves for the selected piece 

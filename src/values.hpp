@@ -2,7 +2,7 @@
 
 #define WINDOW_WIDTH_RATIO 16
 #define WINDOW_HEIGHT_RATIO 9
-#define pieceToBoardScale 0.7
+#define pieceToBoardScale 1
 // this is only intended for GUI and it has nothing to do with evaluating a position  
 #define BLACK_PAWN -1
 #define BLACK_ROOK -5
