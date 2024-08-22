@@ -8,7 +8,7 @@ int main()
     // Create the main window
     sf::RenderWindow window(sf::VideoMode(2400, 1350), "chess-gui");
     window.setFramerateLimit(60);
-    Board chessBoard(window,"5k2/pp3b1p/2pp2pP/2q1n1P1/3BPQ2/8/2PR4/2K5 b - - 0 34");
+    Board chessBoard(window);
     // Start the game loop
     while (window.isOpen())
     {
