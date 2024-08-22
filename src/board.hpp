@@ -7,6 +7,7 @@ private:
     sf::Texture lightSquaresTexture;
     sf::Texture darkSquaresTexture;
     std::vector<sf::Sprite> spriteSquares;
+    // texture for squares that the selected piece can go
     sf::Texture targetSquaresTexture;
     // this is the piece that the user selected with the mouse . if it is -1 it means there is no piece selected
     int pieceSelected;
@@ -62,5 +63,8 @@ public:
     void printBoardState();
     // this method will find the legal moves for the selected piece 
     void findLegalMoves();
+    // apply a move by the x and y of starting position and the target square, it will return false if move is not possible  
+    // this function wont check if the move is legal or not , as long as ther is a piece in starting position it will not return false 
+    bool applyMove(int startX,int startY,int endX,int endY); 
 };
 

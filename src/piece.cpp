@@ -7,6 +7,7 @@
 
 // it will take the type of the piece that we want to create and it's position in the board 
 Piece::Piece (int pieceType ,int x , int y){
+    this -> pieceDimensions = 150;
     // set x and y 
     // check if it is in the boundaries of the board 
     if (x<8 and y < 8 and x > -1 and y > -1){
@@ -138,4 +139,12 @@ void Piece::setGraphicalPositionWhileDragging(int mouseX, int mouseY){
 }
 int Piece::getPieceType(){
     return this->pieceType;
+}
+
+void Piece::setPiecePosition(int updateX,int updateY){
+    this->x = updateX;
+    this->y = updateY;
+    this->pixelX = (this->x * this->pieceDimensions ) + this->pieceDimensions * 4;
+    this->pixelY = (this->y * this->pieceDimensions) + (this->pieceDimensions/2);
+    return ;
 }

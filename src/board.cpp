@@ -642,3 +642,181 @@ void Board::findLegalMovesBlackKing() {
         }
     }
 }
+bool Board::applyMove(int startX,int startY,int endX,int endY){
+    // check to see if there is any piece available in starting position  
+    if (this->piecePositions[startX+startY*8] == 0){
+        return false ;
+    }
+    int n = this->pieces.size();
+    for (int i=0;i<n;i++){
+        sf::Vector2i pos  = pieces[i].getPiecePosition();
+        if (pos.x == startX && pos.y == startY){
+            n = i ;
+            break;
+        }
+    }
+    // add the move number if it was black turn
+    if (!this->isWhiteTurn) this->moveNumber++;
+    //change the turn 
+    this->isWhiteTurn = !this->isWhiteTurn;
+    
+    // increment the half move number (we will set it to zero if there was a capture or pawn move later )
+    this->halfMovesFromLastCaptureOrPawnMove++;
+
+    //-------------------
+    this->piecePositions[endX+endY*8] = this->piecePositions[startX+startY*8];
+    this->piecePositions[startX+startY*8] = 0;
+    this->pieces[n].setPiecePosition(endX,endY);
+    //check to see if it is a capture 
+    if (this->piecePositions[endX+endY*8] != 0){
+        this->halfMovesFromLastCaptureOrPawnMove = 0 ;
+        // find the index of captures piece 
+        int indexOfCapturedPiece =0;
+        for (int i=0;i<pieces.size();i++){
+            sf::Vector2i pos  = pieces[i].getPiecePosition();
+            if (i != n && pos.x == endX && pos.y == endY){
+                indexOfCapturedPiece = i ;
+                break;
+            }
+        }
+        int capturedPieceType = pieces[indexOfCapturedPiece].getPieceType();
+        switch (capturedPieceType)
+        {
+        case BLACK_ROOK:
+            if (endX == 0 && endY==0){
+                this->blackQueenSideCastle = false ;
+            }
+            else if (endX == 7 && endY==0){
+                this->blackKingSideCastle = false ;
+            }
+            break;
+        case WHITE_ROOK:
+            if (endX == 0 && endY==7){
+                this->whiteQueenSideCastle = false ;
+            }
+            else if (endX == 7 && endY==7){
+                this->whiteKingSideCastle = false ;
+            }
+            break;
+        default:
+            break;
+        }
+        // remove the captured piece from the vector 
+        std::vector<Piece> copyVector1(this->pieces);
+        this->pieces.resize(indexOfCapturedPiece);
+        for (int j=indexOfCapturedPiece+1;j<pieces.size();j++){
+            pieces.push_back(copyVector1[j]);
+        }
+    }
+    //check to see if it is an en passant
+    else if (endX == this->enPassantX && endY == this->enPassantY){
+        this->halfMovesFromLastCaptureOrPawnMove = 0 ;
+        int pieceType = pieces[n].getPieceType();
+        if (pieceType<0){
+            int indexOfCapturedPawn =0;
+            for (int i=0;i<pieces.size();i++){
+                sf::Vector2i pos  = pieces[i].getPiecePosition();
+                if (i != n && pos.x == endX && pos.y == endY+1){
+                    indexOfCapturedPawn = i ;
+                    break;
+                }
+            }
+            sf::Vector2i posPawn = pieces[indexOfCapturedPawn].getPiecePosition();
+            piecePositions[posPawn.x+posPawn.y*8] = 0;
+            // remove the captured pawn from the vector 
+            std::vector<Piece> copyVector1(this->pieces);
+            this->pieces.resize(indexOfCapturedPawn);
+            for (int j=indexOfCapturedPawn+1;j<pieces.size();j++){
+                pieces.push_back(copyVector1[j]);
+            }
+        } 
+        else if (pieceType > 0){
+            int indexOfCapturedPawn =0;
+            for (int i=0;i<pieces.size();i++){
+                sf::Vector2i pos  = pieces[i].getPiecePosition();
+                if (i != n && pos.x == endX && pos.y == endY-1){
+                    indexOfCapturedPawn = i ;
+                    break;
+                }
+            }
+            sf::Vector2i posPawn = pieces[indexOfCapturedPawn].getPiecePosition();
+            piecePositions[posPawn.x+posPawn.y*8] = 0;
+            // remove the captured pawn from the vector 
+            std::vector<Piece> copyVector1(this->pieces);
+            this->pieces.resize(indexOfCapturedPawn];
+            for (int j=indexOfCapturedPawn+1;j<pieces.size();j++){
+                pieces.push_back(copyVector1[j]);
+            }
+        }
+
+    }
+    else {
+        int pieceType = this->pieces[n].getPieceType();
+        // handel special scenarios like castle or an passant 
+        switch (pieceType)
+        {
+        case BLACK_PAWN:
+            if ((endY - startY) == 2 && startY == 1){
+                this->enPassantX = endX;
+                this->enPassantY = endY-1;
+            }
+            this->halfMovesFromLastCaptureOrPawnMove = 0;
+            break;
+        case WHITE_PAWN:
+            if ((startY - endY) == 2 && startY == 6){
+                this->enPassantX = endX;
+                this->enPassantY = endY+1;
+            }
+            this->halfMovesFromLastCaptureOrPawnMove = 0;
+            break;
+        case BLACK_KING:
+            // short castle 
+            if (this->blackKingSideCastle && startX == 4 && startY ==0  && endX == 6 && endY==0){
+                // move the rook as well
+                this->applyMove(7,0,5,0);
+            }
+            // long castle 
+            if (this->blackQueenSideCastle && startX == 4 && startY ==0  && endX == 2 && endY==0){
+                 // move the rook as well
+                this->applyMove(0,0,3,0);
+            }
+            this->blackKingSideCastle = false;
+            this->blackQueenSideCastle = false;
+            break;
+        case WHITE_KING:
+             // short castle 
+            if (this->blackKingSideCastle && startX == 4 && startY == 7 && endX == 6 && endY==7){
+                // move the rook as well
+                this->applyMove(7,7,5,7);
+            }
+            // long castle 
+            if (this->blackQueenSideCastle && startX == 4 && startY ==7  && endX == 2 && endY==7){
+                 // move the rook as well
+                this->applyMove(0,7,3,7);
+            }
+            this->whiteKingSideCastle = false;
+            this->whiteQueenSideCastle = false;
+            break;
+        case BLACK_ROOK:
+            if (startX == 0 and startY == 0){
+                this->blackQueenSideCastle = false;
+            }
+            else if(startX == 0 and startY == 7){
+                this->blackKingSideCastle = false;
+            }
+            break;
+        case WHITE_ROOK:
+            if (startX == 7 and startY == 0){
+                this->blackQueenSideCastle = false;
+            }
+            else if(startX == 7 and startY == 7){
+                this->blackKingSideCastle = false;
+            }
+            break;
+        default:
+            this->enPassantX = -1;
+            this->enPassantY = -1;
+            break;
+        }
+    }
+}

@@ -12,6 +12,8 @@ private:
     int pixelX , pixelY;
     bool exists ,isDragging; 
     size_t windowWidth ,  windowHeight;
+    // set the piece Dimensions base on window size (it is a square ) 
+    int pieceDimensions;
 public:
     Piece() = default;
     Piece(int pieceType,int x , int y);
@@ -25,5 +27,5 @@ public:
     void setGraphicalPositionWhileDragging(int mouseX, int  mouseY);
     void draggingReleased(int mouseX,int mouseY);
     int getPieceType();
-    
+    void setPiecePosition(int updateX,int updateY);
 };
