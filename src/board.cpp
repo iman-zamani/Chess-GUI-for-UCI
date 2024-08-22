@@ -743,7 +743,7 @@ bool Board::applyMove(int startX,int startY,int endX,int endY){
             piecePositions[posPawn.x+posPawn.y*8] = 0;
             // remove the captured pawn from the vector 
             std::vector<Piece> copyVector1(this->pieces);
-            this->pieces.resize(indexOfCapturedPawn];
+            this->pieces.resize(indexOfCapturedPawn);
             for (int j=indexOfCapturedPawn+1;j<pieces.size();j++){
                 pieces.push_back(copyVector1[j]);
             }
