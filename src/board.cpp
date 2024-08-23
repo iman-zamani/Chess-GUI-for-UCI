@@ -297,7 +297,6 @@ void Board::setIsPieceDragging(bool setIsPieceDragging,int mouseX,int mouseY){
         piecePositions[posPieceSelected.x + (posPieceSelected.y*8)] = this->pieces[this->pieceSelected].getPieceType();
         int n = pieces.size();
         for (int i=0;i<n;i++){
-            
             if (i == this->pieceSelected){continue;}
             sf::Vector2i pos= this->pieces[i].getPiecePosition();
             if (pos.x == posPieceSelected.x && pos.y == posPieceSelected.y){
@@ -642,6 +641,9 @@ void Board::findLegalMovesBlackKing() {
         }
     }
 }
+
+// this function will only apply the move and the integrity of the move should be checked before passing to this function 
+// this function will update the board class in all of the aspects 
 bool Board::applyMove(int startX,int startY,int endX,int endY){
     // check to see if there is any piece available in starting position  
     if (this->piecePositions[startX+startY*8] == 0){
@@ -819,4 +821,5 @@ bool Board::applyMove(int startX,int startY,int endX,int endY){
             break;
         }
     }
+    return true;
 }
