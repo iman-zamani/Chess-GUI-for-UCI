@@ -66,5 +66,9 @@ public:
     // apply a move by the x and y of starting position and the target square, it will return false if move is not possible  
     // this function wont check if the move is legal or not , as long as ther is a piece in starting position it will not return false 
     bool applyMove(int startX,int startY,int endX,int endY); 
+    // it will drag the selected piece with the mouse 
+    void dragPiece(int mouseX,int mouseY);
+    // place the piece where the user intended 
+    void placePiece(int mouseX,int mouseY);
 };
 

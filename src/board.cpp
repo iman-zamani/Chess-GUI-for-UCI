@@ -219,25 +219,24 @@ void Board::printBoardState() {
 }
 
 void Board::draw(sf::RenderWindow &window){
-    if (this->pieceSelected != -1){
-        this->findLegalMoves();
-        for (int i=0;i<64;i++){
-            if (legalSquaresForTargetPiece[i]){spriteSquares[i].setTexture(targetSquaresTexture);}
-        }
-    }
-    
+    // if (this->pieceSelected != -1){
+    //     this->findLegalMoves();
+    //     for (int i=0;i<64;i++){
+    //         if (legalSquaresForTargetPiece[i]){spriteSquares[i].setTexture(targetSquaresTexture);}
+    //     }
+    // }
+    // if(isDragging && this->pieceSelected != -1){
+    //     // the position of the mouse
+    //     sf::Vector2i position = sf::Mouse::getPosition(window);
+
+    //     this->pieces[this->pieceSelected].setGraphicalPositionWhileDragging(position.x,position.y);
+        
+    // }
+    // else {
+    //     this->squareTextureSetToNormal();
+    // }
     for (sf::Sprite sp : spriteSquares){
         window.draw(sp);
-    }
-    if(isDragging && this->pieceSelected != -1){
-        // the position of the mouse
-        sf::Vector2i position = sf::Mouse::getPosition(window);
-
-        this->pieces[this->pieceSelected].setGraphicalPositionWhileDragging(position.x,position.y);
-        
-    }
-    else {
-        this->squareTextureSetToNormal();
     }
     int n = pieces.size();
     for (int i=0;i<n;i++){
@@ -313,7 +312,26 @@ void Board::setIsPieceDragging(bool setIsPieceDragging,int mouseX,int mouseY){
     return ;
 }
 
+void Board::dragPiece(int mouseX,int mouseY){
+    // if there is a piece selected 
+    // set the position of it to the mouse position
+    if (pieceSelected != -1){
+        pieces[pieceSelected].setGraphicalPositionWhileDragging(mouseX,mouseY);
+    }  
+    return ;
+}
 
+void Board::placePiece(int mouseX,int mouseY){
+    std::cout<<this->pieceSelected<<std::endl;
+    if (pieceSelected != -1){
+        std::cout<<"hear\n";
+        sf::Vector2i start = pieces[pieceSelected].getPiecePosition();
+        pieces[pieceSelected].draggingReleased(mouseX,mouseY);
+        sf::Vector2i end = pieces[pieceSelected].getPiecePosition();
+        
+    }
+    return ;
+}
 
 // it will get the square name in string like (f6 or d2) and it will convert it to x and y 
 sf::Vector2i Board::squareNameToXY(const std::string &square){
@@ -327,6 +345,7 @@ sf::Vector2i Board::squareNameToXY(const std::string &square){
 // saving the legal moves that can be made with the given piece (piece index)
 void Board::findLegalMoves(){
     int pieceType = this->pieces[this->pieceSelected].getPieceType();
+    std::cout<<pieceType<<std::endl;
     switch (pieceType)
     {
     //black pieces 

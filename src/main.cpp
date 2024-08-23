@@ -56,16 +56,17 @@ int main()
                 if (event.mouseButton.button == sf::Mouse::Left){
                     
                     mousePressed = false;
-                    if (isDragging)
-                    {
-                        // Handle dragging logic here
-                        std::cout << "dragged to: " << event.mouseButton.x << ", " << event.mouseButton.y << std::endl;
-                    }
-                    else
-                    {
-                            // Handle clicking logic here
-                        std::cout << "clicked at: " << event.mouseButton.x << ", " << event.mouseButton.y << std::endl;
-                    }
+                    // if (isDragging)
+                    // {
+                    //     // Handle dragging logic here
+                    //     std::cout << "dragged to: " << event.mouseButton.x << ", " << event.mouseButton.y << std::endl;
+                    // }
+                    // else
+                    // {
+                    //         // Handle clicking logic here
+                    //     std::cout << "clicked at: " << event.mouseButton.x << ", " << event.mouseButton.y << std::endl;
+                    // }
+                    chessBoard.placePiece(event.mouseButton.x,event.mouseButton.y);
                 }
                 break;
             default:
@@ -73,8 +74,9 @@ int main()
             }
         }
         if (isDragging && mousePressed){
-            std::cout<<"dragging is happening "<< number <<std::endl;
-            number++;
+            //std::cout<<"dragging is happening "<< number <<std::endl;
+            sf::Vector2i mousePosition = sf::Mouse::getPosition(window);
+            chessBoard.dragPiece(mousePosition.x,mousePosition.y);
         }
         else if (isDragging){
             isDragging = false ;
