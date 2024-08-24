@@ -66,7 +66,8 @@ int main()
                     //         // Handle clicking logic here
                     //     std::cout << "clicked at: " << event.mouseButton.x << ", " << event.mouseButton.y << std::endl;
                     // }
-                    chessBoard.placePiece(event.mouseButton.x,event.mouseButton.y);
+                    sf::Vector2i mousePosition = sf::Mouse::getPosition(window);
+                    chessBoard.placePiece(mousePosition.x,mousePosition.y);
                 }
                 break;
             default:

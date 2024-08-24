@@ -256,7 +256,12 @@ void Board::selectTargetPiece(sf::RenderWindow &window, int mouseX, int mouseY){
     int x = (mouseX - (chunksWidth*4) )/ (chunksWidth);
     int y = (mouseY - (chunksHeight/2)) / chunksHeight;
 
-
+    if (this->legalSquaresForTargetPiece[x+y*8]) {
+        // there is no need to select a new piece 
+        // because the selected square can be a target square for the 
+        // previous selected piece 
+        return ;
+    }
     int n = pieces.size();
     for (int i=0;i<n;i++){
         
@@ -332,7 +337,11 @@ void Board::placePiece(int mouseX,int mouseY){
         sf::Vector2i start = pieces[pieceSelected].getPiecePosition();
         pieces[pieceSelected].draggingReleased(mouseX,mouseY);
         sf::Vector2i end = pieces[pieceSelected].getPiecePosition();
-        applyMove((int)start.x,(int)start.y,(int)end.x,(int)end.y);
+        
+        if ((start.x != end.x ) || (start.y != end.y)){ 
+            applyMove((int)start.x,(int)start.y,(int)end.x,(int)end.y);
+            std::fill(legalSquaresForTargetPiece.begin(), legalSquaresForTargetPiece.end(), false);
+            }
     }
     return ;
 }
@@ -399,6 +408,7 @@ void Board::findLegalMoves(){
 void Board::findLegalMovesWhitePawn(){
     std::fill(legalSquaresForTargetPiece.begin(), legalSquaresForTargetPiece.end(), false);
     sf::Vector2i pos =  this->pieces[this->pieceSelected].getPiecePosition();
+   
     // square in front of the pawn
     int squareInFrontOfPawn = ((pos.y-1) * 8) + pos.x;
     if (piecePositions[squareInFrontOfPawn] == 0){
@@ -667,6 +677,8 @@ void Board::findLegalMovesBlackKing() {
 // this function will only apply the move and the integrity of the move should be checked before passing to this function 
 // this function will update the board class in all of the aspects 
 bool Board::applyMove(int startX,int startY,int endX,int endY){
+     //std::cout<<"start X: "<<startX<<" Y: "<<startY<<std::endl;
+      //std::cout<<"end X: "<<endX<<" Y: "<<endY<<std::endl;
     // check to see if there is any piece available in starting position  
     if (this->piecePositions[startX+startY*8] == 0){
         return false ;
@@ -679,6 +691,8 @@ bool Board::applyMove(int startX,int startY,int endX,int endY){
             break;
         }
     }
+    
+    
     // add the move number if it was black turn
     if (!this->isWhiteTurn) this->moveNumber++;
     //change the turn 
@@ -688,11 +702,9 @@ bool Board::applyMove(int startX,int startY,int endX,int endY){
     this->halfMovesFromLastCaptureOrPawnMove++;
 
     //-------------------
-    this->piecePositions[endX+endY*8] = this->piecePositions[startX+startY*8];
-    this->piecePositions[startX+startY*8] = 0;
-    this->pieces[n].setPiecePosition(endX,endY);
     //check to see if it is a capture 
     if (this->piecePositions[endX+endY*8] != 0){
+        
         this->halfMovesFromLastCaptureOrPawnMove = 0 ;
         // find the index of captures piece 
         int indexOfCapturedPiece =0;
@@ -702,6 +714,9 @@ bool Board::applyMove(int startX,int startY,int endX,int endY){
                 indexOfCapturedPiece = i ;
                 break;
             }
+        }
+        if (indexOfCapturedPiece == 0){
+            throw std::invalid_argument("Error conflict with board aspects");
         }
         int capturedPieceType = pieces[indexOfCapturedPiece].getPieceType();
         switch (capturedPieceType)
@@ -728,12 +743,17 @@ bool Board::applyMove(int startX,int startY,int endX,int endY){
         // remove the captured piece from the vector 
         std::vector<Piece> copyVector1(this->pieces);
         this->pieces.resize(indexOfCapturedPiece);
-        for (int j=indexOfCapturedPiece+1;j<pieces.size();j++){
+        for (int j=indexOfCapturedPiece+1;j<copyVector1.size();j++){
             pieces.push_back(copyVector1[j]);
         }
     }
+    this->piecePositions[endX+endY*8] = this->piecePositions[startX+startY*8];
+    this->piecePositions[startX+startY*8] = 0;
+    this->pieces[n].setPiecePosition(endX,endY);
+    return true;
     //check to see if it is an en passant
-    else if (endX == this->enPassantX && endY == this->enPassantY){
+    //else
+     if (endX == this->enPassantX && endY == this->enPassantY){
         this->halfMovesFromLastCaptureOrPawnMove = 0 ;
         int pieceType = pieces[n].getPieceType();
         if (pieceType<0){

@@ -86,8 +86,6 @@ void Piece::draggingReleased(int mouseX,int mouseY){
     //std::cout<<chunksWidth << " "<< chunksHeight<<std::endl;
     this->x  = (mouseX - (chunksWidth * 4))/ chunksWidth;
     this->y =  (mouseY -  (chunksHeight/2)) / chunksHeight;
-
-
     this->pixelX = (this->x * chunksWidth ) + chunksWidth * 4;
     this->pixelY = (this->y * chunksHeight) + (chunksHeight/2);
     this->sprite.setPosition(pixelX,pixelY);
