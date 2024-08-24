@@ -219,12 +219,7 @@ void Board::printBoardState() {
 }
 
 void Board::draw(sf::RenderWindow &window){
-    // if (this->pieceSelected != -1){
-    //     this->findLegalMoves();
-    //     for (int i=0;i<64;i++){
-    //         if (legalSquaresForTargetPiece[i]){spriteSquares[i].setTexture(targetSquaresTexture);}
-    //     }
-    // }
+    
     // if(isDragging && this->pieceSelected != -1){
     //     // the position of the mouse
     //     sf::Vector2i position = sf::Mouse::getPosition(window);
@@ -235,6 +230,14 @@ void Board::draw(sf::RenderWindow &window){
     // else {
     //     this->squareTextureSetToNormal();
     // }
+    this->squareTextureSetToNormal();
+
+    if (this->pieceSelected != -1){
+        for (int i=0;i<64;i++){
+            if (legalSquaresForTargetPiece[i]){spriteSquares[i].setTexture(targetSquaresTexture);}
+        }
+    }
+
     for (sf::Sprite sp : spriteSquares){
         window.draw(sp);
     }
@@ -264,15 +267,18 @@ void Board::selectTargetPiece(sf::RenderWindow &window, int mouseX, int mouseY){
             break;
         }
     }
+    
     // this will save the index of the selected piece 
     // and if the user clicked on a place with no piece it 
-    //  will deselect the selected piece 
+    //  will deselect the selected piece unless the old selected piece 
+    //  can move to that square 
     if (n == (int)pieces.size()){
-        this->pieceSelected = -1;
+        if (!this->legalSquaresForTargetPiece[x+y*8]) {this->pieceSelected = -1;}
         return ;
     }
     else {
         this->pieceSelected = n;
+        this->findLegalMoves();
         return ;
     } 
 }
@@ -322,13 +328,11 @@ void Board::dragPiece(int mouseX,int mouseY){
 }
 
 void Board::placePiece(int mouseX,int mouseY){
-    std::cout<<this->pieceSelected<<std::endl;
     if (pieceSelected != -1){
-        std::cout<<"hear\n";
         sf::Vector2i start = pieces[pieceSelected].getPiecePosition();
         pieces[pieceSelected].draggingReleased(mouseX,mouseY);
         sf::Vector2i end = pieces[pieceSelected].getPiecePosition();
-        
+        applyMove((int)start.x,(int)start.y,(int)end.x,(int)end.y);
     }
     return ;
 }
@@ -345,7 +349,6 @@ sf::Vector2i Board::squareNameToXY(const std::string &square){
 // saving the legal moves that can be made with the given piece (piece index)
 void Board::findLegalMoves(){
     int pieceType = this->pieces[this->pieceSelected].getPieceType();
-    std::cout<<pieceType<<std::endl;
     switch (pieceType)
     {
     //black pieces 

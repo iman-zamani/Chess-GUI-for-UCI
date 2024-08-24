@@ -28,21 +28,7 @@ private:
     // this vector has a size of 64 (for each square) and it will hold the pieceType that exist in each square 
     //and if no piece is in that square it will store 0
     std::vector<int> piecePositions;
-    // methods to get legal moves for each piece type
-    // white pieces 
-    void findLegalMovesWhitePawn();
-    void findLegalMovesWhiteRook();
-    void findLegalMovesWhiteKnight();
-    void findLegalMovesWhiteBishop();
-    void findLegalMovesWhiteQueen();
-    void findLegalMovesWhiteKing();
-    // black pieces 
-    void findLegalMovesBlackPawn();
-    void findLegalMovesBlackRook();
-    void findLegalMovesBlackKnight();
-    void findLegalMovesBlackBishop();
-    void findLegalMovesBlackQueen();
-    void findLegalMovesBlackKing();
+    
     // this vectors stores the legal squares that the selected piece can go 
     // for each square if it is true that piece can go to that square 
     std::vector<bool> legalSquaresForTargetPiece;
@@ -70,5 +56,21 @@ public:
     void dragPiece(int mouseX,int mouseY);
     // place the piece where the user intended 
     void placePiece(int mouseX,int mouseY);
+private:
+    // methods to get legal moves for each piece type
+    // white pieces 
+    void findLegalMovesWhitePawn();
+    void findLegalMovesWhiteRook();
+    void findLegalMovesWhiteKnight();
+    void findLegalMovesWhiteBishop();
+    void findLegalMovesWhiteQueen();
+    void findLegalMovesWhiteKing();
+    // black pieces 
+    void findLegalMovesBlackPawn();
+    void findLegalMovesBlackRook();
+    void findLegalMovesBlackKnight();
+    void findLegalMovesBlackBishop();
+    void findLegalMovesBlackQueen();
+    void findLegalMovesBlackKing();
 };
 
