@@ -2,14 +2,23 @@
 #include<vector>
 #include<string>
 #include <cmath>
+#include <thread>
+#include <memory>
 #include <SFML/Graphics.hpp>
+#include "values.hpp"
+#include "configuration.hpp"
 #include "board.hpp"
+
+
 int main()
 {
     // Create the main window
-    sf::RenderWindow window(sf::VideoMode(2400, 1350), "chess-gui");
+    sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "chess-gui");
     window.setFramerateLimit(60);
     Board chessBoard(window);
+
+    // create the config window object 
+    Config conf(WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
 
     const float DRAG_THRESHOLD = 10.0f;
     bool isDragging = false;
@@ -33,11 +42,21 @@ int main()
             case sf::Event::MouseButtonPressed:
                 if (event.mouseButton.button == sf::Mouse::Left)
                     {
-                        chessBoard.selectTargetPiece(window,event.mouseButton.x,event.mouseButton.y);
-                        // record the position where the mouse was pressed
-                        mousePressed = true;
-                        mousePressPosition = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
-                        isDragging = false;
+                        // if it is outside of the board   event.mouseButton.x
+                        if( !(event.mouseButton.x > ((WINDOW_WIDTH/WINDOW_WIDTH_RATIO)*4) && event.mouseButton.x < ((WINDOW_WIDTH/WINDOW_WIDTH_RATIO)*12)) ||
+                         !(event.mouseButton.y > ((WINDOW_HEIGHT/WINDOW_HEIGHT_RATIO)/2) && event.mouseButton.y < (((WINDOW_HEIGHT/WINDOW_HEIGHT_RATIO)/2)*17)) ){
+                            
+                            sf::Vector2i mainWindowPosition = window.getPosition();
+                            conf.open(mainWindowPosition);
+
+                         }
+                         else {
+                            chessBoard.selectTargetPiece(window,event.mouseButton.x,event.mouseButton.y);
+                            // record the position where the mouse was pressed
+                            mousePressed = true;
+                            mousePressPosition = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
+                            isDragging = false;
+                         }
                     }
                 break;
 
@@ -83,6 +102,7 @@ int main()
             isDragging = false ;
         }
         // Clear screen
+        
         window.clear();
 
         chessBoard.draw(window);
