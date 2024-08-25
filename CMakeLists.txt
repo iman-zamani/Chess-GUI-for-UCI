@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 find_package(SFML 2.5 COMPONENTS graphics window system REQUIRED)
 
 # Add the executable with the new name
-add_executable(chess-gui src/board.cpp src/main.cpp src/piece.cpp)
+add_executable(chess-gui src/board.cpp src/main.cpp src/piece.cpp src/configuration.cpp)
 
 # Link SFML libraries
 target_link_libraries(chess-gui sfml-graphics sfml-window sfml-system)
