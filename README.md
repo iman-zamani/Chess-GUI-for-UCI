@@ -2,6 +2,9 @@
 
 Chess-GUI-for-UCI is a graphical user interface designed to interact with UCI-compatible chess engines. This application allows two chess engines to compete against each other or enables a human player to challenge any UCI engine. Please note that this project is currently under active development and may not have all features fully implemented.
 
+![app screenshot](images/chessBoard.png)
+
+
 ## Features (Planned and Current)
 
 - **Engine vs. Engine**: Set up matches between two UCI-compatible engines and watch them play.
