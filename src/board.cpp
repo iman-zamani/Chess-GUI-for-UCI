@@ -281,6 +281,11 @@ void Board::selectTargetPiece(sf::RenderWindow &window, int mouseX, int mouseY){
         if (!this->legalSquaresForTargetPiece[x+y*8]) {this->pieceSelected = -1;}
         return ;
     }
+    // checking if it is that color turn to move 
+    else if ((this->pieces[n].getPieceType() < 0 && this->isWhiteTurn) || (this->pieces[n].getPieceType() > 0 && !this->isWhiteTurn)){
+        if (!this->legalSquaresForTargetPiece[x+y*8]) {this->pieceSelected = -1;}
+        return ;
+    }
     else {
         this->pieceSelected = n;
         this->findLegalMoves();

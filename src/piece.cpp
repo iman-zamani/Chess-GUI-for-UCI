@@ -84,6 +84,7 @@ void Piece::draggingReleased(int mouseX,int mouseY){
     int chunksHeight =150;
     
     //std::cout<<chunksWidth << " "<< chunksHeight<<std::endl;
+    // this is not complete at all , no checks are added 
     this->x  = (mouseX - (chunksWidth * 4))/ chunksWidth;
     this->y =  (mouseY -  (chunksHeight/2)) / chunksHeight;
     this->pixelX = (this->x * chunksWidth ) + chunksWidth * 4;
