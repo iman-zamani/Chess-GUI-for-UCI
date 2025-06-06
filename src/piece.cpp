@@ -1,149 +1,26 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
-#include "values.hpp"
-#include "piece.hpp"
 #include <cmath>
+#include "piece.hpp"
 
-
-// it will take the type of the piece that we want to create and it's position in the board 
-Piece::Piece (int pieceType ,int x , int y){
-    this -> pieceDimensions = 150;
-    // set x and y 
-    // check if it is in the boundaries of the board 
-    if (x<8 and y < 8 and x > -1 and y > -1){
-        this->x = x;
-        this->y = y;
-    }
-    else {
-        throw std::invalid_argument("x and y values must be greater than zero and smaller than 8.");
-    }
-    int pieceTypeWithoutColor = abs(pieceType);
-    //set pieceType
-    // if it is a valid piece type base on pieceValues.hpp file 
-    if (pieceTypeWithoutColor == 1 || pieceTypeWithoutColor == 3 || pieceTypeWithoutColor == 4 || pieceTypeWithoutColor == 5 || pieceTypeWithoutColor == 9 || pieceTypeWithoutColor == 20){
-        this->pieceType = pieceType;
-        
-    }
-    else {
-        throw std::invalid_argument("not a valid Pice type");
-    }
-    // ------
-    this->exists =true;
-    //--------
-    // find the coordination of the piece in pieceTexture.png
-    int i = 0 , j  = 0;
-    // determine if the piece is black or white
-    if (pieceType < 0 ){j = 1;}
-    // determine the type itself 
-    switch (pieceTypeWithoutColor)
-    {
-    case 20:
-        i = 0;
-        break;
-    case 9:
-        i = 1;
-        break;
-    case 4:
-        i = 2;
-        break;
-    case 3:
-        i = 3;
-        break;
-    case 5:
-        i = 4;
-        break;
-    case 1:
-        i = 5;
-        break;
-    
-    default:
-        break;
-    }
-    
-    sf::IntRect rect(i * 150,j * 150,150,150);// (left, top, width, height)
-     // loading texture from file 
-    if (!this->texture.loadFromFile("./Resources/piceTexture.png", rect)) {
-        throw std::invalid_argument("Error loading texture from file.");
-    }
-    this->texture.setSmooth(true);
-    this->sprite.setTexture(this->texture);
-    this->sprite.setScale(pieceToBoardScale,pieceToBoardScale);
-    this->isDragging = false ;
-    
+// return a const reference to the sprite for drawing
+const sf::Sprite& Piece::getSprite()const{
+    return sprite;
 }
-void Piece::updateGraphicalPosition(int windowWidth , int windowHeight){
-    int chunksWidth = windowWidth / 16;
-    int chunksHeight = windowHeight / 9;
-    this->pixelX = (this->x * chunksWidth ) + chunksWidth * 4;
-    this->pixelY = (this->y * chunksHeight) + (chunksHeight/2);
-    return ;
+// set position of the sprite using a vector
+void Piece::setPosition(const sf::Vector2f& position) {
+    sprite.setPosition(position);
 }
-void Piece::draggingReleased(int mouseX,int mouseY){
-
-    int chunksWidth = 150;
-    int chunksHeight =150;
-    
-    //std::cout<<chunksWidth << " "<< chunksHeight<<std::endl;
-    // this is not complete at all , no checks are added 
-    this->x  = (mouseX - (chunksWidth * 4))/ chunksWidth;
-    this->y =  (mouseY -  (chunksHeight/2)) / chunksHeight;
-    this->pixelX = (this->x * chunksWidth ) + chunksWidth * 4;
-    this->pixelY = (this->y * chunksHeight) + (chunksHeight/2);
-    this->sprite.setPosition(pixelX,pixelY);
-    return ;
+// set the position of the sprite
+void Piece::setPosition(float x, float y) {
+    pixelX = x;
+    pixelY = y;
+    sprite.setPosition(x, y);
 }
 
-void Piece::draw(sf::RenderWindow &window){
-    sf::Vector2u size = window.getSize();
-    if (this->windowWidth != size.x || this->windowHeight != size.y){
-        this->windowHeight = size.y, this->windowWidth = size.x;
-        this->updateGraphicalPosition(size.x,size.y);
-        this->sprite.setPosition(pixelX,pixelY);
-    }
-    window.draw(this->sprite);
-}
-
-
-Piece::Piece(const Piece& other) {
-    this->pieceType = other.pieceType;
-    this->x = other.x;
-    this->y = other.y;
-    this->pixelX = other.pixelX;
-    this->pixelY = other.pixelY;
-    this->exists = other.exists;
-    this->isDragging = other.isDragging;
-    this->windowWidth = other.windowWidth;
-    this->windowHeight = other.windowHeight;
-
-    // Copy the texture
-    this->texture = other.texture;
-    this->texture.setSmooth(true);
-    // Set the texture to the sprite
-    this->sprite.setTexture(this->texture);
-    
-    // If there is any specific transformation applied to the original sprite, we replicate it
-    this->sprite.setPosition(other.sprite.getPosition());
-    this->sprite.setScale(other.sprite.getScale());
-    this->sprite.setRotation(other.sprite.getRotation());
-    this->sprite.setColor(other.sprite.getColor());
-}
-sf::Vector2i Piece::getPiecePosition(){
-    return sf::Vector2(this->x,this->y);
-}
-void Piece::setGraphicalPositionWhileDragging(int mouseX, int mouseY){
-    this->pixelX = mouseX - (sprite.getLocalBounds().width / 2);
-    this->pixelY = mouseY - (sprite.getLocalBounds().height / 2);
-    this->sprite.setPosition(this->pixelX, this->pixelY);
-    return ;
-}
-int Piece::getPieceType(){
+int Piece::getType(){
     return this->pieceType;
 }
-
-void Piece::setPiecePosition(int updateX,int updateY){
-    this->x = updateX;
-    this->y = updateY;
-    this->pixelX = (this->x * this->pieceDimensions ) + this->pieceDimensions * 4;
-    this->pixelY = (this->y * this->pieceDimensions) + (this->pieceDimensions/2);
-    return ;
+sf::Vector2i Piece::getPosition(){
+    return sf::Vector2(this->x,this->y);
 }

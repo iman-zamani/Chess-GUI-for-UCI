@@ -15,17 +15,13 @@ private:
     // set the piece Dimensions base on window size (it is a square ) 
     int pieceDimensions;
 public:
-    Piece() = default;
-    Piece(int pieceType,int x , int y);
-    ~Piece(){};
+    Piece() ;
     // Copy constructor
     Piece(const Piece& other);
-
-    void draw(sf::RenderWindow &window);    
-    void updateGraphicalPosition(int windowWidth , int windowHeight);
-    sf::Vector2i getPiecePosition();
-    void setGraphicalPositionWhileDragging(int mouseX, int  mouseY);
-    void draggingReleased(int mouseX,int mouseY);
-    int getPieceType();
-    void setPiecePosition(int updateX,int updateY);
+    sf::Vector2i getPosition();
+    int getType();
+    const sf::Sprite& getSprite() const;
+    // two ways of updating the position using function overloading 
+    void setPosition(float x, float y);
+    void setPosition(const sf::Vector2f& position) ;
 };
