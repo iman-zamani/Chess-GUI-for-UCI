@@ -1,7 +1,7 @@
 #pragma once 
 
 
-class Piece{
+class Piece : public sf::Drawable{
 private:
     int pieceType;
     sf::Texture texture;
@@ -14,13 +14,16 @@ private:
     size_t windowWidth ,  windowHeight;
     // set the piece Dimensions base on window size (it is a square ) 
     int pieceDimensions;
+    virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const override {
+        target.draw(sprite, states);
+    }
 public:
-    Piece() ;
+    Piece() = default;  
+    Piece(int pieceType,int x , int y);
     // Copy constructor
     Piece(const Piece& other);
     sf::Vector2i getPosition();
     int getType();
-    const sf::Sprite& getSprite() const;
     // two ways of updating the position using function overloading 
     void setPosition(float x, float y);
     void setPosition(const sf::Vector2f& position) ;

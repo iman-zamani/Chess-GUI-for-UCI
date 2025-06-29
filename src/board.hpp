@@ -1,8 +1,18 @@
 #include "piece.hpp"
+#include<iostream>
+#include<vector>
+#include<string>
+#include <cmath>
+#include <thread>
+#include <memory>
+#include <SFML/Graphics.hpp>
 
-class Board{
+
+class Board : public sf::Drawable{
 
 private:
+    // store the window reference to avoid passing as a parameter each time 
+    sf::RenderWindow& window;
     std::vector<Piece> pieces;
     sf::Texture lightSquaresTexture;
     sf::Texture darkSquaresTexture;
@@ -33,19 +43,33 @@ private:
     // for each square if it is true that piece can go to that square 
     std::vector<bool> legalSquaresForTargetPiece;
     //
-    void squareTextureSetToNormal();
-    
+    void setSquaresTexture();
+    void constructor(const std::string &FEN);
+    //draw the board squares 
+    void drawBoardBackground(sf::RenderTarget& target) const {
+        for (sf::Sprite sp : spriteSquares){
+            window.draw(sp);
+        }
+    }
+    // draw all the elements 
+    virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const override {
+        drawBoardBackground(target);
+        for (const auto& piece : pieces) {
+            target.draw(piece);
+        }
+    }
+    sf::Vector2i squareNameToXY(const std::string &square);
 public:
 
-    Board(sf::RenderWindow &window,const std::string &FEN);
+    Board(sf::RenderWindow &win,const std::string &FEN): window(win){this->constructor(FEN);};
     // if this constructor is used, it will call the default constructor (with FEN string) and give it the 
     //default starting position as the required FEN String 
-    Board(sf::RenderWindow &window) : Board(window,"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") {};
+    Board(sf::RenderWindow &win) : Board(win,"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") {};
     void draw(sf::RenderWindow &window); 
     void selectTargetPiece(sf::RenderWindow &window, int mouseX, int mouseY);
     bool getIsPieceDragging();
     void setIsPieceDragging(bool setIsPieceDragging,int mouseX,int mouseY);
-    sf::Vector2i squareNameToXY(const std::string &square);
+    
     void printBoardState();
     // this method will find the legal moves for the selected piece 
     void findLegalMoves();
