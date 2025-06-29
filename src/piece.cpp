@@ -22,7 +22,7 @@ sf::Vector2i Piece::getPosition(){
 }
 
 // it will take the type of the piece that we want to create and it's position in the board 
-Piece::Piece (int pieceType ,int x , int y){
+Piece::Piece (int pieceType ,int x , int y, int squareSide){
     this -> pieceDimensions = 150;
     // set x and y 
     // check if it is in the boundaries of the board 
@@ -83,8 +83,10 @@ Piece::Piece (int pieceType ,int x , int y){
     }
     this->texture.setSmooth(true);
     this->sprite.setTexture(this->texture);
-    this->sprite.setScale(1,1);
+    float scale = static_cast<float>(squareSide) / 150;
+    this->sprite.setScale(scale,scale);
     this->isDragging = false ;
+    this->setPosition(x*squareSide + (squareSide/2),y*squareSide );
     
 }
 

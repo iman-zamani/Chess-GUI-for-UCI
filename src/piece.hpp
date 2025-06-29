@@ -19,7 +19,7 @@ private:
     }
 public:
     Piece() = default;  
-    Piece(int pieceType,int x , int y);
+    Piece(int pieceType,int x , int y, int squareSide);
     // Copy constructor
     Piece(const Piece& other);
     sf::Vector2i getPosition();
