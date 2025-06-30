@@ -86,8 +86,12 @@ Piece::Piece (int pieceType ,int x , int y, int squareSide){
     float scale = static_cast<float>(squareSide) / 150;
     this->sprite.setScale(scale,scale);
     this->isDragging = false ;
-    this->setPosition(x*squareSide + (squareSide/2),y*squareSide );
-    
+    this->setPosition(x*squareSide + (squareSide/2),y*squareSide + (squareSide/2));
+    // create the ghost version of the piece 
+    this->ghostSprite = this->sprite;
+    ghostSprite.setColor(sf::Color(255, 255, 255, 100));
+    // set the piece as not selected for dragging 
+    this->isDragging = false;
 }
 
 Piece::Piece(const Piece& other) {

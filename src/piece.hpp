@@ -6,6 +6,8 @@ private:
     int pieceType;
     sf::Texture texture;
     sf::Sprite  sprite;
+    // ghost version of the piece 
+    sf::Sprite ghostSprite;
     // from 0 to 7 
     int x , y ;
     // the coordination of  piece in pixels 
@@ -15,7 +17,12 @@ private:
     // set the piece Dimensions base on window size (it is a square ) 
     int pieceDimensions;
     virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const override {
-        target.draw(sprite, states);
+        if (!isDragging){
+            target.draw(sprite, states);
+        }
+        else {
+            target.draw(ghostSprite, states);
+        }
     }
 public:
     Piece() = default;  

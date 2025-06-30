@@ -25,7 +25,7 @@ void Board::constructor(const std::string &FEN){
     int windowWidth = size.x;
     int windowHeight = size.y;
     // we will find the smaller side and we will devid it by the number of squares that we want 
-    int x = (windowHeight>windowWidth ? windowWidth : windowHeight) / 8 ;
+    int x = (windowHeight>windowWidth ? windowWidth : windowHeight) / 9 ;
 
     
     //////////////////////////////////////////////////////////////////////////////////////////
@@ -57,7 +57,7 @@ void Board::constructor(const std::string &FEN){
     ////////////////////////////////////////////////////////////////////////////////////////////
     // this part is for setting the position of squares 
     int i = x / 2;
-    int j = 0;
+    int j = x / 2;
     int squareSetPositionCounter = 0;
     for (int k=0;k<64;k++){
         this->spriteSquares[k].setPosition(i,j);
