@@ -1,6 +1,8 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
-#include <cmath>
+#include <optional>
+#include<vector>
+#include<string>
 #include "values.hpp"
 #include "piece.hpp"
 #include "board.hpp"
@@ -523,7 +525,8 @@ void Board::findLegalMovesBlackKing() {
 }
 
 
-const sf::Sprite& Board::getDraggingPieceSprite(sf::Vector2f clickPos) {
+const sf::Texture& Board::getDraggingPieceTexture(sf::Vector2f clickPos) {
+    //temp fix, this is not optimized way to find the piece
     for (int i = 0; i < this->pieces.size(); i++) {
         sf::Vector2f piecePosF(static_cast<float>(this->pieces[i].getPosition().x),static_cast<float>(this->pieces[i].getPosition().y));
 
@@ -532,9 +535,17 @@ const sf::Sprite& Board::getDraggingPieceSprite(sf::Vector2f clickPos) {
         if (absDiffX <0 || absDiffY < 0){continue;}
         if (absDiffX < squareSideLength && absDiffY < squareSideLength) {
             pieceSelected = i;
-            return this->pieces[pieceSelected].getSprite();
+            this->pieces[pieceSelected].selectPiece();
+            return this->pieces[pieceSelected].getTexture();
         }
     }
-
-    return spriteSquares[0];
+    return emptyTextureToReturn;
+}
+const sf::Vector2f Board::getSelectedPieceSpriteScale()const{
+    const float pieceScale = this->pieces[pieceSelected].getScale();
+    sf::Vector2f tempVector(pieceScale, pieceScale);
+    return tempVector;
+}
+void Board::placeThePiece(sf::Vector2f clickPos){
+    // To Do
 }

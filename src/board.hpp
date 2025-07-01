@@ -1,11 +1,11 @@
-#include "piece.hpp"
-#include<iostream>
+#pragma once
+#include <iostream>
+#include <SFML/Graphics.hpp>
+#include <optional>
 #include<vector>
 #include<string>
-#include <cmath>
-#include <thread>
-#include <memory>
-#include <SFML/Graphics.hpp>
+#include "piece.hpp"
+
 
 
 class Board : public sf::Drawable{
@@ -43,6 +43,8 @@ private:
     // this vectors stores the legal squares that the selected piece can go 
     // for each square if it is true that piece can go to that square 
     std::vector<bool> legalSquaresForTargetPiece;
+    // this texture is empty and .getSize() on it will always return sf::Vector2u(0, 0)
+    sf::Texture emptyTextureToReturn;
     //
     void setSquaresTexture();
     void constructor(const std::string &FEN);
@@ -81,8 +83,10 @@ public:
     void dragPiece(int mouseX,int mouseY);
     // place the piece where the user intended 
     void placePiece(int mouseX,int mouseY);
-    // dragging pieces
-    const sf::Sprite& getDraggingPieceSprite(sf::Vector2f clickPos);
+    // dragging pieces texture
+    const sf::Texture& getDraggingPieceTexture(sf::Vector2f clickPos);
+    const sf::Vector2f getSelectedPieceSpriteScale()const;
+    void placeThePiece(sf::Vector2f clickPos);
 private:
     // methods to get legal moves for each piece type
     // white pieces 

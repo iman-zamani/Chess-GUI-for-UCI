@@ -8,6 +8,8 @@ private:
     sf::Sprite  sprite;
     // ghost version of the piece 
     sf::Sprite ghostSprite;
+    // the scale we need to apply to sprites so the size gets correct 
+    float scale;
     // from 0 to 7 
     int x , y ;
     // the coordination of  piece in pixels 
@@ -34,8 +36,8 @@ public:
     // two ways of updating the position using function overloading 
     void setPosition(float x, float y);
     void setPosition(const sf::Vector2f& position) ;
-    
-    const sf::Sprite& getSprite() const {
-        return sprite;
-    }
+    const sf::Texture& getTexture() const;
+    const float getScale()const;
+    void selectPiece();
+    void deselectPiece();
 };

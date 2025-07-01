@@ -83,7 +83,7 @@ Piece::Piece (int pieceType ,int x , int y, int squareSide){
     }
     this->texture.setSmooth(true);
     this->sprite.setTexture(this->texture);
-    float scale = static_cast<float>(squareSide) / 150;
+    scale = static_cast<float>(squareSide) / 150;
     this->sprite.setScale(scale,scale);
     this->isDragging = false ;
     this->setPosition(x*squareSide + (squareSide/2),y*squareSide + (squareSide/2));
@@ -116,4 +116,18 @@ Piece::Piece(const Piece& other) {
     this->sprite.setScale(other.sprite.getScale());
     this->sprite.setRotation(other.sprite.getRotation());
     this->sprite.setColor(other.sprite.getColor());
+}
+const sf::Texture& Piece::getTexture() const {
+    return texture;
+}
+void Piece::selectPiece(){
+    // we should change the texture to the ghost one showing to the user this piece is selected
+    this->isDragging = true;
+}
+void Piece::deselectPiece(){
+    // we should change the texture to the real one showing to the user this piece is deselected
+    this->isDragging = false;
+}
+const float Piece::getScale()const{
+    return this->scale;
 }

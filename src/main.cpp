@@ -62,8 +62,15 @@ int main(){
         if (!mouseLeftButtonIsPressed && sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
             sf::Vector2i mousePixel = sf::Mouse::getPosition(window);
             sf::Vector2f virtualMouse = window.mapPixelToCoords(mousePixel, virtualView);
-            draggingPieceSprite = board.getDraggingPieceSprite(virtualMouse);
-            mouseLeftButtonIsPressed = true;
+            const sf::Texture* draggingPieceTexture = &board.getDraggingPieceTexture(virtualMouse);
+            if (draggingPieceTexture->getSize() != sf::Vector2u(0, 0)){
+                draggingPieceSprite.setTexture(*draggingPieceTexture);
+                draggingPieceSprite.setScale(board.getSelectedPieceSpriteScale());
+                mouseLeftButtonIsPressed = true;
+            }
+            else {
+                mouseLeftButtonIsPressed = false;
+            }            
         }        
         // Clear the window with black color
         window.clear(sf::Color::Black);
