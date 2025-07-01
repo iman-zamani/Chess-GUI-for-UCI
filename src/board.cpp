@@ -25,30 +25,30 @@ void Board::constructor(const std::string &FEN){
     int windowWidth = size.x;
     int windowHeight = size.y;
     // we will find the smaller side and we will devid it by the number of squares that we want 
-    int x = (windowHeight>windowWidth ? windowWidth : windowHeight) / 9 ;
+    this->squareSideLength = (windowHeight>windowWidth ? windowWidth : windowHeight) / 9 ;
 
     
     //////////////////////////////////////////////////////////////////////////////////////////
     // loading the texture of light and dark squares and loading the Sprite of each square base on it  
-    sf::IntRect rectLight(0,0,x,x);
+    sf::IntRect rectLight(0,0,squareSideLength,squareSideLength);
      // loading texture from file 
     if (!this->lightSquaresTexture.loadFromFile("./Resources/boardColor.png", rectLight)) {
         throw std::invalid_argument("Error loading light squares texture from file.");
     }
     this->lightSquaresTexture.setSmooth(true);
-    sf::IntRect rectDark(240,0,x,x);
+    sf::IntRect rectDark(240,0,squareSideLength,squareSideLength);
      // loading texture from file 
     if (!this->darkSquaresTexture.loadFromFile("./Resources/boardColor.png", rectDark)) {
         throw std::invalid_argument("Error loading dark squares texture from file.");
     }
 
-    this->lightSquaresTexture.setSmooth(true);
+    this->darkSquaresTexture.setSmooth(true);
     this->spriteSquares.resize(64);
     this->setSquaresTexture();
 
     //////////////////////////////////////////////////////////////////////////////////////////
     // loading the texture for target pieces 
-    sf::IntRect rectTargetSquare(0,0,x,x);
+    sf::IntRect rectTargetSquare(0,0,squareSideLength,squareSideLength);
      // loading texture from file 
     if (!this->targetSquaresTexture.loadFromFile("./Resources/targetSquare.png", rectLight)) {
         throw std::invalid_argument("Error loading target square texture from file.");
@@ -56,18 +56,18 @@ void Board::constructor(const std::string &FEN){
     targetSquaresTexture.setSmooth(true);
     ////////////////////////////////////////////////////////////////////////////////////////////
     // this part is for setting the position of squares 
-    int i = x / 2;
-    int j = x / 2;
+    int i = squareSideLength / 2;
+    int j = squareSideLength / 2;
     int squareSetPositionCounter = 0;
     for (int k=0;k<64;k++){
         this->spriteSquares[k].setPosition(i,j);
         squareSetPositionCounter++;
-        i += x;
+        i += squareSideLength;
         // we divided the width of the window to three parts the first 1/4 of it is black , from the end of 1/4 to start of 4/4 we will show the board 
         // and the last 1/4 is black as well
         if (squareSetPositionCounter>=8){
-            j+=x;
-            i = x / 2;
+            j+=squareSideLength;
+            i = squareSideLength / 2;
             squareSetPositionCounter = 0;
         }
     }
@@ -84,18 +84,18 @@ void Board::constructor(const std::string &FEN){
         //end of the piece position part of the FEN string 
         if (c == ' '){break;}
         switch (c) {
-        case 'p': pieces.emplace_back(BLACK_PAWN, i, j, x);piecePositions[piecePositionIndex]=BLACK_PAWN; break;
-        case 'P': pieces.emplace_back(WHITE_PAWN, i, j, x);piecePositions[piecePositionIndex]=WHITE_PAWN; break;
-        case 'b': pieces.emplace_back(BLACK_BISHOP, i, j, x);piecePositions[piecePositionIndex]=BLACK_BISHOP; break;
-        case 'B': pieces.emplace_back(WHITE_BISHOP, i, j, x);piecePositions[piecePositionIndex]=WHITE_BISHOP; break;
-        case 'n': pieces.emplace_back(BLACK_KNIGHT, i, j, x);piecePositions[piecePositionIndex]=BLACK_KNIGHT; break;
-        case 'N': pieces.emplace_back(WHITE_KNIGHT, i, j, x);piecePositions[piecePositionIndex]=WHITE_KNIGHT; break;
-        case 'r': pieces.emplace_back(BLACK_ROOK, i, j, x);piecePositions[piecePositionIndex]=BLACK_ROOK; break;
-        case 'R': pieces.emplace_back(WHITE_ROOK, i, j, x);piecePositions[piecePositionIndex]=WHITE_ROOK; break;
-        case 'q': pieces.emplace_back(BLACK_QUEEN, i, j, x);piecePositions[piecePositionIndex]=BLACK_QUEEN; break;
-        case 'Q': pieces.emplace_back(WHITE_QUEEN, i, j, x);piecePositions[piecePositionIndex]=WHITE_QUEEN; break;
-        case 'k': pieces.emplace_back(BLACK_KING, i, j, x);piecePositions[piecePositionIndex]=BLACK_KING; break;
-        case 'K': pieces.emplace_back(WHITE_KING, i, j, x);piecePositions[piecePositionIndex]=WHITE_KING; break;
+        case 'p': pieces.emplace_back(BLACK_PAWN, i, j, squareSideLength);piecePositions[piecePositionIndex]=BLACK_PAWN; break;
+        case 'P': pieces.emplace_back(WHITE_PAWN, i, j, squareSideLength);piecePositions[piecePositionIndex]=WHITE_PAWN; break;
+        case 'b': pieces.emplace_back(BLACK_BISHOP, i, j, squareSideLength);piecePositions[piecePositionIndex]=BLACK_BISHOP; break;
+        case 'B': pieces.emplace_back(WHITE_BISHOP, i, j, squareSideLength);piecePositions[piecePositionIndex]=WHITE_BISHOP; break;
+        case 'n': pieces.emplace_back(BLACK_KNIGHT, i, j, squareSideLength);piecePositions[piecePositionIndex]=BLACK_KNIGHT; break;
+        case 'N': pieces.emplace_back(WHITE_KNIGHT, i, j, squareSideLength);piecePositions[piecePositionIndex]=WHITE_KNIGHT; break;
+        case 'r': pieces.emplace_back(BLACK_ROOK, i, j, squareSideLength);piecePositions[piecePositionIndex]=BLACK_ROOK; break;
+        case 'R': pieces.emplace_back(WHITE_ROOK, i, j, squareSideLength);piecePositions[piecePositionIndex]=WHITE_ROOK; break;
+        case 'q': pieces.emplace_back(BLACK_QUEEN, i, j, squareSideLength);piecePositions[piecePositionIndex]=BLACK_QUEEN; break;
+        case 'Q': pieces.emplace_back(WHITE_QUEEN, i, j, squareSideLength);piecePositions[piecePositionIndex]=WHITE_QUEEN; break;
+        case 'k': pieces.emplace_back(BLACK_KING, i, j, squareSideLength);piecePositions[piecePositionIndex]=BLACK_KING; break;
+        case 'K': pieces.emplace_back(WHITE_KING, i, j, squareSideLength);piecePositions[piecePositionIndex]=WHITE_KING; break;
         case '/':
             j++; i = 0;
             continue;
@@ -184,11 +184,9 @@ void Board::constructor(const std::string &FEN){
 }
 void Board::setSquaresTexture(){
     int H = 0;
-        for (int L = 0; L < 8; ++L)
-        {
+        for (int L = 0; L < 8; ++L){
     
-            for (int M = 0; M < 8; ++M)
-            {
+            for (int M = 0; M < 8; ++M){
                 if ((L + M) % 2 == 1){
                     this->spriteSquares[H].setTexture(this->darkSquaresTexture);
                 }
@@ -197,7 +195,7 @@ void Board::setSquaresTexture(){
                 }
                 H++;
             }
-}
+        }
 }
 
 sf::Vector2i Board::squareNameToXY(const std::string &square){
@@ -522,4 +520,21 @@ void Board::findLegalMovesBlackKing() {
             }
         }
     }
+}
+
+
+const sf::Sprite& Board::getDraggingPieceSprite(sf::Vector2f clickPos) {
+    for (int i = 0; i < this->pieces.size(); i++) {
+        sf::Vector2f piecePosF(static_cast<float>(this->pieces[i].getPosition().x),static_cast<float>(this->pieces[i].getPosition().y));
+
+        float absDiffX = clickPos.x - piecePosF.x;
+        float absDiffY = clickPos.y - piecePosF.y;
+        if (absDiffX <0 || absDiffY < 0){continue;}
+        if (absDiffX < squareSideLength && absDiffY < squareSideLength) {
+            pieceSelected = i;
+            return this->pieces[pieceSelected].getSprite();
+        }
+    }
+
+    return spriteSquares[0];
 }

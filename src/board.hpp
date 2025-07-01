@@ -19,6 +19,7 @@ private:
     std::vector<sf::Sprite> spriteSquares;
     // texture for squares that the selected piece can go
     sf::Texture targetSquaresTexture;
+    int squareSideLength;
     // this is the piece that the user selected with the mouse . if it is -1 it means there is no piece selected
     int pieceSelected;
     //
@@ -80,6 +81,8 @@ public:
     void dragPiece(int mouseX,int mouseY);
     // place the piece where the user intended 
     void placePiece(int mouseX,int mouseY);
+    // dragging pieces
+    const sf::Sprite& getDraggingPieceSprite(sf::Vector2f clickPos);
 private:
     // methods to get legal moves for each piece type
     // white pieces 

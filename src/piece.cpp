@@ -18,7 +18,7 @@ int Piece::getType(){
     return this->pieceType;
 }
 sf::Vector2i Piece::getPosition(){
-    return sf::Vector2(this->x,this->y);
+    return sf::Vector2(this->pixelX,this->pixelY);
 }
 
 // it will take the type of the piece that we want to create and it's position in the board 

@@ -34,4 +34,8 @@ public:
     // two ways of updating the position using function overloading 
     void setPosition(float x, float y);
     void setPosition(const sf::Vector2f& position) ;
+    
+    const sf::Sprite& getSprite() const {
+        return sprite;
+    }
 };
