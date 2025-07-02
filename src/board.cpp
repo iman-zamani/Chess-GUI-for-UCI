@@ -525,8 +525,9 @@ void Board::findLegalMovesBlackKing() {
     }
 }
 
-
-const sf::Texture& Board::getDraggingPieceTexture(sf::Vector2f clickPos) {
+// we should call this on the start of the dragging 
+// it will return the texture of the pice user is trying to drag 
+const sf::Texture& Board::startDragging(sf::Vector2f clickPos) {
     //temp fix, this is not optimized way to find the piece
     for (int i = 0; i < this->pieces.size(); i++) {
         sf::Vector2f piecePosF(static_cast<float>(this->pieces[i].getPosition().x),static_cast<float>(this->pieces[i].getPosition().y));
@@ -537,11 +538,52 @@ const sf::Texture& Board::getDraggingPieceTexture(sf::Vector2f clickPos) {
         if (absDiffX < squareSideLength && absDiffY < squareSideLength) {
             pieceSelected = i;
             this->pieces[pieceSelected].selectPiece();
-            std::cout<<"selected piece: "<<pieceSelected<<std::endl;
             return this->pieces[pieceSelected].getTexture();
         }
     }
+    // reset the selected piece 
+    pieceSelected = -1;
     return emptyTextureToReturn;
+}
+
+// we should call this when the dragging ends  
+void Board::endDragging(sf::Vector2f clickPos) {
+    if (pieceSelected == -1){
+        return;
+    }
+    // piece is released so we should deselect it no matter if we need to apply a move as well or not 
+    this->pieces[pieceSelected].deselectPiece();
+    int selectedPieceType = this->pieces[pieceSelected].getType();
+    // we should find which square user is pointing to
+    float pointedSquareCoordinateX = clickPos.x - (squareSideLength / 2);
+    float pointedSquareCoordinateY = clickPos.y - (squareSideLength / 2);
+    int pointedSquareX = pointedSquareCoordinateX / squareSideLength;
+    int pointedSquareY = pointedSquareCoordinateY / squareSideLength;
+    // we should find if this is a capture
+    //temp fix, this is not optimized way to find the piece
+    for (int i = 0; i < this->pieces.size(); i++) {
+        // we will skip the pieces with the same color, if they are the same color they will be both negative or positive
+        // so if we multiply them together the result will be positive 
+        if ((this->pieces[i].getType()*selectedPieceType) > 0){continue;}
+        sf::Vector2f piecePosF(static_cast<float>(this->pieces[i].getPosition().x),static_cast<float>(this->pieces[i].getPosition().y));
+
+        float absDiffX = clickPos.x - piecePosF.x;
+        float absDiffY = clickPos.y - piecePosF.y;
+        if (absDiffX <0 || absDiffY < 0){continue;}
+        if (absDiffX < squareSideLength && absDiffY < squareSideLength) {
+            // delete the captured piece 
+
+            // move the selected piece 
+
+            // reset the selected piece tracker 
+            pieceSelected = -1;
+            return ;
+        }
+    }
+    // it is not a capture 
+    // the user is pointing to an empty square
+    this->pieces[pieceSelected].moveTo(pointedSquareX,pointedSquareY);
+    return;
 }
 const sf::Vector2f Board::getSelectedPieceSpriteScale()const{
     const float pieceScale = this->pieces[pieceSelected].getScale();

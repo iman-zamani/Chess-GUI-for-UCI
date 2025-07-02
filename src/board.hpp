@@ -83,8 +83,10 @@ public:
     void dragPiece(int mouseX,int mouseY);
     // place the piece where the user intended 
     void placePiece(int mouseX,int mouseY);
-    // dragging pieces texture
-    const sf::Texture& getDraggingPieceTexture(sf::Vector2f clickPos);
+    // start dragging with returning dragging pieces texture
+    const sf::Texture& startDragging(sf::Vector2f clickPos);
+    // end dragging 
+    void endDragging(sf::Vector2f clickPos);
     const sf::Vector2f getSelectedPieceSpriteScale()const;
     void placeThePiece(sf::Vector2f clickPos);
 private:

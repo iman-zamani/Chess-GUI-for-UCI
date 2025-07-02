@@ -10,6 +10,8 @@ private:
     sf::Sprite ghostSprite;
     // the scale we need to apply to sprites so the size gets correct 
     float scale;
+    // size of each square of the board
+    int squareSide; 
     // from 0 to 7 
     int x , y ;
     // the coordination of  piece in pixels 
@@ -26,6 +28,9 @@ private:
             target.draw(ghostSprite, states);
         }
     }
+    // two ways of updating the position using function overloading 
+    void setPosition(float x, float y);
+    void setPosition(const sf::Vector2f& position) ;
 public:
     Piece() = default;  
     Piece(int pieceType,int x , int y, int squareSide);
@@ -33,11 +38,9 @@ public:
     Piece(const Piece& other);
     sf::Vector2i getPosition();
     int getType();
-    // two ways of updating the position using function overloading 
-    void setPosition(float x, float y);
-    void setPosition(const sf::Vector2f& position) ;
     const sf::Texture& getTexture() const;
     const float getScale()const;
     void selectPiece();
     void deselectPiece();
+    bool moveTo(int destX, int destY);
 };

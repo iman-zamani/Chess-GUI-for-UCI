@@ -7,11 +7,13 @@
 void Piece::setPosition(const sf::Vector2f& position) {
     sprite.setPosition(position);
 }
-// set the position of the sprite
+// set the position of the sprites
 void Piece::setPosition(float x, float y) {
     pixelX = x;
     pixelY = y;
     sprite.setPosition(x, y);
+    ghostSprite.setPosition(x,y);
+    return;
 }
 
 int Piece::getType(){
@@ -22,7 +24,8 @@ sf::Vector2i Piece::getPosition(){
 }
 
 // it will take the type of the piece that we want to create and it's position in the board 
-Piece::Piece (int pieceType ,int x , int y, int squareSide){
+Piece::Piece (int pieceType ,int x , int y, int squareSideLength){
+    this->squareSide = squareSideLength;
     this -> pieceDimensions = 150;
     // set x and y 
     // check if it is in the boundaries of the board 
@@ -78,13 +81,13 @@ Piece::Piece (int pieceType ,int x , int y, int squareSide){
     
     sf::IntRect rect(i * 150,j * 150,150,150);// (left, top, width, height)
      // loading texture from file 
-    if (!this->texture.loadFromFile("./Resources/piceTexture.png", rect)) {
+    if (!this->texture.loadFromFile("./Resources/pieceTexture.png", rect)) {
         throw std::invalid_argument("Error loading texture from file.");
     }
     this->texture.setSmooth(true);
     this->sprite.setTexture(this->texture);
-    scale = static_cast<float>(squareSide) / 150;
-    this->sprite.setScale(scale,scale);
+    this->scale = static_cast<float>(squareSide) / 150;
+    this->sprite.setScale(this->scale,this->scale);
     this->isDragging = false ;
     this->setPosition(x*squareSide + (squareSide/2),y*squareSide + (squareSide/2));
     // create the ghost version of the piece 
@@ -130,4 +133,15 @@ void Piece::deselectPiece(){
 }
 const float Piece::getScale()const{
     return this->scale;
+}
+bool Piece::moveTo(int destX, int destY){
+    if (destX > 7 || destX < 0 || destY > 7 || destY < 0){
+        return false;
+    }
+    this->x = destX;
+    this->y = destY;
+    this->pixelX = x*squareSide + (squareSide/2);
+    this-> pixelY = y*squareSide + (squareSide/2);
+    this->setPosition(pixelX,pixelY);
+    return true;
 }

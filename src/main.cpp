@@ -51,8 +51,9 @@ int main(){
             // mouse left click release detection  
             if (mouseLeftButtonIsPressed && event.type == sf::Event::MouseButtonReleased){
                 if (event.mouseButton.button == sf::Mouse::Left){
-                    //int x = event.mouseButton.x;
-                    //int y = event.mouseButton.y;
+                    sf::Vector2i mousePixel = sf::Mouse::getPosition(window);
+                    sf::Vector2f virtualMouse = window.mapPixelToCoords(mousePixel, virtualView);
+                    board.endDragging(virtualMouse);
                     mouseLeftButtonIsPressed = false;
                 }
             }
@@ -62,7 +63,7 @@ int main(){
         if (!mouseLeftButtonIsPressed && sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
             sf::Vector2i mousePixel = sf::Mouse::getPosition(window);
             sf::Vector2f virtualMouse = window.mapPixelToCoords(mousePixel, virtualView);
-            const sf::Texture* draggingPieceTexture = &board.getDraggingPieceTexture(virtualMouse);
+            const sf::Texture* draggingPieceTexture = &board.startDragging(virtualMouse);
             if (draggingPieceTexture->getSize() != sf::Vector2u(0, 0)){
                 draggingPieceSprite.setTexture(*draggingPieceTexture);
                 draggingPieceSprite.setScale(board.getSelectedPieceSpriteScale());
@@ -71,8 +72,8 @@ int main(){
             else {
                 mouseLeftButtonIsPressed = false;
             }            
-        }        
-        // draw it in the exact place of mouse 
+        }       
+        // draw it in the exact place of mouse  
         if (mouseLeftButtonIsPressed){
             sf::Vector2i mousePixel = sf::Mouse::getPosition(window);
             sf::Vector2f virtualMouse = window.mapPixelToCoords(mousePixel, virtualView);
@@ -86,7 +87,6 @@ int main(){
         // Clear the window with black color
         window.clear(sf::Color::Black);
         window.draw(board);
-        // draw it in the exact place of mouse 
         if (mouseLeftButtonIsPressed){
             window.draw(draggingPieceSprite);
         }
