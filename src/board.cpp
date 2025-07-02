@@ -548,11 +548,20 @@ const sf::Texture& Board::startDragging(sf::Vector2f clickPos) {
 
 // we should call this when the dragging ends  
 void Board::endDragging(sf::Vector2f clickPos) {
+    // if there is no piece selected to release it 
     if (pieceSelected == -1){
         return;
     }
     // piece is released so we should deselect it no matter if we need to apply a move as well or not 
     this->pieces[pieceSelected].deselectPiece();
+    // check if the clicked position is in the board range 
+    {
+        int upAndLeft = squareSideLength / 2;
+        int downAndRight = upAndLeft + (8*squareSideLength);
+        if (clickPos.x < upAndLeft || clickPos.y < upAndLeft || clickPos.x > downAndRight || clickPos.y > downAndRight){
+            return;
+        }
+    }
     int selectedPieceType = this->pieces[pieceSelected].getType();
     // we should find which square user is pointing to
     float pointedSquareCoordinateX = clickPos.x - (squareSideLength / 2);
@@ -562,15 +571,16 @@ void Board::endDragging(sf::Vector2f clickPos) {
     // we should find if this is a capture
     //temp fix, this is not optimized way to find the piece
     for (int i = 0; i < this->pieces.size(); i++) {
-        // we will skip the pieces with the same color, if they are the same color they will be both negative or positive
-        // so if we multiply them together the result will be positive 
-        if ((this->pieces[i].getType()*selectedPieceType) > 0){continue;}
+        
         sf::Vector2f piecePosF(static_cast<float>(this->pieces[i].getPosition().x),static_cast<float>(this->pieces[i].getPosition().y));
 
         float absDiffX = clickPos.x - piecePosF.x;
         float absDiffY = clickPos.y - piecePosF.y;
         if (absDiffX <0 || absDiffY < 0){continue;}
-        if (absDiffX < squareSideLength && absDiffY < squareSideLength) {
+        if ((absDiffX >= 0 || absDiffY >= 0) && (absDiffX < squareSideLength && absDiffY < squareSideLength)) {
+            // we will skip the pieces with the same color, if they are the same color they will be both negative or positive
+            // so if we multiply them together the result will be positive 
+            if ((this->pieces[i].getType()*selectedPieceType) > 0){continue;}
             // delete the captured piece 
 
             // move the selected piece 
