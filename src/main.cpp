@@ -72,9 +72,6 @@ int main(){
                 mouseLeftButtonIsPressed = false;
             }            
         }        
-        // Clear the window with black color
-        window.clear(sf::Color::Black);
-        window.draw(board);
         // draw it in the exact place of mouse 
         if (mouseLeftButtonIsPressed){
             sf::Vector2i mousePixel = sf::Mouse::getPosition(window);
@@ -85,6 +82,12 @@ int main(){
             float widthTT = bounds.width  * scale.x;
             float heightTT = bounds.height  * scale.y;
             draggingPieceSprite.setPosition(virtualMouse.x-(widthTT/2),virtualMouse.y-(heightTT/2));
+        }
+        // Clear the window with black color
+        window.clear(sf::Color::Black);
+        window.draw(board);
+        // draw it in the exact place of mouse 
+        if (mouseLeftButtonIsPressed){
             window.draw(draggingPieceSprite);
         }
         // Display the window

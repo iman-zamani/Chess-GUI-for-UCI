@@ -10,7 +10,8 @@
 void Board::constructor(const std::string &FEN){
     // there is no piece selected at start
     this->pieceSelected = -1;
-    
+    // resize the elements in the pieces vector to avoid comping because of how vector handles memory 
+    this->pieces.resize(32);
     
     // no piece is dragging at start 
     this->isDragging = false;
@@ -536,6 +537,7 @@ const sf::Texture& Board::getDraggingPieceTexture(sf::Vector2f clickPos) {
         if (absDiffX < squareSideLength && absDiffY < squareSideLength) {
             pieceSelected = i;
             this->pieces[pieceSelected].selectPiece();
+            std::cout<<"selected piece: "<<pieceSelected<<std::endl;
             return this->pieces[pieceSelected].getTexture();
         }
     }
