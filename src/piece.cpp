@@ -100,7 +100,6 @@ Piece::Piece (int pieceType ,int x , int y, int squareSideLength){
 }
 
 Piece::Piece(const Piece& other) {
-    std::cout<<"no commit"<<std::endl;
     this->pieceType = other.pieceType;
     this->x = other.x;
     this->y = other.y;
@@ -110,18 +109,27 @@ Piece::Piece(const Piece& other) {
     this->isDragging = other.isDragging;
     this->windowWidth = other.windowWidth;
     this->windowHeight = other.windowHeight;
+    this->scale = other.scale;
+    this->squareSide = other.squareSide;
+    this->pieceDimensions = other.pieceDimensions;
 
-    // Copy the texture
-    this->texture = other.texture;
-    this->texture->setSmooth(true);
-    // Set the texture to the sprite
-    this->sprite.setTexture(*texture);
-    
-    // If there is any specific transformation applied to the original sprite, we replicate it
+    // deep copy of texture
+    this->texture = new sf::Texture(*other.texture);
+
+    // apply texture to sprite
+    this->sprite.setTexture(*this->texture);
     this->sprite.setPosition(other.sprite.getPosition());
     this->sprite.setScale(other.sprite.getScale());
     this->sprite.setRotation(other.sprite.getRotation());
     this->sprite.setColor(other.sprite.getColor());
+
+    // for the ghost sprite
+    this->ghostSprite = this->sprite;
+    this->ghostSprite.setColor(sf::Color(255, 255, 255, 100));
+}
+Piece::~Piece() {
+    delete texture;
+    texture = nullptr;
 }
 sf::Texture* Piece::getTexture() {
     

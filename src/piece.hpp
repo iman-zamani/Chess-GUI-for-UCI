@@ -43,4 +43,5 @@ public:
     void selectPiece();
     void deselectPiece();
     bool moveTo(int destX, int destY);
+    ~Piece();
 };
