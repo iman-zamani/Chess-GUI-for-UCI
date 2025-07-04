@@ -81,11 +81,13 @@ Piece::Piece (int pieceType ,int x , int y, int squareSideLength){
     
     sf::IntRect rect(i * 150,j * 150,150,150);// (left, top, width, height)
      // loading texture from file 
-    if (!this->texture.loadFromFile("./Resources/pieceTexture.png", rect)) {
+    this->texture = new sf::Texture();
+    if (!this->texture->loadFromFile("./Resources/pieceTexture.png", rect)) {
         throw std::invalid_argument("Error loading texture from file.");
     }
-    this->texture.setSmooth(true);
-    this->sprite.setTexture(this->texture);
+    
+    this->texture->setSmooth(true);
+    this->sprite.setTexture(*texture);
     this->scale = static_cast<float>(squareSide) / 150;
     this->sprite.setScale(this->scale,this->scale);
     this->isDragging = false ;
@@ -98,6 +100,7 @@ Piece::Piece (int pieceType ,int x , int y, int squareSideLength){
 }
 
 Piece::Piece(const Piece& other) {
+    std::cout<<"no commit"<<std::endl;
     this->pieceType = other.pieceType;
     this->x = other.x;
     this->y = other.y;
@@ -110,9 +113,9 @@ Piece::Piece(const Piece& other) {
 
     // Copy the texture
     this->texture = other.texture;
-    this->texture.setSmooth(true);
+    this->texture->setSmooth(true);
     // Set the texture to the sprite
-    this->sprite.setTexture(this->texture);
+    this->sprite.setTexture(*texture);
     
     // If there is any specific transformation applied to the original sprite, we replicate it
     this->sprite.setPosition(other.sprite.getPosition());
@@ -120,7 +123,8 @@ Piece::Piece(const Piece& other) {
     this->sprite.setRotation(other.sprite.getRotation());
     this->sprite.setColor(other.sprite.getColor());
 }
-const sf::Texture& Piece::getTexture() const {
+sf::Texture* Piece::getTexture() {
+    
     return texture;
 }
 void Piece::selectPiece(){

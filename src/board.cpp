@@ -10,8 +10,8 @@
 void Board::constructor(const std::string &FEN){
     // there is no piece selected at start
     this->pieceSelected = -1;
-    // resize the elements in the pieces vector to avoid comping because of how vector handles memory 
-    this->pieces.resize(32);
+    // reserve the elements in the pieces vector to avoid comping because of how vector handles memory 
+    this->pieces.reserve(32);
     
     // no piece is dragging at start 
     this->isDragging = false;
@@ -86,6 +86,7 @@ void Board::constructor(const std::string &FEN){
     for (char c : FEN) {
         //end of the piece position part of the FEN string 
         if (c == ' '){break;}
+        
         switch (c) {
         case 'p': pieces.emplace_back(BLACK_PAWN, i, j, squareSideLength);piecePositions[piecePositionIndex]=BLACK_PAWN; break;
         case 'P': pieces.emplace_back(WHITE_PAWN, i, j, squareSideLength);piecePositions[piecePositionIndex]=WHITE_PAWN; break;
@@ -527,7 +528,7 @@ void Board::findLegalMovesBlackKing() {
 
 // we should call this on the start of the dragging 
 // it will return the texture of the pice user is trying to drag 
-const sf::Texture& Board::startDragging(sf::Vector2f clickPos) {
+sf::Texture* Board::startDragging(sf::Vector2f clickPos) {
     //temp fix, this is not optimized way to find the piece
     for (int i = 0; i < this->pieces.size(); i++) {
         sf::Vector2f piecePosF(static_cast<float>(this->pieces[i].getPosition().x),static_cast<float>(this->pieces[i].getPosition().y));

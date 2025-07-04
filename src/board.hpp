@@ -44,7 +44,7 @@ private:
     // for each square if it is true that piece can go to that square 
     std::vector<bool> legalSquaresForTargetPiece;
     // this texture is empty and .getSize() on it will always return sf::Vector2u(0, 0)
-    sf::Texture emptyTextureToReturn;
+    sf::Texture* emptyTextureToReturn;
     //
     void setSquaresTexture();
     void constructor(const std::string &FEN);
@@ -84,7 +84,7 @@ public:
     // place the piece where the user intended 
     void placePiece(int mouseX,int mouseY);
     // start dragging with returning dragging pieces texture
-    const sf::Texture& startDragging(sf::Vector2f clickPos);
+    sf::Texture* startDragging(sf::Vector2f clickPos);
     // end dragging 
     void endDragging(sf::Vector2f clickPos);
     const sf::Vector2f getSelectedPieceSpriteScale()const;

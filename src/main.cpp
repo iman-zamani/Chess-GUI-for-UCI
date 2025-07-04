@@ -60,10 +60,11 @@ int main(){
             
         }
         // detect mouse left click and select a piece to darg 
+        sf::Texture* draggingPieceTexture ;
         if (!mouseLeftButtonIsPressed && sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
             sf::Vector2i mousePixel = sf::Mouse::getPosition(window);
             sf::Vector2f virtualMouse = window.mapPixelToCoords(mousePixel, virtualView);
-            const sf::Texture* draggingPieceTexture = &board.startDragging(virtualMouse);
+            draggingPieceTexture = board.startDragging(virtualMouse);
             if (draggingPieceTexture->getSize() != sf::Vector2u(0, 0)){
                 draggingPieceSprite.setTexture(*draggingPieceTexture);
                 draggingPieceSprite.setScale(board.getSelectedPieceSpriteScale());

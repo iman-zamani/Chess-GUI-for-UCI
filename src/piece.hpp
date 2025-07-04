@@ -4,7 +4,7 @@
 class Piece : public sf::Drawable{
 private:
     int pieceType;
-    sf::Texture texture;
+    sf::Texture *texture;
     sf::Sprite  sprite;
     // ghost version of the piece 
     sf::Sprite ghostSprite;
@@ -38,7 +38,7 @@ public:
     Piece(const Piece& other);
     sf::Vector2i getPosition();
     int getType();
-    const sf::Texture& getTexture() const;
+    sf::Texture* getTexture();
     const float getScale()const;
     void selectPiece();
     void deselectPiece();
