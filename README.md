@@ -56,5 +56,6 @@ Contributions to Chess-GUI-for-UCI are welcome! Here are a few ways you can help
 
 ## License
 
-Chess-GUI-for-UCI is open-source software licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
+This project is licensed under a custom MIT-style license with an attribution requirement.  
+See [CUSTOM_LICENSE](./LICENSE) for full terms.
 
