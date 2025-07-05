@@ -128,7 +128,6 @@ Piece::Piece(const Piece& other) {
     this->ghostSprite.setColor(sf::Color(255, 255, 255, 100));
 }
 Piece::~Piece() {
-    delete texture;
     texture = nullptr;
 }
 sf::Texture* Piece::getTexture() {

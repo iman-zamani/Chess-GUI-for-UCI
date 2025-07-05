@@ -35,6 +35,7 @@ int main(){
     Board board(window);   
 
     sf::Sprite draggingPieceSprite;
+    sf::Texture* draggingPieceTexture ;
     // Main loop
     while (window.isOpen())
     {
@@ -60,7 +61,6 @@ int main(){
             
         }
         // detect mouse left click and select a piece to darg 
-        sf::Texture* draggingPieceTexture ;
         if (!mouseLeftButtonIsPressed && sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
             sf::Vector2i mousePixel = sf::Mouse::getPosition(window);
             sf::Vector2f virtualMouse = window.mapPixelToCoords(mousePixel, virtualView);
@@ -72,9 +72,9 @@ int main(){
             }
             else {
                 mouseLeftButtonIsPressed = false;
-            }            
-        }       
-        // draw it in the exact place of mouse  
+            }        
+        }
+        // draw it in the exact place of mouse while dragging
         if (mouseLeftButtonIsPressed){
             sf::Vector2i mousePixel = sf::Mouse::getPosition(window);
             sf::Vector2f virtualMouse = window.mapPixelToCoords(mousePixel, virtualView);

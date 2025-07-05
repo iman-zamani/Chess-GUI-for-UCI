@@ -22,6 +22,8 @@ private:
     int squareSideLength;
     // this is the piece that the user selected with the mouse . if it is -1 it means there is no piece selected
     int pieceSelected;
+    // the size of piece vector fro tracking how many pieces are in the board 
+    int piecesVectorSize;
     //
     bool isDragging;
     // board present qualities 

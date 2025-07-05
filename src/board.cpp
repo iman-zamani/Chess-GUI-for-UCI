@@ -11,12 +11,12 @@ void Board::constructor(const std::string &FEN){
     // there is no piece selected at start
     this->pieceSelected = -1;
     // reserve the elements in the pieces vector to avoid comping because of how vector handles memory 
+    this->piecesVectorSize = 32;
     this->pieces.reserve(32);
-    
     // no piece is dragging at start 
     this->isDragging = false;
-
-
+    // allocate the memory for empty texture 
+    this->emptyTextureToReturn = new sf::Texture();
     // theres is no piece selected so there are no legal moves as well
     // it is resized to 64 for each square
     this->legalSquaresForTargetPiece.resize(64, false);
@@ -530,7 +530,7 @@ void Board::findLegalMovesBlackKing() {
 // it will return the texture of the pice user is trying to drag 
 sf::Texture* Board::startDragging(sf::Vector2f clickPos) {
     //temp fix, this is not optimized way to find the piece
-    for (int i = 0; i < this->pieces.size(); i++) {
+    for (int i = 0; i < this->piecesVectorSize; i++) {
         sf::Vector2f piecePosF(static_cast<float>(this->pieces[i].getPosition().x),static_cast<float>(this->pieces[i].getPosition().y));
 
         float absDiffX = clickPos.x - piecePosF.x;
@@ -550,7 +550,7 @@ sf::Texture* Board::startDragging(sf::Vector2f clickPos) {
 // we should call this when the dragging ends  
 void Board::endDragging(sf::Vector2f clickPos) {
     // if there is no piece selected to release it 
-    if (pieceSelected == -1){
+    if (pieceSelected < 0 || pieceSelected >= piecesVectorSize){
         return;
     }
     // piece is released so we should deselect it no matter if we need to apply a move as well or not 
@@ -571,7 +571,7 @@ void Board::endDragging(sf::Vector2f clickPos) {
     int pointedSquareY = pointedSquareCoordinateY / squareSideLength;
     // we should find if this is a capture
     //temp fix, this is not optimized way to find the piece
-    for (int i = 0; i < this->pieces.size(); i++) {
+    for (int i = 0; i < this->piecesVectorSize; i++) {
         
         sf::Vector2f piecePosF(static_cast<float>(this->pieces[i].getPosition().x),static_cast<float>(this->pieces[i].getPosition().y));
 
@@ -582,11 +582,12 @@ void Board::endDragging(sf::Vector2f clickPos) {
             // we will skip the pieces with the same color, if they are the same color they will be both negative or positive
             // so if we multiply them together the result will be positive 
             if ((this->pieces[i].getType()*selectedPieceType) > 0){continue;}
-            // delete the captured piece 
-
             // move the selected piece 
-
+            this->pieces[pieceSelected].moveTo(pointedSquareX,pointedSquareY);
+            // delete the captured piece 
+            this->pieces.erase(this->pieces.begin() + i);
             // reset the selected piece tracker 
+            this->piecesVectorSize--;
             pieceSelected = -1;
             return ;
         }
@@ -597,6 +598,10 @@ void Board::endDragging(sf::Vector2f clickPos) {
     return;
 }
 const sf::Vector2f Board::getSelectedPieceSpriteScale()const{
+    if (pieceSelected < 0 || pieceSelected >= piecesVectorSize){
+        sf::Vector2f tempVector(0, 0);
+        return tempVector;
+    }
     const float pieceScale = this->pieces[pieceSelected].getScale();
     sf::Vector2f tempVector(pieceScale, pieceScale);
     return tempVector;
