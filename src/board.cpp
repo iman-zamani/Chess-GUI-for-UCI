@@ -581,7 +581,7 @@ void Board::endDragging(sf::Vector2f clickPos) {
         if ((absDiffX >= 0 || absDiffY >= 0) && (absDiffX < squareSideLength && absDiffY < squareSideLength)) {
             // we will skip the pieces with the same color, if they are the same color they will be both negative or positive
             // so if we multiply them together the result will be positive 
-            if ((this->pieces[i].getType()*selectedPieceType) > 0){continue;}
+            if ((this->pieces[i].getType()*selectedPieceType) > 0){return ;}
             // move the selected piece 
             this->pieces[pieceSelected].moveTo(pointedSquareX,pointedSquareY);
             // delete the captured piece 
