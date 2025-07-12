@@ -1,6 +1,5 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
-#include <optional>
 #include<vector>
 #include<string>
 #include "values.hpp"
@@ -207,7 +206,7 @@ sf::Vector2i Board::squareNameToXY(const std::string &square){
     // in the board we store the y in opposite order so we need to ( 8 - value )
     int x = square[0] - 'a';
     int y = 8 - (square[1] - '0');
-    return sf::Vector2(x,y);
+    return sf::Vector2i(x,y);
 }
 void Board::findLegalMoves(){
     int pieceType = this->pieces[this->pieceSelected].getType();
@@ -276,10 +275,10 @@ void Board::findLegalMovesWhitePawn(){
     }
     // if captures available 
     // is the square exists and there is an enemy piece there 
-    if (squareInFrontOfPawn%8 == 0 and piecePositions[squareInFrontOfPawn+1]<0){
+    if (squareInFrontOfPawn%8 == 0 && piecePositions[squareInFrontOfPawn+1]<0){
         legalSquaresForTargetPiece[squareInFrontOfPawn+1] = true;
     }
-    else if(squareInFrontOfPawn % 8 == 7 and piecePositions[squareInFrontOfPawn-1]<0){
+    else if(squareInFrontOfPawn % 8 == 7 && piecePositions[squareInFrontOfPawn-1]<0){
         legalSquaresForTargetPiece[squareInFrontOfPawn-1] = true;
     }
     else {
@@ -411,10 +410,10 @@ void Board::findLegalMovesBlackPawn(){
     }
     // if captures available 
     // is the square exists and there is an enemy piece there 
-    if (squareInFrontOfPawn%8 == 0 and piecePositions[squareInFrontOfPawn+1]>0){
+    if (squareInFrontOfPawn%8 == 0 && piecePositions[squareInFrontOfPawn+1]>0){
         legalSquaresForTargetPiece[squareInFrontOfPawn+1] = true;
     }
-    else if(squareInFrontOfPawn % 8 == 7 and piecePositions[squareInFrontOfPawn-1]>0){
+    else if(squareInFrontOfPawn % 8 == 7 && piecePositions[squareInFrontOfPawn-1]>0){
         legalSquaresForTargetPiece[squareInFrontOfPawn-1] = true;
     }
     else {

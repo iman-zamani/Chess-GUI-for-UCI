@@ -20,7 +20,7 @@ int Piece::getType(){
     return this->pieceType;
 }
 sf::Vector2i Piece::getPosition(){
-    return sf::Vector2(this->pixelX,this->pixelY);
+    return sf::Vector2i(this->pixelX,this->pixelY);
 }
 
 // it will take the type of the piece that we want to create and it's position in the board 
@@ -29,7 +29,7 @@ Piece::Piece (int pieceType ,int x , int y, int squareSideLength){
     this -> pieceDimensions = 150;
     // set x and y 
     // check if it is in the boundaries of the board 
-    if (x<8 and y < 8 and x > -1 and y > -1){
+    if (x<8 && y < 8 && x > -1 && y > -1){
         this->x = x;
         this->y = y;
     }

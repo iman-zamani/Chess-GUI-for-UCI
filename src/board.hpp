@@ -1,9 +1,4 @@
 #pragma once
-#include <iostream>
-#include <SFML/Graphics.hpp>
-#include <optional>
-#include<vector>
-#include<string>
 #include "piece.hpp"
 
 
