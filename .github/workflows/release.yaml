@@ -85,9 +85,9 @@ jobs:
       matrix:
         include:
           - target_arch: x86_64
-            runs_on: macos-13    # Last stable Intel runner
+            runs_on: macos-15-intel
           - target_arch: arm64
-            runs_on: macos-14    # Apple Silicon runner
+            runs_on: macos-14   
     steps:
       - uses: actions/checkout@v4
 
