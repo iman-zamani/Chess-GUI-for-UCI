@@ -46,9 +46,8 @@ cmake --build .
 Ensure the `Resources` folder is located **next to the executable** before running.
 
 ---
-
 ## License
 
-This project is licensed under the **GNU General Public License (GPL)**.
+This project is licensed under the GNU General Public License v2.0.
 See [`LICENSE`](./LICENSE) for full terms.
 
