@@ -19,10 +19,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # 1. Install Dependencies
       - name: Install SFML via vcpkg
         shell: pwsh
-        run: vcpkg install sfml:x64-windows
+        run: |
+          vcpkg install sfml:x64-windows
 
+      # 2. Configure & Build
       - name: Configure CMake
         shell: pwsh
         run: |
@@ -35,26 +38,35 @@ jobs:
         shell: pwsh
         run: cmake --build build --config Release
 
-      - name: Package
+      # 3. Package
+      - name: Prepare Package
         shell: bash
         run: |
           VERSION="${GITHUB_REF#refs/tags/}"
           DIST_NAME="chess-gui-${VERSION}-windows-x64"
-          mkdir -p "$DIST_NAME"
+          mkdir "$DIST_NAME"
 
-          # 1. Copy Executable
+          # Copy Executable
           if [ -f "build/Release/chess-gui.exe" ]; then
             cp "build/Release/chess-gui.exe" "$DIST_NAME/"
-            cp "build/Release/"*.dll "$DIST_NAME/" || true
+            cp "build/Release/"*.dll "$DIST_NAME/"
           else
             cp "build/chess-gui.exe" "$DIST_NAME/"
+            # Try to find DLLs if they aren't in Release (vcpkg quirk)
             find "build" -name "*.dll" -exec cp {} "$DIST_NAME/" \;
           fi
 
-          # 2. Copy Resources (Critical)
-          if [ -d "Resources" ]; then cp -r "Resources" "$DIST_NAME/"; fi
+          # Copy Resources (Critical!)
+          # Assuming Resources is in root of repo. Adjust path if it's in src/ or build/
+          if [ -d "build/Resources" ]; then
+             cp -r "build/Resources" "$DIST_NAME/Resources"
+          elif [ -d "Resources" ]; then
+             cp -r "Resources" "$DIST_NAME/Resources"
+          else
+             echo "WARNING: Resources directory not found!"
+          fi
 
-          # 3. Zip
+          # Create Zip
           7z a "${DIST_NAME}.zip" "$DIST_NAME"
 
       - name: Upload Artifact
@@ -64,44 +76,34 @@ jobs:
           path: "*.zip"
 
   # ==========================================================
-  # 2. MACOS BUILD (Intel & Apple Silicon on macos-14)
+  # 2. MACOS BUILD (Intel & Apple Silicon)
   # ==========================================================
   build-macos:
     name: build-macos-${{ matrix.target_arch }}
-    runs-on: macos-14
+    runs-on: ${{ matrix.runs_on }}
     strategy:
       matrix:
         include:
           - target_arch: x86_64
-            sfml_arch: "clang"   
-            cmake_arch: "x86_64"
+            runs_on: macos-13    # Last stable Intel runner
           - target_arch: arm64
-            sfml_arch: "clang-arm64"
-            cmake_arch: "arm64"
+            runs_on: macos-14    # Apple Silicon runner
     steps:
       - uses: actions/checkout@v4
 
+      # 1. Install Dependencies
       - name: Install Tools
-        run: brew install create-dmg
-
-      # MANUAL INSTALL: Solves the Homebrew architecture mismatch
-      - name: Install SFML 2.6.1 (Manual SDK)
         run: |
-          echo "Downloading SFML for ${{ matrix.target_arch }}..."
-          curl -L -O https://www.sfml-dev.org/files/SFML-2.6.1-macOS-${{ matrix.sfml_arch }}.tar.gz
-          tar -xzf SFML-2.6.1-macOS-${{ matrix.sfml_arch }}.tar.gz
-          mv SFML-2.6.1 SFML_SDK
+          brew install sfml@2 create-dmg
 
-      - name: Configure CMake
+      # 2. Configure & Build
+      - name: Configure & Build
         run: |
-          cmake -S . -B build \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_OSX_ARCHITECTURES=${{ matrix.cmake_arch }} \
-            -DSFML_DIR=${{ github.workspace }}/SFML_SDK/lib/cmake/SFML
+          # Use our smart CMakeLists.txt that finds sfml@2 automatically
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release
 
-      - name: Build
-        run: cmake --build build --config Release
-
+      # 3. Package DMG
       - name: Create DMG
         run: |
           VERSION="${GITHUB_REF#refs/tags/}"
@@ -110,33 +112,28 @@ jobs:
           STAGING="dist"
           
           mkdir -p "$STAGING"
-
-          # 1. Copy Binary
+          
+          # Find and Copy Binary
           BIN="build/chess-gui"
           if [ ! -f "$BIN" ] && [ -f "build/Release/chess-gui" ]; then BIN="build/Release/chess-gui"; fi
           cp "$BIN" "$STAGING/chess-gui"
           chmod +x "$STAGING/chess-gui"
-          
-          # 2. Copy dylibs (Fixes "Library not loaded" error on other Macs)
-          # We must copy the SFML frameworks into the dist folder and fix paths, 
-          # OR for simplicity in this script, we assume static linking or user installs libs.
-          # To make it truly portable, we usually copy the Frameworks/dylibs next to the binary.
-          cp -r SFML_SDK/lib/*.dylib "$STAGING/"
 
-          # 3. Copy Resources (Critical)
-          if [ -d "Resources" ]; then cp -r "Resources" "$STAGING/"; fi
+          # Copy Resources (Critical!)
+          if [ -d "build/Resources" ]; then cp -r "build/Resources" "$STAGING/";
+          elif [ -d "Resources" ]; then cp -r "Resources" "$STAGING/"; fi
 
-          # 4. Create DMG
+          # Create DMG
           create-dmg \
             --volname "$VOL_NAME" \
             --window-pos 200 120 \
-            --window-size 600 400 \
+            --window-size 800 400 \
             --icon "chess-gui" 200 190 \
             --hide-extension "chess-gui" \
             "$DMG_NAME" \
             "$STAGING"
 
-          # 5. Zip
+          # Zip the DMG (Github releases handle zips better)
           zip "${DMG_NAME}.zip" "$DMG_NAME"
 
       - name: Upload Artifact
@@ -153,35 +150,44 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # 1. Install Dependencies
       - name: Install System Deps
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential cmake libsfml-dev ruby ruby-dev rpm libfuse2
           sudo gem install --no-document fpm
-          wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          
+          # Install linuxdeploy for AppImage
+          wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
           chmod +x linuxdeploy-x86_64.AppImage
           sudo mv linuxdeploy-x86_64.AppImage /usr/local/bin/linuxdeploy
 
+      # 2. Build
       - name: Configure & Build
         run: |
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
           cmake --build build --config Release
 
-      - name: Package Linux
+      # 3. Prepare Staging Area
+      - name: Prepare Staging
         run: |
-          VERSION="${GITHUB_REF#refs/tags/}"
-          CLEAN_VERSION="${VERSION#v}"
-          
-          # Setup Staging
           mkdir -p AppDir/usr/bin
+          
+          # Copy Binary
           BIN="build/chess-gui"
           if [ ! -f "$BIN" ] && [ -f "build/Release/chess-gui" ]; then BIN="build/Release/chess-gui"; fi
           cp "$BIN" AppDir/usr/bin/chess-gui
+          
+          # Copy Resources NEXT TO BINARY (safest for relative paths)
+          if [ -d "build/Resources" ]; then cp -r "build/Resources" AppDir/usr/bin/;
+          elif [ -d "Resources" ]; then cp -r "Resources" AppDir/usr/bin/; fi
 
-          # Copy Resources (Critical)
-          if [ -d "Resources" ]; then cp -r "Resources" AppDir/usr/bin/; fi
-
-          # --- AppImage ---
+      # 4. Create AppImage
+      - name: Create AppImage
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/}"
+          
+          # Create a simple .desktop file required for AppImage
           cat > chess-gui.desktop <<EOF
           [Desktop Entry]
           Type=Application
@@ -191,28 +197,50 @@ jobs:
           Categories=Game;
           EOF
           
+          # Build AppImage
+          # We use --appimage-extract-and-run if linuxdeploy fails on runner, but usually it works directly
           linuxdeploy --appdir AppDir --desktop-file chess-gui.desktop --output appimage
+          
           mv Chess_GUI-*.AppImage "chess-gui-${VERSION}-linux-x86_64.AppImage"
 
-          # --- DEB/RPM Staging ---
+      # 5. Create DEB and RPM
+      - name: Create DEB & RPM
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/}"
+          CLEAN_VERSION="${VERSION#v}"
+          
+          # We use a trick for DEB/RPM: Install to /opt/chess-gui so Resources stay with Bin
+          # Then we symlink the bin to /usr/bin
+          
           PKG_ROOT="pkg-root"
           mkdir -p "$PKG_ROOT/opt/chess-gui"
+          
+          # Copy contents from AppDir/usr/bin (which has bin + Resources)
           cp -r AppDir/usr/bin/* "$PKG_ROOT/opt/chess-gui/"
-
-          # Scripts for symlinking
+          
+          # Create post-install script to symlink
           echo '#!/bin/bash' > post-install.sh
           echo 'ln -sf /opt/chess-gui/chess-gui /usr/bin/chess-gui' >> post-install.sh
+          
+          # Create post-uninstall script to remove symlink
           echo '#!/bin/bash' > post-uninstall.sh
           echo 'rm -f /usr/bin/chess-gui' >> post-uninstall.sh
 
+          # Build DEB
           fpm -s dir -t deb -n chess-gui -v "${CLEAN_VERSION}" \
-            --after-install post-install.sh --after-remove post-uninstall.sh \
-            --description "Chess GUI" -C "$PKG_ROOT" .
-          
-          fpm -s dir -t rpm -n chess-gui -v "${CLEAN_VERSION}" \
-            --after-install post-install.sh --after-remove post-uninstall.sh \
-            --description "Chess GUI" -C "$PKG_ROOT" .
+            --after-install post-install.sh \
+            --after-remove post-uninstall.sh \
+            --description "Chess GUI" \
+            -C "$PKG_ROOT" .
 
+          # Build RPM
+          fpm -s dir -t rpm -n chess-gui -v "${CLEAN_VERSION}" \
+            --after-install post-install.sh \
+            --after-remove post-uninstall.sh \
+            --description "Chess GUI" \
+            -C "$PKG_ROOT" .
+
+          # Rename
           mv chess-gui_*.deb "chess-gui-${VERSION}-linux-amd64.deb"
           mv chess-gui-*.x86_64.rpm "chess-gui-${VERSION}-linux-x86_64.rpm"
 
