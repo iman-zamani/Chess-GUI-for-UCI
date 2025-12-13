@@ -1,4 +1,4 @@
-name: Build and Release (SFML 2.x)
+name: Build and Release Multi-Platform
 
 on:
   push:
@@ -8,216 +8,175 @@ on:
 permissions:
   contents: write
 
-env:
-  BUILD_DIR: build
-  APP_NAME: chess-gui
-
 jobs:
   # ==========================================================
-  # WINDOWS (x64) - MSVC + vcpkg (SFML 2.x)
+  # 1. WINDOWS BUILD (x86_64)
   # ==========================================================
   build-windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up MSVC
-        uses: ilammy/msvc-dev-cmd@v1
+      # Install SFML 2.x + toolchain via vcpkg (reliable on Windows)
+      - name: Set up vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: "6f29f12b9b1c0b7d2f0a5d4a3e1f0a0f6f7e9c2a" # pin to avoid surprises
 
-      # Pin vcpkg to avoid surprises (SFML 3.x in the future)
-      # You can update this commit when you want to bump dependencies.
-      - name: Clone vcpkg (pinned)
+      - name: Install SFML 2.x (vcpkg)
         shell: pwsh
         run: |
-          git clone https://github.com/microsoft/vcpkg.git $env:GITHUB_WORKSPACE\vcpkg
-          cd $env:GITHUB_WORKSPACE\vcpkg
-          git checkout 6f29f12b9b1c0b7d2f0a5d4a3e1f0a0f6f7e9c2a
-          .\bootstrap-vcpkg.bat
+          vcpkg install sfml[graphics,window,system]:x64-windows
 
-      - name: Install SFML 2.x with vcpkg
+      - name: Configure
         shell: pwsh
         run: |
-          cd $env:GITHUB_WORKSPACE\vcpkg
-          .\vcpkg.exe install sfml[graphics,window,system]:x64-windows
-
-      - name: Configure (Release)
-        shell: pwsh
-        run: |
-          $version = "${env:GITHUB_REF}".Replace("refs/tags/","")
-          cmake -S . -B $env:BUILD_DIR `
+          cd build
+          cmake .. `
             -DCMAKE_BUILD_TYPE=Release `
-            -DCMAKE_TOOLCHAIN_FILE="$env:GITHUB_WORKSPACE\vcpkg\scripts\buildsystems\vcpkg.cmake" `
+            -DCMAKE_TOOLCHAIN_FILE="${env:VCPKG_ROOT}\scripts\buildsystems\vcpkg.cmake" `
             -DVCPKG_TARGET_TRIPLET=x64-windows
 
-      - name: Build (Release)
+      - name: Build
         shell: pwsh
         run: |
-          cmake --build $env:BUILD_DIR --config Release
+          cd build
+          cmake --build . --config Release
 
-      - name: Package artifact
-        shell: pwsh
+      - name: Rename artifact
+        shell: bash
         run: |
-          $version = "${env:GITHUB_REF}".Replace("refs/tags/","")
-          New-Item -ItemType Directory -Force dist | Out-Null
+          VERSION="${GITHUB_REF#refs/tags/}"
+          if [ -f "build/Release/chess-gui.exe" ]; then
+            cp "build/Release/chess-gui.exe" "chess-gui-${VERSION}-windows-x64.exe"
+          else
+            cp "build/chess-gui.exe" "chess-gui-${VERSION}-windows-x64.exe"
+          fi
 
-          $exe1 = Join-Path $env:BUILD_DIR "Release\${env:APP_NAME}.exe"
-          $exe2 = Join-Path $env:BUILD_DIR "${env:APP_NAME}.exe"
-
-          if (Test-Path $exe1) { Copy-Item $exe1 "dist\${env:APP_NAME}-$version-windows-x64.exe" }
-          elseif (Test-Path $exe2) { Copy-Item $exe2 "dist\${env:APP_NAME}-$version-windows-x64.exe" }
-          else { throw "Built exe not found." }
-
-      - name: Upload artifact
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-x64
-          path: dist/*
+          path: chess-gui-*-windows-x64.exe
 
   # ==========================================================
-  # MACOS (Intel + ARM) - brew sfml@2
+  # 2. MACOS BUILD (Intel & Apple Silicon)
   # ==========================================================
   build-macos:
-    name: build-macos-${{ matrix.platform }}
+    name: build-macos-${{ matrix.target_arch }}
     runs-on: ${{ matrix.runs_on }}
     strategy:
       matrix:
         include:
-          - platform: intel-x86_64
-            runs_on: macos-13
-          - platform: arm64
-            runs_on: macos-14
-
+          - target_arch: x86_64
+            runs_on: macos-15-intel
+          - target_arch: arm64
+            runs_on: macos-15
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install deps (SFML 2.x)
+      - name: Install SFML 2.x
         run: |
           brew update
           brew install cmake sfml@2
 
-      - name: Configure (Release)
+      - name: Configure
         run: |
-          VERSION="${GITHUB_REF#refs/tags/}"
-          # build directory exists in repo, but create it if it doesn't
-          mkdir -p "${{ env.BUILD_DIR }}"
-          cd "${{ env.BUILD_DIR }}"
+          cd build
           cmake .. -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build (Release)
+      - name: Build
         run: |
-          cd "${{ env.BUILD_DIR }}"
+          cd build
           cmake --build . --config Release
 
-      - name: Package artifact
+      - name: Package
         run: |
           VERSION="${GITHUB_REF#refs/tags/}"
-          mkdir -p dist
+          BIN="build/chess-gui"
+          if [ ! -f "$BIN" ] && [ -f "build/Release/chess-gui" ]; then BIN="build/Release/chess-gui"; fi
+          cp "$BIN" "chess-gui-${VERSION}-macos-${{ matrix.target_arch }}"
+          chmod +x "chess-gui-${VERSION}-macos-${{ matrix.target_arch }}"
+          zip "chess-gui-${VERSION}-macos-${{ matrix.target_arch }}.zip" "chess-gui-${VERSION}-macos-${{ matrix.target_arch }}"
 
-          BIN1="${{ env.BUILD_DIR }}/${{ env.APP_NAME }}"
-          BIN2="${{ env.BUILD_DIR }}/Release/${{ env.APP_NAME }}"
-
-          if [ -f "$BIN1" ]; then
-            cp "$BIN1" "dist/${{ env.APP_NAME }}-${VERSION}-macos-${{ matrix.platform }}"
-          elif [ -f "$BIN2" ]; then
-            cp "$BIN2" "dist/${{ env.APP_NAME }}-${VERSION}-macos-${{ matrix.platform }}"
-          else
-            echo "Binary not found"; ls -R "${{ env.BUILD_DIR }}"; exit 1
-          fi
-
-          chmod +x "dist/${{ env.APP_NAME }}-${VERSION}-macos-${{ matrix.platform }}"
-          (cd dist && zip "${{ env.APP_NAME }}-${VERSION}-macos-${{ matrix.platform }}.zip" "${{ env.APP_NAME }}-${VERSION}-macos-${{ matrix.platform }}")
-          rm "dist/${{ env.APP_NAME }}-${VERSION}-macos-${{ matrix.platform }}"
-
-      - name: Upload artifact
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: macos-${{ matrix.platform }}
-          path: dist/*.zip
+          name: macos-${{ matrix.target_arch }}
+          path: chess-gui-*-macos-*.zip
 
   # ==========================================================
-  # LINUX (x64) - build + tar.gz + .deb + .rpm
+  # 3. LINUX BUILD + Packaging (tar.gz, .deb, .rpm)
   # ==========================================================
   build-linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install system deps (SFML 2.x + packaging)
+      - name: Install System Deps (SFML 2.x + packaging)
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            cmake build-essential \
+            build-essential cmake \
             libsfml-dev \
-            ruby ruby-dev \
-            rpm
+            ruby ruby-dev rpm
           sudo gem install --no-document fpm
 
-      - name: Configure (Release)
+      - name: Configure
         run: |
-          VERSION="${GITHUB_REF#refs/tags/}"
-          mkdir -p "${{ env.BUILD_DIR }}"
-          cd "${{ env.BUILD_DIR }}"
+          cd build
           cmake .. -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build (Release)
+      - name: Build
         run: |
-          cd "${{ env.BUILD_DIR }}"
+          cd build
           cmake --build . --config Release
 
-      - name: Package (tar.gz, deb, rpm)
+      - name: Package Tarball + DEB + RPM
         run: |
           VERSION="${GITHUB_REF#refs/tags/}"
           CLEAN_VERSION="${VERSION#v}"
-          mkdir -p dist
 
-          BIN1="${{ env.BUILD_DIR }}/${{ env.APP_NAME }}"
-          BIN2="${{ env.BUILD_DIR }}/Release/${{ env.APP_NAME }}"
-
-          if [ -f "$BIN1" ]; then
-            cp "$BIN1" "dist/${{ env.APP_NAME }}"
-          elif [ -f "$BIN2" ]; then
-            cp "$BIN2" "dist/${{ env.APP_NAME }}"
-          else
-            echo "Binary not found"; ls -R "${{ env.BUILD_DIR }}"; exit 1
-          fi
-
-          chmod +x "dist/${{ env.APP_NAME }}"
+          # collect the binary
+          BIN="build/chess-gui"
+          if [ ! -f "$BIN" ] && [ -f "build/Release/chess-gui" ]; then BIN="build/Release/chess-gui"; fi
+          chmod +x "$BIN"
 
           # tar.gz
-          (cd dist && tar -czvf "${{ env.APP_NAME }}-${VERSION}-linux-x64.tar.gz" "${{ env.APP_NAME }}")
+          cp "$BIN" chess-gui
+          tar -czvf "chess-gui-${VERSION}-linux-x64.tar.gz" chess-gui
 
-          # deb/rpm via fpm -> installs to /usr/local/bin/chess-gui
-          fpm -s dir -t deb -n "${{ env.APP_NAME }}" -v "${CLEAN_VERSION}" \
+          # deb/rpm (installs to /usr/local/bin/chess-gui)
+          fpm -s dir -t deb -n chess-gui -v "${CLEAN_VERSION}" \
             --prefix /usr/local/bin \
             --description "Chess GUI (SFML 2.x)" \
-            dist/${{ env.APP_NAME }}
+            chess-gui
 
-          fpm -s dir -t rpm -n "${{ env.APP_NAME }}" -v "${CLEAN_VERSION}" \
+          fpm -s dir -t rpm -n chess-gui -v "${CLEAN_VERSION}" \
             --prefix /usr/local/bin \
             --description "Chess GUI (SFML 2.x)" \
-            dist/${{ env.APP_NAME }}
+            chess-gui
 
-          # Rename to nice names
-          mv *.deb "dist/${{ env.APP_NAME }}-${VERSION}-linux-amd64.deb"
-          mv *.rpm "dist/${{ env.APP_NAME }}-${VERSION}-linux-x86_64.rpm"
+          mv chess-gui_*.deb "chess-gui-${VERSION}-linux-amd64.deb"
+          mv chess-gui-*.x86_64.rpm "chess-gui-${VERSION}-linux-x86_64.rpm"
 
-          # keep binary too (optional)
-          mv "dist/${{ env.APP_NAME }}" "dist/${{ env.APP_NAME }}-${VERSION}-linux-x64"
-
-      - name: Upload artifacts
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: linux-x64
-          path: dist/*
+          path: |
+            chess-gui-*-linux-x64.tar.gz
+            chess-gui-*-linux-amd64.deb
+            chess-gui-*-linux-x86_64.rpm
 
   # ==========================================================
-  # RELEASE (collect + publish)
+  # 4. RELEASE
   # ==========================================================
   release:
     needs: [build-windows, build-macos, build-linux]
     runs-on: ubuntu-latest
     steps:
-      - name: Download all artifacts
+      - name: Download All Artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
