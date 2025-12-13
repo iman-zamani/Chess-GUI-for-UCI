@@ -1,0 +1,231 @@
+name: Build and Release (SFML 2.x)
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+env:
+  BUILD_DIR: build
+  APP_NAME: chess-gui
+
+jobs:
+  # ==========================================================
+  # WINDOWS (x64) - MSVC + vcpkg (SFML 2.x)
+  # ==========================================================
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      # Pin vcpkg to avoid surprises (SFML 3.x in the future)
+      # You can update this commit when you want to bump dependencies.
+      - name: Clone vcpkg (pinned)
+        shell: pwsh
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git $env:GITHUB_WORKSPACE\vcpkg
+          cd $env:GITHUB_WORKSPACE\vcpkg
+          git checkout 6f29f12b9b1c0b7d2f0a5d4a3e1f0a0f6f7e9c2a
+          .\bootstrap-vcpkg.bat
+
+      - name: Install SFML 2.x with vcpkg
+        shell: pwsh
+        run: |
+          cd $env:GITHUB_WORKSPACE\vcpkg
+          .\vcpkg.exe install sfml[graphics,window,system]:x64-windows
+
+      - name: Configure (Release)
+        shell: pwsh
+        run: |
+          $version = "${env:GITHUB_REF}".Replace("refs/tags/","")
+          cmake -S . -B $env:BUILD_DIR `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_TOOLCHAIN_FILE="$env:GITHUB_WORKSPACE\vcpkg\scripts\buildsystems\vcpkg.cmake" `
+            -DVCPKG_TARGET_TRIPLET=x64-windows
+
+      - name: Build (Release)
+        shell: pwsh
+        run: |
+          cmake --build $env:BUILD_DIR --config Release
+
+      - name: Package artifact
+        shell: pwsh
+        run: |
+          $version = "${env:GITHUB_REF}".Replace("refs/tags/","")
+          New-Item -ItemType Directory -Force dist | Out-Null
+
+          $exe1 = Join-Path $env:BUILD_DIR "Release\${env:APP_NAME}.exe"
+          $exe2 = Join-Path $env:BUILD_DIR "${env:APP_NAME}.exe"
+
+          if (Test-Path $exe1) { Copy-Item $exe1 "dist\${env:APP_NAME}-$version-windows-x64.exe" }
+          elseif (Test-Path $exe2) { Copy-Item $exe2 "dist\${env:APP_NAME}-$version-windows-x64.exe" }
+          else { throw "Built exe not found." }
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: dist/*
+
+  # ==========================================================
+  # MACOS (Intel + ARM) - brew sfml@2
+  # ==========================================================
+  build-macos:
+    name: build-macos-${{ matrix.platform }}
+    runs-on: ${{ matrix.runs_on }}
+    strategy:
+      matrix:
+        include:
+          - platform: intel-x86_64
+            runs_on: macos-13
+          - platform: arm64
+            runs_on: macos-14
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps (SFML 2.x)
+        run: |
+          brew update
+          brew install cmake sfml@2
+
+      - name: Configure (Release)
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/}"
+          # build directory exists in repo, but create it if it doesn't
+          mkdir -p "${{ env.BUILD_DIR }}"
+          cd "${{ env.BUILD_DIR }}"
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build (Release)
+        run: |
+          cd "${{ env.BUILD_DIR }}"
+          cmake --build . --config Release
+
+      - name: Package artifact
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/}"
+          mkdir -p dist
+
+          BIN1="${{ env.BUILD_DIR }}/${{ env.APP_NAME }}"
+          BIN2="${{ env.BUILD_DIR }}/Release/${{ env.APP_NAME }}"
+
+          if [ -f "$BIN1" ]; then
+            cp "$BIN1" "dist/${{ env.APP_NAME }}-${VERSION}-macos-${{ matrix.platform }}"
+          elif [ -f "$BIN2" ]; then
+            cp "$BIN2" "dist/${{ env.APP_NAME }}-${VERSION}-macos-${{ matrix.platform }}"
+          else
+            echo "Binary not found"; ls -R "${{ env.BUILD_DIR }}"; exit 1
+          fi
+
+          chmod +x "dist/${{ env.APP_NAME }}-${VERSION}-macos-${{ matrix.platform }}"
+          (cd dist && zip "${{ env.APP_NAME }}-${VERSION}-macos-${{ matrix.platform }}.zip" "${{ env.APP_NAME }}-${VERSION}-macos-${{ matrix.platform }}")
+          rm "dist/${{ env.APP_NAME }}-${VERSION}-macos-${{ matrix.platform }}"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.platform }}
+          path: dist/*.zip
+
+  # ==========================================================
+  # LINUX (x64) - build + tar.gz + .deb + .rpm
+  # ==========================================================
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system deps (SFML 2.x + packaging)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake build-essential \
+            libsfml-dev \
+            ruby ruby-dev \
+            rpm
+          sudo gem install --no-document fpm
+
+      - name: Configure (Release)
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/}"
+          mkdir -p "${{ env.BUILD_DIR }}"
+          cd "${{ env.BUILD_DIR }}"
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build (Release)
+        run: |
+          cd "${{ env.BUILD_DIR }}"
+          cmake --build . --config Release
+
+      - name: Package (tar.gz, deb, rpm)
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/}"
+          CLEAN_VERSION="${VERSION#v}"
+          mkdir -p dist
+
+          BIN1="${{ env.BUILD_DIR }}/${{ env.APP_NAME }}"
+          BIN2="${{ env.BUILD_DIR }}/Release/${{ env.APP_NAME }}"
+
+          if [ -f "$BIN1" ]; then
+            cp "$BIN1" "dist/${{ env.APP_NAME }}"
+          elif [ -f "$BIN2" ]; then
+            cp "$BIN2" "dist/${{ env.APP_NAME }}"
+          else
+            echo "Binary not found"; ls -R "${{ env.BUILD_DIR }}"; exit 1
+          fi
+
+          chmod +x "dist/${{ env.APP_NAME }}"
+
+          # tar.gz
+          (cd dist && tar -czvf "${{ env.APP_NAME }}-${VERSION}-linux-x64.tar.gz" "${{ env.APP_NAME }}")
+
+          # deb/rpm via fpm -> installs to /usr/local/bin/chess-gui
+          fpm -s dir -t deb -n "${{ env.APP_NAME }}" -v "${CLEAN_VERSION}" \
+            --prefix /usr/local/bin \
+            --description "Chess GUI (SFML 2.x)" \
+            dist/${{ env.APP_NAME }}
+
+          fpm -s dir -t rpm -n "${{ env.APP_NAME }}" -v "${CLEAN_VERSION}" \
+            --prefix /usr/local/bin \
+            --description "Chess GUI (SFML 2.x)" \
+            dist/${{ env.APP_NAME }}
+
+          # Rename to nice names
+          mv *.deb "dist/${{ env.APP_NAME }}-${VERSION}-linux-amd64.deb"
+          mv *.rpm "dist/${{ env.APP_NAME }}-${VERSION}-linux-x86_64.rpm"
+
+          # keep binary too (optional)
+          mv "dist/${{ env.APP_NAME }}" "dist/${{ env.APP_NAME }}-${VERSION}-linux-x64"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-x64
+          path: dist/*
+
+  # ==========================================================
+  # RELEASE (collect + publish)
+  # ==========================================================
+  release:
+    needs: [build-windows, build-macos, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: "*"
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          generate_release_notes: true

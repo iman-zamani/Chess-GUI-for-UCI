@@ -1,6 +1,3 @@
-# Ignore all directories starting with a dot
-.*/
-
 # Ignore everything in the build directory
 build/*
 
