@@ -58,3 +58,30 @@ elseif(TARGET sfml-graphics)
 else()
     message(FATAL_ERROR "SFML found but targets are missing. Check installation.")
 endif()
+
+# =============================================================================
+# 4. RESOURCE HANDLING
+# =============================================================================
+
+# Track all files in the Resources directory. 
+# CONFIGURE_DEPENDS ensures CMake automatically re-runs if you add or delete files.
+file(GLOB_RECURSE RESOURCE_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/Resources/*")
+
+# Create a custom command to copy the directory. 
+# It outputs a ".stamp" file so the build system knows when the copy is complete.
+add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/Resources.stamp"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory 
+        "${CMAKE_CURRENT_SOURCE_DIR}/Resources" 
+        "${CMAKE_CURRENT_BINARY_DIR}/Resources"
+    COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_CURRENT_BINARY_DIR}/Resources.stamp"
+    DEPENDS ${RESOURCE_FILES}
+    COMMENT "Syncing Resources directory to build folder..."
+)
+
+# Bind the custom command to a target so it can be built
+add_custom_target(SyncResources DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/Resources.stamp")
+
+# Make the main executable depend on the resource syncing target.
+# This ensures resources are always updated *before* the executable finishes building.
+add_dependencies(chess-gui SyncResources)

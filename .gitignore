@@ -1,5 +1,3 @@
 # Ignore everything in the build directory
-build/*
+#build/*
 
-# But allow the Resources directory within the build directory
-!/build/Resources/
