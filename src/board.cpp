@@ -671,57 +671,95 @@ void Board::endDragging(sf::Vector2f clickPos) {
     sf::Vector2i originalPos = this->pieces[pieceSelected].getGridPosition();
     int originalIdx = originalPos.y * 8 + originalPos.x;
 
-    // --- IDENTIFY CASTLING INTERCEPTION ---
+    // Identify Special Moves
     bool isCastlingMove = (selectedPieceType == WHITE_KING || selectedPieceType == BLACK_KING) && (std::abs(pointedSquareX - originalPos.x) == 2);
-    int rookOriginalX = -1, rookTargetX = -1;
-    int castlingY = originalPos.y;
+    bool isPawn = (selectedPieceType == WHITE_PAWN || selectedPieceType == BLACK_PAWN);
+    bool isEnPassantCapture = isPawn && (pointedSquareX == enPassantX && pointedSquareY == enPassantY) && (piecePositions[targetIdx] == 0);
 
-    if (isCastlingMove) {
-        if (pointedSquareX == 6) { // King-side castling (g1 or g8)
-            rookOriginalX = 7; // Rook begins on h-file
-            rookTargetX = 5;   // Rook teleports to f-file
-        } else if (pointedSquareX == 2) { // Queen-side castling (c1 or c8)
-            rookOriginalX = 0; // Rook begins on a-file
-            rookTargetX = 3;   // Rook teleports to d-file
-        }
-    }
+    int nextEnPassantX = -1;
+    int nextEnPassantY = -1;
 
-    // Handle standard Capture Execution
-    bool pieceCaptured = false;
-    for (int i = 0; i < this->piecesVectorSize; i++) {
-        if (i == pieceSelected) continue;
-        
-        sf::Vector2i pGrid = this->pieces[i].getGridPosition();
-        if (pGrid.x == pointedSquareX && pGrid.y == pointedSquareY) {
-            // Delete the captured piece
-            this->pieces.erase(this->pieces.begin() + i);
-            this->piecesVectorSize--;
-            if (i < pieceSelected) {
-                pieceSelected--;
+    // --- EXECUTE EN PASSANT CAPTURE REMOVAL ---
+    if (isEnPassantCapture) {
+        // Find the Y coordinate of the captured pawn (it sits on the original row of the victim)
+        int victimY = originalPos.y; 
+        int victimIdx = victimY * 8 + pointedSquareX;
+
+        // Clear the layout map position for the victim pawn
+        piecePositions[victimIdx] = 0;
+
+        // Erase the victim pawn object from our rendering vector
+        for (int i = 0; i < this->piecesVectorSize; i++) {
+            if (i == pieceSelected) continue;
+            sf::Vector2i pGrid = this->pieces[i].getGridPosition();
+            if (pGrid.x == pointedSquareX && pGrid.y == victimY) {
+                this->pieces.erase(this->pieces.begin() + i);
+                this->piecesVectorSize--;
+                if (i < pieceSelected) {
+                    pieceSelected--;
+                }
+                break;
             }
-            pieceCaptured = true;
-            break;
         }
     }
 
-    // Teleport the King piece to its finalized grid square coordinate
+    // Handle Standard Capture Execution (Direct Landings)
+    if (!isEnPassantCapture) {
+        for (int i = 0; i < this->piecesVectorSize; i++) {
+            if (i == pieceSelected) continue;
+            
+            sf::Vector2i pGrid = this->pieces[i].getGridPosition();
+            if (pGrid.x == pointedSquareX && pGrid.y == pointedSquareY) {
+                this->pieces.erase(this->pieces.begin() + i);
+                this->piecesVectorSize--;
+                if (i < pieceSelected) {
+                    pieceSelected--;
+                }
+                break;
+            }
+        }
+    }
+
+    // Teleport our active piece to its finalized grid square coordinate
     this->pieces[pieceSelected].moveTo(pointedSquareX, pointedSquareY);
 
-    // layout positions vector permanently for the King
+    // Update the layout positions vector permanently
     piecePositions[originalIdx] = 0;
     piecePositions[targetIdx] = selectedPieceType;
 
-    // --- EXECUTE SECONDARY ROOK TELEPORTATION ---
-    if (isCastlingMove && rookOriginalX != -1) {
+    // --- TRACK NEW EN PASSANT POTENTIALS ---
+    if (isPawn && std::abs(pointedSquareY - originalPos.y) == 2) {
+        nextEnPassantX = pointedSquareX;
+        // En Passant square is the square the pawn skipped over
+        nextEnPassantY = (originalPos.y + pointedSquareY) / 2;
+    }
+    this->enPassantX = nextEnPassantX;
+    this->enPassantY = nextEnPassantY;
+
+    // --- EXECUTE PAWN PROMOTION ---
+    if (isPawn && (pointedSquareY == 0 || pointedSquareY == 7)) {
+        int promotedPieceType = (selectedPieceType > 0) ? WHITE_QUEEN : BLACK_QUEEN;
+        
+        // 1. Update layout board tracking state
+        piecePositions[targetIdx] = promotedPieceType;
+
+        // 2. Re-initialize the Piece object safely as a Queen to load the correct textures
+        this->pieces[pieceSelected] = Piece(promotedPieceType, pointedSquareX, pointedSquareY, squareSideLength);
+    }
+
+    // --- EXECUTE ROOK TELEPORTATION IF CASTLING ---
+    if (isCastlingMove) {
+        int rookOriginalX = (pointedSquareX == 6) ? 7 : 0;
+        int rookTargetX = (pointedSquareX == 6) ? 5 : 3;
+        int castlingY = originalPos.y;
+
         int rookOriginalIdx = castlingY * 8 + rookOriginalX;
         int rookTargetIdx = castlingY * 8 + rookTargetX;
         int rookType = piecePositions[rookOriginalIdx];
 
-        // 1. Swap layout array data maps permanently for the Rook
         piecePositions[rookOriginalIdx] = 0;
         piecePositions[rookTargetIdx] = rookType;
 
-        // 2. Locate the precise Rook object in our tracking vector and adjust its coordinates
         for (int i = 0; i < this->piecesVectorSize; i++) {
             sf::Vector2i pGrid = this->pieces[i].getGridPosition();
             if (pGrid.x == rookOriginalX && pGrid.y == castlingY) {
@@ -731,8 +769,7 @@ void Board::endDragging(sf::Vector2f clickPos) {
         }
     }
 
-    // --- AMEND FEN CASTLING RIGHTS RIGHTS ---
-    // If a King moves, all castling accessibility is lost permanently for that side
+    // --- AMEND FEN CASTLING RIGHTS ---
     if (selectedPieceType == WHITE_KING) {
         this->whiteKingSideCastle = false;
         this->whiteQueenSideCastle = false;
@@ -740,12 +777,10 @@ void Board::endDragging(sf::Vector2f clickPos) {
         this->blackKingSideCastle = false;
         this->blackQueenSideCastle = false;
     }
-    
-    // If any Rook corner changes or suffers a direct capture, drop specific rights
-    if (originalIdx == 7 * 8 + 7 || targetIdx == 7 * 8 + 7) this->whiteKingSideCastle = false; // h1 square
-    if (originalIdx == 7 * 8 + 0 || targetIdx == 7 * 8 + 0) this->whiteQueenSideCastle = false; // a1 square
-    if (originalIdx == 0 * 8 + 7 || targetIdx == 0 * 8 + 7) this->blackKingSideCastle = false; // h8 square
-    if (originalIdx == 0 * 8 + 0 || targetIdx == 0 * 8 + 0) this->blackQueenSideCastle = false; // a8 square
+    if (originalIdx == 7 * 8 + 7 || targetIdx == 7 * 8 + 7) this->whiteKingSideCastle = false;
+    if (originalIdx == 7 * 8 + 0 || targetIdx == 7 * 8 + 0) this->whiteQueenSideCastle = false;
+    if (originalIdx == 0 * 8 + 7 || targetIdx == 0 * 8 + 7) this->blackKingSideCastle = false;
+    if (originalIdx == 0 * 8 + 0 || targetIdx == 0 * 8 + 0) this->blackQueenSideCastle = false;
 
     // --- ENFORCE TURN SWITCHING ---
     this->isWhiteTurn = !this->isWhiteTurn;
