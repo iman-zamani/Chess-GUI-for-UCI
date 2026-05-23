@@ -63,11 +63,7 @@ private:
     void setSquaresTexture();
     void constructor(const std::string &FEN);
     //draw the board squares 
-    void drawBoardBackground(sf::RenderTarget& target) const {
-        for (sf::Sprite sp : spriteSquares){
-            window.draw(sp);
-        }
-    }
+    void drawBoardBackground(sf::RenderTarget& target) const;
     // draw all the elements 
     virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const override {
         drawBoardBackground(target);
@@ -76,6 +72,8 @@ private:
         }
     }
     sf::Vector2i squareNameToXY(const std::string &square);
+    bool isSquareAttacked(int targetX, int targetY, bool attackedByWhite) const;
+    sf::Vector2i findKingGridPosition(bool whiteKing) const;
 public:
 
     Board(sf::RenderWindow &win,const std::string &FEN): window(win){this->constructor(FEN);};

@@ -225,89 +225,127 @@ sf::Vector2i Board::squareNameToXY(const std::string &square){
     int y = 8 - (square[1] - '0');
     return sf::Vector2i(x,y);
 }
-void Board::findLegalMoves(){
-    int pieceType = this->pieces[this->pieceSelected].getType();
-    switch (pieceType)
-    {
-    //black pieces 
-    case BLACK_ROOK:
-        this->findLegalMovesBlackRook();
-        break;
-    case BLACK_BISHOP:
-        this->findLegalMovesBlackBishop();
-        break;
-    case BLACK_KNIGHT:
-        this->findLegalMovesBlackKnight();
-        break;
-    case BLACK_QUEEN:
-        this->findLegalMovesBlackQueen();
-        break;
-    case BLACK_KING:
-        this->findLegalMovesBlackKing();
-        break;
-    case BLACK_PAWN:
-        this->findLegalMovesBlackPawn();
-        break;
-    // white pieces 
-    case WHITE_ROOK:
-        this->findLegalMovesWhiteRook();
-        break;
-    case WHITE_BISHOP:
-        this->findLegalMovesWhiteBishop();
-        break;
-    case WHITE_KNIGHT:
-        this->findLegalMovesWhiteKnight();
-        break;
-    case WHITE_QUEEN:
-        this->findLegalMovesWhiteQueen();
-        break;
-    case WHITE_KING:
-        this->findLegalMovesWhiteKing();
-        break;
-    case WHITE_PAWN:
-        this->findLegalMovesWhitePawn();
-        break;
+void Board::findLegalMoves() {
+    if (this->pieceSelected == -1) return;
+
+    int selectedPieceIndex = this->pieceSelected;
+    int pieceType = this->pieces[selectedPieceIndex].getType();
     
-    default:
-        break;
+    // 1. Turn enforcement
+    if ((this->isWhiteTurn && pieceType < 0) || (!this->isWhiteTurn && pieceType > 0)) {
+        std::fill(legalSquaresForTargetPiece.begin(), legalSquaresForTargetPiece.end(), false);
+        return;
+    }
+
+    // 2. Generate pseudo-legal moves using your existing switch block
+    switch (pieceType) {
+        case BLACK_ROOK:   this->findLegalMovesBlackRook();   break;
+        case BLACK_BISHOP: this->findLegalMovesBlackBishop(); break;
+        case BLACK_KNIGHT: this->findLegalMovesBlackKnight(); break;
+        case BLACK_QUEEN:  this->findLegalMovesBlackQueen();  break;
+        case BLACK_KING:   this->findLegalMovesBlackKing();   break;
+        case BLACK_PAWN:   this->findLegalMovesBlackPawn();   break;
+        case WHITE_ROOK:   this->findLegalMovesWhiteRook();   break;
+        case WHITE_BISHOP: this->findLegalMovesWhiteBishop(); break;
+        case WHITE_KNIGHT: this->findLegalMovesWhiteKnight(); break;
+        case WHITE_QUEEN:  this->findLegalMovesWhiteQueen();  break;
+        case WHITE_KING:   this->findLegalMovesWhiteKing();   break;
+        case WHITE_PAWN:   this->findLegalMovesWhitePawn();   break;
+        default: return;
+    }
+
+    // Save a copy of the pseudo-legal moves list to filter through
+    std::vector<bool> pseudoLegalSquares = legalSquaresForTargetPiece;
+    std::fill(legalSquaresForTargetPiece.begin(), legalSquaresForTargetPiece.end(), false);
+
+    sf::Vector2i originalPos = this->pieces[selectedPieceIndex].getGridPosition();
+    int originalIndex = originalPos.y * 8 + originalPos.x;
+    bool isWhite = (pieceType > 0);
+
+    // 3. Filter moves by simulating them (Make / Unmake)
+    for (int targetIdx = 0; targetIdx < 64; ++targetIdx) {
+        if (!pseudoLegalSquares[targetIdx]) continue;
+
+        int targetX = targetIdx % 8;
+        int targetY = targetIdx / 8;
+
+        // Special Castling Check: Must not castle out of, through, or into check
+        if ((pieceType == WHITE_KING || pieceType == BLACK_KING) && std::abs(targetX - originalPos.x) == 2) {
+            // Check if starting square is under attack (Castling out of check)
+            if (isSquareAttacked(originalPos.x, originalPos.y, !isWhite)) continue;
+
+            // Check the passing square (e.g., f1 for White King-side)
+            int stepX = (targetX > originalPos.x) ? 1 : -1;
+            if (isSquareAttacked(originalPos.x + stepX, originalPos.y, !isWhite)) continue;
+        }
+
+        // --- Simulate Move (Make) ---
+        int capturedPiece = piecePositions[targetIdx];
+        piecePositions[originalIndex] = 0;
+        piecePositions[targetIdx] = pieceType;
+        
+        // Temporarily adjust the piece's grid tracking properties
+        int tempX = this->pieces[selectedPieceIndex].x;
+        int tempY = this->pieces[selectedPieceIndex].y;
+        this->pieces[selectedPieceIndex].x = targetX;
+        this->pieces[selectedPieceIndex].y = targetY;
+
+        // --- Evaluate Legality ---
+        sf::Vector2i kingPos = findKingGridPosition(isWhite);
+        bool kingIsSafe = !isSquareAttacked(kingPos.x, kingPos.y, !isWhite);
+
+        if (kingIsSafe) {
+            legalSquaresForTargetPiece[targetIdx] = true;
+        }
+
+        // --- Undo Move (Unmake) ---
+        piecePositions[originalIndex] = pieceType;
+        piecePositions[targetIdx] = capturedPiece;
+        this->pieces[selectedPieceIndex].x = tempX;
+        this->pieces[selectedPieceIndex].y = tempY;
     }
 }
 // white pieces 
-void Board::findLegalMovesWhitePawn(){
+void Board::findLegalMovesWhitePawn() {
     std::fill(legalSquaresForTargetPiece.begin(), legalSquaresForTargetPiece.end(), false);
-    sf::Vector2i pos =  this->pieces[this->pieceSelected].getPosition();
-   
-    // square in front of the pawn
-    int squareInFrontOfPawn = ((pos.y-1) * 8) + pos.x;
-    if (piecePositions[squareInFrontOfPawn] == 0){
-        legalSquaresForTargetPiece[squareInFrontOfPawn] = true;
-        // if it is in staring position 
-         if (pos.y == 6){
-            int twoSquaresInFrontOfPawn = ((pos.y-2) * 8) + pos.x;
-            // if two squares in front of it are free
-            if (piecePositions[twoSquaresInFrontOfPawn] == 0){
-                legalSquaresForTargetPiece[twoSquaresInFrontOfPawn] = true;
+    sf::Vector2i pos = this->pieces[this->pieceSelected].getGridPosition(); // Using the new grid position method
+
+    // Move forward
+    if (pos.y - 1 >= 0) {
+        int oneStep = (pos.y - 1) * 8 + pos.x;
+        if (piecePositions[oneStep] == 0) {
+            legalSquaresForTargetPiece[oneStep] = true;
+            // Two steps forward (only if one step is also empty)
+            if (pos.y == 6) {
+                int twoStep = (pos.y - 2) * 8 + pos.x;
+                if (piecePositions[twoStep] == 0) {
+                    legalSquaresForTargetPiece[twoStep] = true;
+                }
             }
         }
     }
-    // if captures available 
-    // is the square exists and there is an enemy piece there 
-    if (squareInFrontOfPawn%8 == 0 && piecePositions[squareInFrontOfPawn+1]<0){
-        legalSquaresForTargetPiece[squareInFrontOfPawn+1] = true;
-    }
-    else if(squareInFrontOfPawn % 8 == 7 && piecePositions[squareInFrontOfPawn-1]<0){
-        legalSquaresForTargetPiece[squareInFrontOfPawn-1] = true;
-    }
-    else {
-        if(piecePositions[squareInFrontOfPawn+1]<0)legalSquaresForTargetPiece[squareInFrontOfPawn+1] = true;
-        if(piecePositions[squareInFrontOfPawn-1]<0)legalSquaresForTargetPiece[squareInFrontOfPawn-1] = true;
-    }
-    return ;
-}
 
+    // Captures & En Passant
+    if (pos.y - 1 >= 0) {
+        // Capture Left
+        if (pos.x - 1 >= 0) {
+            int captureLeft = (pos.y - 1) * 8 + (pos.x - 1);
+            if (piecePositions[captureLeft] < 0 || (pos.x - 1 == enPassantX && pos.y - 1 == enPassantY)) {
+                legalSquaresForTargetPiece[captureLeft] = true;
+            }
+        }
+        // Capture Right
+        if (pos.x + 1 <= 7) {
+            int captureRight = (pos.y - 1) * 8 + (pos.x + 1);
+            if (piecePositions[captureRight] < 0 || (pos.x + 1 == enPassantX && pos.y - 1 == enPassantY)) {
+                legalSquaresForTargetPiece[captureRight] = true;
+            }
+        }
+    }
+}
 void Board::findLegalMovesWhiteKnight() {
     std::fill(legalSquaresForTargetPiece.begin(), legalSquaresForTargetPiece.end(), false);
-    sf::Vector2i pos = this->pieces[this->pieceSelected].getPosition();
+    sf::Vector2i pos = this->pieces[this->pieceSelected].getGridPosition();
     std::vector<sf::Vector2i> moves = {
         {pos.x + 2, pos.y + 1}, {pos.x + 2, pos.y - 1},
         {pos.x - 2, pos.y + 1}, {pos.x - 2, pos.y - 1},
@@ -328,7 +366,7 @@ void Board::findLegalMovesWhiteKnight() {
 
 void Board::findLegalMovesWhiteBishop() {
     std::fill(legalSquaresForTargetPiece.begin(), legalSquaresForTargetPiece.end(), false);
-    sf::Vector2i pos = this->pieces[this->pieceSelected].getPosition();
+    sf::Vector2i pos = this->pieces[this->pieceSelected].getGridPosition();
     std::vector<sf::Vector2i> directions = {{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 
     for (const auto& dir : directions) {
@@ -349,7 +387,7 @@ void Board::findLegalMovesWhiteBishop() {
 
 void Board::findLegalMovesWhiteRook() {
     std::fill(legalSquaresForTargetPiece.begin(), legalSquaresForTargetPiece.end(), false);
-    sf::Vector2i pos = this->pieces[this->pieceSelected].getPosition();
+    sf::Vector2i pos = this->pieces[this->pieceSelected].getGridPosition();
     std::vector<sf::Vector2i> directions = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
 
     for (const auto& dir : directions) {
@@ -370,7 +408,7 @@ void Board::findLegalMovesWhiteRook() {
 
 void Board::findLegalMovesWhiteQueen() {
     std::fill(legalSquaresForTargetPiece.begin(), legalSquaresForTargetPiece.end(), false);
-    sf::Vector2i pos = this->pieces[this->pieceSelected].getPosition();
+    sf::Vector2i pos = this->pieces[this->pieceSelected].getGridPosition();
     std::vector<sf::Vector2i> directions = {
         {1, 0}, {-1, 0}, {0, 1}, {0, -1}, // rook moves
         {1, 1}, {1, -1}, {-1, 1}, {-1, -1} // bishop moves
@@ -394,7 +432,9 @@ void Board::findLegalMovesWhiteQueen() {
 
 void Board::findLegalMovesWhiteKing() {
     std::fill(legalSquaresForTargetPiece.begin(), legalSquaresForTargetPiece.end(), false);
-    sf::Vector2i pos = this->pieces[this->pieceSelected].getPosition();
+    sf::Vector2i pos = this->pieces[this->pieceSelected].getGridPosition();
+
+    // Normal King Moves
     for (int dx = -1; dx <= 1; ++dx) {
         for (int dy = -1; dy <= 1; ++dy) {
             if (dx == 0 && dy == 0) continue;
@@ -406,43 +446,90 @@ void Board::findLegalMovesWhiteKing() {
             }
         }
     }
+
+    // Castling
+    if (pos.x == 4 && pos.y == 7) {
+        // King-side (O-O)
+        if (whiteKingSideCastle && piecePositions[7 * 8 + 5] == 0 && piecePositions[7 * 8 + 6] == 0) {
+            legalSquaresForTargetPiece[7 * 8 + 6] = true; // g1
+        }
+        // Queen-side (O-O-O)
+        if (whiteQueenSideCastle && piecePositions[7 * 8 + 1] == 0 && piecePositions[7 * 8 + 2] == 0 && piecePositions[7 * 8 + 3] == 0) {
+            legalSquaresForTargetPiece[7 * 8 + 2] = true; // c1
+        }
+    }
 }
 
-// black pieces 
-void Board::findLegalMovesBlackPawn(){
+void Board::findLegalMovesBlackKing() {
     std::fill(legalSquaresForTargetPiece.begin(), legalSquaresForTargetPiece.end(), false);
-    sf::Vector2i pos =  this->pieces[this->pieceSelected].getPosition();
-    // square in front of the pawn
-    int squareInFrontOfPawn = ((pos.y+1) * 8) + pos.x;
-    if (piecePositions[squareInFrontOfPawn] == 0){
-        legalSquaresForTargetPiece[squareInFrontOfPawn] = true;
-        // if it is in staring position 
-         if (pos.y == 1){
-            int twoSquaresInFrontOfPawn = ((pos.y+2) * 8) + pos.x;
-            // if two squares in front of it are free
-            if (piecePositions[twoSquaresInFrontOfPawn] == 0){
-                legalSquaresForTargetPiece[twoSquaresInFrontOfPawn] = true;
+    sf::Vector2i pos = this->pieces[this->pieceSelected].getGridPosition();
+
+    // Normal King Moves
+    for (int dx = -1; dx <= 1; ++dx) {
+        for (int dy = -1; dy <= 1; ++dy) {
+            if (dx == 0 && dy == 0) continue;
+            sf::Vector2i newPos = pos + sf::Vector2i(dx, dy);
+            if (newPos.x >= 0 && newPos.x < 8 && newPos.y >= 0 && newPos.y < 8) {
+                int index = newPos.y * 8 + newPos.x;
+                if (piecePositions[index] >= 0)
+                    legalSquaresForTargetPiece[index] = true;
             }
         }
     }
-    // if captures available 
-    // is the square exists and there is an enemy piece there 
-    if (squareInFrontOfPawn%8 == 0 && piecePositions[squareInFrontOfPawn+1]>0){
-        legalSquaresForTargetPiece[squareInFrontOfPawn+1] = true;
-    }
-    else if(squareInFrontOfPawn % 8 == 7 && piecePositions[squareInFrontOfPawn-1]>0){
-        legalSquaresForTargetPiece[squareInFrontOfPawn-1] = true;
-    }
-    else {
-        if(piecePositions[squareInFrontOfPawn+1]>0)legalSquaresForTargetPiece[squareInFrontOfPawn+1] = true;
-        if(piecePositions[squareInFrontOfPawn-1]>0)legalSquaresForTargetPiece[squareInFrontOfPawn-1] = true;
-    }
-    return ;
-}
 
+    // Castling
+    if (pos.x == 4 && pos.y == 0) {
+        // King-side (O-O)
+        if (blackKingSideCastle && piecePositions[5] == 0 && piecePositions[6] == 0) {
+            legalSquaresForTargetPiece[6] = true; // g8
+        }
+        // Queen-side (O-O-O)
+        if (blackQueenSideCastle && piecePositions[1] == 0 && piecePositions[2] == 0 && piecePositions[3] == 0) {
+            legalSquaresForTargetPiece[2] = true; // c8
+        }
+    }
+}
+// black pieces 
+void Board::findLegalMovesBlackPawn() {
+    std::fill(legalSquaresForTargetPiece.begin(), legalSquaresForTargetPiece.end(), false);
+    sf::Vector2i pos = this->pieces[this->pieceSelected].getGridPosition();
+
+    // Move forward
+    if (pos.y + 1 <= 7) {
+        int oneStep = (pos.y + 1) * 8 + pos.x;
+        if (piecePositions[oneStep] == 0) {
+            legalSquaresForTargetPiece[oneStep] = true;
+            // Two steps forward
+            if (pos.y == 1) {
+                int twoStep = (pos.y + 2) * 8 + pos.x;
+                if (piecePositions[twoStep] == 0) {
+                    legalSquaresForTargetPiece[twoStep] = true;
+                }
+            }
+        }
+    }
+
+    // Captures & En Passant
+    if (pos.y + 1 <= 7) {
+        // Capture Left
+        if (pos.x - 1 >= 0) {
+            int captureLeft = (pos.y + 1) * 8 + (pos.x - 1);
+            if (piecePositions[captureLeft] > 0 || (pos.x - 1 == enPassantX && pos.y + 1 == enPassantY)) {
+                legalSquaresForTargetPiece[captureLeft] = true;
+            }
+        }
+        // Capture Right
+        if (pos.x + 1 <= 7) {
+            int captureRight = (pos.y + 1) * 8 + (pos.x + 1);
+            if (piecePositions[captureRight] > 0 || (pos.x + 1 == enPassantX && pos.y + 1 == enPassantY)) {
+                legalSquaresForTargetPiece[captureRight] = true;
+            }
+        }
+    }
+}
 void Board::findLegalMovesBlackRook() {
     std::fill(legalSquaresForTargetPiece.begin(), legalSquaresForTargetPiece.end(), false);
-    sf::Vector2i pos = this->pieces[this->pieceSelected].getPosition();
+    sf::Vector2i pos = this->pieces[this->pieceSelected].getGridPosition();
     std::vector<sf::Vector2i> directions = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
 
     for (const auto& dir : directions) {
@@ -463,7 +550,7 @@ void Board::findLegalMovesBlackRook() {
 
 void Board::findLegalMovesBlackKnight() {
     std::fill(legalSquaresForTargetPiece.begin(), legalSquaresForTargetPiece.end(), false);
-    sf::Vector2i pos = this->pieces[this->pieceSelected].getPosition();
+    sf::Vector2i pos = this->pieces[this->pieceSelected].getGridPosition();
     std::vector<sf::Vector2i> moves = {
         {pos.x + 2, pos.y + 1}, {pos.x + 2, pos.y - 1},
         {pos.x - 2, pos.y + 1}, {pos.x - 2, pos.y - 1},
@@ -483,7 +570,7 @@ void Board::findLegalMovesBlackKnight() {
 
 void Board::findLegalMovesBlackQueen() {
     std::fill(legalSquaresForTargetPiece.begin(), legalSquaresForTargetPiece.end(), false);
-    sf::Vector2i pos = this->pieces[this->pieceSelected].getPosition();
+    sf::Vector2i pos = this->pieces[this->pieceSelected].getGridPosition();
     std::vector<sf::Vector2i> directions = {
         {1, 0}, {-1, 0}, {0, 1}, {0, -1}, // rook moves
         {1, 1}, {1, -1}, {-1, 1}, {-1, -1} // bishop moves
@@ -507,7 +594,7 @@ void Board::findLegalMovesBlackQueen() {
 
 void Board::findLegalMovesBlackBishop() {
     std::fill(legalSquaresForTargetPiece.begin(), legalSquaresForTargetPiece.end(), false);
-    sf::Vector2i pos = this->pieces[this->pieceSelected].getPosition();
+    sf::Vector2i pos = this->pieces[this->pieceSelected].getGridPosition();
     std::vector<sf::Vector2i> directions = {{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 
     for (const auto& dir : directions) {
@@ -526,21 +613,6 @@ void Board::findLegalMovesBlackBishop() {
     }
 }
 
-void Board::findLegalMovesBlackKing() {
-    std::fill(legalSquaresForTargetPiece.begin(), legalSquaresForTargetPiece.end(), false);
-    sf::Vector2i pos = this->pieces[this->pieceSelected].getPosition();
-    for (int dx = -1; dx <= 1; ++dx) {
-        for (int dy = -1; dy <= 1; ++dy) {
-            if (dx == 0 && dy == 0) continue;
-            sf::Vector2i newPos = pos + sf::Vector2i(dx, dy);
-            if (newPos.x >= 0 && newPos.x < 8 && newPos.y >= 0 && newPos.y < 8) {
-                int index = newPos.y * 8 + newPos.x;
-                if (piecePositions[index] >= 0)
-                    legalSquaresForTargetPiece[index] = true;
-            }
-        }
-    }
-}
 
 // we should call this on the start of the dragging 
 // it will return the texture of the pice user is trying to drag 
@@ -565,53 +637,70 @@ sf::Texture* Board::startDragging(sf::Vector2f clickPos) {
 
 // we should call this when the dragging ends  
 void Board::endDragging(sf::Vector2f clickPos) {
-    // if there is no piece selected to release it 
     if (pieceSelected < 0 || pieceSelected >= piecesVectorSize){
         return;
     }
-    // piece is released so we should deselect it no matter if we need to apply a move as well or not 
+    
     this->pieces[pieceSelected].deselectPiece();
-    // check if the clicked position is in the board range 
-    {
-        int upAndLeft = squareSideLength / 2;
-        int downAndRight = upAndLeft + (8*squareSideLength);
-        if (clickPos.x < upAndLeft || clickPos.y < upAndLeft || clickPos.x > downAndRight || clickPos.y > downAndRight){
-            return;
-        }
+    
+    // Check if the clicked position is inside the board boundaries
+    int upAndLeft = squareSideLength / 2;
+    int downAndRight = upAndLeft + (8 * squareSideLength);
+    if (clickPos.x < upAndLeft || clickPos.y < upAndLeft || clickPos.x > downAndRight || clickPos.y > downAndRight){
+        // Snap back to original position
+        sf::Vector2i orig = this->pieces[pieceSelected].getGridPosition();
+        this->pieces[pieceSelected].moveTo(orig.x, orig.y);
+        return;
     }
+
     int selectedPieceType = this->pieces[pieceSelected].getType();
-    // we should find which square user is pointing to
     float pointedSquareCoordinateX = clickPos.x - (squareSideLength / 2);
     float pointedSquareCoordinateY = clickPos.y - (squareSideLength / 2);
     int pointedSquareX = pointedSquareCoordinateX / squareSideLength;
     int pointedSquareY = pointedSquareCoordinateY / squareSideLength;
-    // we should find if this is a capture
-    //temp fix, this is not optimized way to find the piece
-    for (int i = 0; i < this->piecesVectorSize; i++) {
-        
-        sf::Vector2f piecePosF(static_cast<float>(this->pieces[i].getPosition().x),static_cast<float>(this->pieces[i].getPosition().y));
+    
+    int targetIdx = pointedSquareY * 8 + pointedSquareX;
 
-        float absDiffX = clickPos.x - piecePosF.x;
-        float absDiffY = clickPos.y - piecePosF.y;
-        if (absDiffX <0 || absDiffY < 0){continue;}
-        if ((absDiffX >= 0 || absDiffY >= 0) && (absDiffX < squareSideLength && absDiffY < squareSideLength)) {
-            // we will skip the pieces with the same color, if they are the same color they will be both negative or positive
-            // so if we multiply them together the result will be positive 
-            if ((this->pieces[i].getType()*selectedPieceType) > 0){return ;}
-            // move the selected piece 
-            this->pieces[pieceSelected].moveTo(pointedSquareX,pointedSquareY);
-            // delete the captured piece 
+    if (!legalSquaresForTargetPiece[targetIdx]) {
+        sf::Vector2i orig = this->pieces[pieceSelected].getGridPosition();
+        this->pieces[pieceSelected].moveTo(orig.x, orig.y);
+        return;
+    }
+
+    sf::Vector2i originalPos = this->pieces[pieceSelected].getGridPosition();
+    int originalIdx = originalPos.y * 8 + originalPos.x;
+
+    // Handle Capture Execution
+    bool pieceCaptured = false;
+    for (int i = 0; i < this->piecesVectorSize; i++) {
+        if (i == pieceSelected) continue;
+        
+        sf::Vector2i pGrid = this->pieces[i].getGridPosition();
+        if (pGrid.x == pointedSquareX && pGrid.y == pointedSquareY) {
+            // Delete the captured piece
             this->pieces.erase(this->pieces.begin() + i);
-            // reset the selected piece tracker 
             this->piecesVectorSize--;
-            pieceSelected = -1;
-            return ;
+            if (i < pieceSelected) {
+                pieceSelected--; // Adjust index since element shift occurred
+            }
+            pieceCaptured = true;
+            break;
         }
     }
-    // it is not a capture 
-    // the user is pointing to an empty square
-    this->pieces[pieceSelected].moveTo(pointedSquareX,pointedSquareY);
-    return;
+
+    // Move the active piece to its new grid coordinate
+    this->pieces[pieceSelected].moveTo(pointedSquareX, pointedSquareY);
+
+    // Update the piecePositions vector state permanently
+    piecePositions[originalIdx] = 0;
+    piecePositions[targetIdx] = selectedPieceType;
+
+    // --- ENFORCE TURN SWITCHING ---
+    this->isWhiteTurn = !this->isWhiteTurn;
+
+    // Reset move generation states
+    std::fill(legalSquaresForTargetPiece.begin(), legalSquaresForTargetPiece.end(), false);
+    pieceSelected = -1;
 }
 const sf::Vector2f Board::getSelectedPieceSpriteScale()const{
     if (pieceSelected < 0 || pieceSelected >= piecesVectorSize){
@@ -624,4 +713,126 @@ const sf::Vector2f Board::getSelectedPieceSpriteScale()const{
 }
 void Board::placeThePiece(sf::Vector2f clickPos){
     // To Do
+}
+
+
+bool Board::isSquareAttacked(int targetX, int targetY, bool attackedByWhite) const {
+    // Check Knight attacks
+    std::vector<sf::Vector2i> knightMoves = {
+        {targetX + 2, targetY + 1}, {targetX + 2, targetY - 1},
+        {targetX - 2, targetY + 1}, {targetX - 2, targetY - 1},
+        {targetX + 1, targetY + 2}, {targetX + 1, targetY - 2},
+        {targetX - 1, targetY + 2}, {targetX - 1, targetY - 2}
+    };
+    int targetEnemyKnight = attackedByWhite ? WHITE_KNIGHT : BLACK_KNIGHT;
+    for (const auto& move : knightMoves) {
+        if (move.x >= 0 && move.x < 8 && move.y >= 0 && move.y < 8) {
+            if (piecePositions[move.y * 8 + move.x] == targetEnemyKnight) return true;
+        }
+    }
+
+    // Check Straight Line attacks (Rook / Queen / King)
+    std::vector<sf::Vector2i> straightDirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+    int enemyRook = attackedByWhite ? WHITE_ROOK : BLACK_ROOK;
+    int enemyQueen = attackedByWhite ? WHITE_QUEEN : BLACK_QUEEN;
+    int enemyKing = attackedByWhite ? WHITE_KING : BLACK_KING;
+
+    for (const auto& dir : straightDirs) {
+        int step = 1;
+        while (true) {
+            int nx = targetX + dir.x * step;
+            int ny = targetY + dir.y * step;
+            if (nx < 0 || nx >= 8 || ny < 0 || ny >= 8) break;
+
+            int piece = piecePositions[ny * 8 + nx];
+            if (piece != 0) {
+                if (piece == enemyRook || piece == enemyQueen) return true;
+                if (step == 1 && piece == enemyKing) return true; // King adjacent attack
+                break; // Blocked by any other piece
+            }
+            step++;
+        }
+    }
+
+    // Check Diagonal attacks (Bishop / Queen / King / Pawn)
+    std::vector<sf::Vector2i> diagDirs = {{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
+    int enemyBishop = attackedByWhite ? WHITE_BISHOP : BLACK_BISHOP;
+    int enemyPawn = attackedByWhite ? WHITE_PAWN : BLACK_PAWN;
+
+    for (const auto& dir : diagDirs) {
+        int step = 1;
+        while (true) {
+            int nx = targetX + dir.x * step;
+            int ny = targetY + dir.y * step;
+            if (nx < 0 || nx >= 8 || ny < 0 || ny >= 8) break;
+
+            int piece = piecePositions[ny * 8 + nx];
+            if (piece != 0) {
+                if (piece == enemyBishop || piece == enemyQueen) return true;
+                if (step == 1 && piece == enemyKing) return true;
+                
+                // Pawn attacks are direction-dependent and only 1 square away diagonally
+                if (step == 1) {
+                    if (attackedByWhite) {
+                        // White pawns attack upwards relative to the board layout (y decreases for black, but here we check who attacks our square)
+                        // If a White Pawn is at (targetX ± 1, targetY + 1), it attacks (targetX, targetY)
+                        if (ny == targetY + 1 && piece == enemyPawn) return true;
+                    } else {
+                        // If a Black Pawn is at (targetX ± 1, targetY - 1), it attacks (targetX, targetY)
+                        if (ny == targetY - 1 && piece == enemyPawn) return true;
+                    }
+                }
+                break; // Blocked
+            }
+            step++;
+        }
+    }
+
+    return false;
+}
+
+sf::Vector2i Board::findKingGridPosition(bool whiteKing) const {
+    int targetKingType = whiteKing ? WHITE_KING : BLACK_KING;
+    for (const auto& piece : pieces) {
+        // We look for a non-ghost, matching king type
+        if (piece.pieceType == targetKingType) {
+            return sf::Vector2i(piece.x, piece.y); 
+        }
+    }
+    // search the positions board directly if vector sync is off, fallback only 
+    for (int idx = 0; idx < 64; ++idx) {
+        if (piecePositions[idx] == targetKingType) {
+            return sf::Vector2i(idx % 8, idx / 8);
+        }
+    }
+    return sf::Vector2i(-1, -1);
+}
+
+
+void Board::drawBoardBackground(sf::RenderTarget& target) const {
+    // draw the basic squares
+    for (sf::Sprite sp : spriteSquares){
+        window.draw(sp);
+    }
+    
+    // overlay indicators for legal squares if a piece is currently selected
+    if (pieceSelected != -1) {
+        for (int idx = 0; idx < 64; ++idx) {
+            if (legalSquaresForTargetPiece[idx]) {
+                sf::Sprite targetIndicator;
+                targetIndicator.setTexture(targetSquaresTexture);
+                
+                float scaleFactor = static_cast<float>(squareSideLength) / targetSquaresTexture.getSize().x;
+                targetIndicator.setScale(scaleFactor, scaleFactor);
+                
+                int sx = idx % 8;
+                int sy = idx / 8;
+                int pixelX = sx * squareSideLength + (squareSideLength / 2);
+                int pixelY = sy * squareSideLength + (squareSideLength / 2);
+                targetIndicator.setPosition(pixelX, pixelY);
+                
+                window.draw(targetIndicator);
+            }
+        }
+    }
 }

@@ -19,6 +19,7 @@
 
 
 class Piece : public sf::Drawable{
+    friend class Board;
 private:
     int pieceType;
     sf::Texture *texture;
@@ -61,4 +62,5 @@ public:
     void deselectPiece();
     bool moveTo(int destX, int destY);
     ~Piece();
+    sf::Vector2i getGridPosition() const { return sf::Vector2i(this->x, this->y); }
 };

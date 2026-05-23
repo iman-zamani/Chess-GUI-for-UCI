@@ -83,6 +83,7 @@ int main(){
             sf::Vector2f virtualMouse = window.mapPixelToCoords(mousePixel, virtualView);
             draggingPieceTexture = board.startDragging(virtualMouse);
             if (draggingPieceTexture->getSize() != sf::Vector2u(0, 0)){
+                board.findLegalMoves(); 
                 draggingPieceSprite.setTexture(*draggingPieceTexture);
                 draggingPieceSprite.setScale(board.getSelectedPieceSpriteScale());
                 mouseLeftButtonIsPressed = true;
