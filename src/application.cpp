@@ -1,10 +1,13 @@
 #include "application.hpp"
+#include "utils.hpp"
+#include <SFML/Window/Clipboard.hpp>
 #include <iostream>
 #include <cmath>
 
 Application::Application() 
     : state(AppState::MainMenu), isWhiteSide(true), 
-      mouseLeftButtonIsPressed(false), isDraggingPiece(false), draggingPieceTexture(nullptr) 
+      mouseLeftButtonIsPressed(false), isDraggingPiece(false), draggingPieceTexture(nullptr),
+      currentPopup(PopupType::None), gameOverPopupShown(false)
 {
     sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
     unsigned int winW = static_cast<unsigned int>(desktop.width * 0.6f);
@@ -26,8 +29,10 @@ Application::Application()
 
 void Application::initUI() {
     float cx = LOGICAL_WIDTH / 2.f;
+    float cy = LOGICAL_HEIGHT / 2.f;
 
     btnBackTopLeft = std::make_unique<Button>(50, 50, 140, 50, "< BACK", font);
+    btnBackPlaying = std::make_unique<Button>(50, 50, 140, 50, "< BACK", font);
 
     // Main Menu
     titleMain = sf::Text("DOMIN8 CHESS", font, 80);
@@ -40,27 +45,54 @@ void Application::initUI() {
     titlePvC = sf::Text("PLAYER VS COMPUTER", font, 60);
     titlePvC.setFillColor(sf::Color(0, 240, 255));
     titlePvC.setPosition(cx - titlePvC.getLocalBounds().width / 2.f, 150);
-    pathPvC = std::make_unique<TextInput>(cx - 400, 350, 800, 60, "UCI Engine Path", font);
+    pathPvC = std::make_unique<TextInput>(cx - 400, 350, 650, 60, "UCI Engine Path", font);
+    btnBrowsePvC = std::make_unique<Button>(cx + 260, 350, 140, 60, "BROWSE", font);
+    
     btnSide = std::make_unique<Button>(cx - 400, 480, 250, 60, "Side: WHITE", font);
-    timePvC = std::make_unique<TextInput>(cx - 100, 480, 150, 60, "Time (m)", font);
-    incPvC = std::make_unique<TextInput>(cx + 100, 480, 150, 60, "Inc (s)", font);
+    timePvC = std::make_unique<TextInput>(cx - 100, 480, 150, 60, "Time (m)", font, true);
+    incPvC = std::make_unique<TextInput>(cx + 100, 480, 150, 60, "Inc (s)", font, true);
     btnStartPvC = std::make_unique<Button>(cx - 200, 650, 400, 80, "START GAME", font);
 
     // CvC Menu
     titleCvC = sf::Text("COMPUTER VS COMPUTER", font, 60);
     titleCvC.setFillColor(sf::Color(0, 240, 255));
     titleCvC.setPosition(cx - titleCvC.getLocalBounds().width / 2.f, 150);
-    path1CvC = std::make_unique<TextInput>(cx - 400, 320, 800, 60, "Engine 1 Path (White)", font);
-    path2CvC = std::make_unique<TextInput>(cx - 400, 450, 800, 60, "Engine 2 Path (Black)", font);
-    timeCvC = std::make_unique<TextInput>(cx - 400, 580, 150, 60, "Time (m)", font);
-    incCvC = std::make_unique<TextInput>(cx - 200, 580, 150, 60, "Inc (s)", font);
+    path1CvC = std::make_unique<TextInput>(cx - 400, 320, 650, 60, "Engine 1 Path (White)", font);
+    btnBrowse1CvC = std::make_unique<Button>(cx + 260, 320, 140, 60, "BROWSE", font);
+    
+    path2CvC = std::make_unique<TextInput>(cx - 400, 450, 650, 60, "Engine 2 Path (Black)", font);
+    btnBrowse2CvC = std::make_unique<Button>(cx + 260, 450, 140, 60, "BROWSE", font);
+    
+    timeCvC = std::make_unique<TextInput>(cx - 400, 580, 150, 60, "Time (m)", font, true);
+    incCvC = std::make_unique<TextInput>(cx - 200, 580, 150, 60, "Inc (s)", font, true);
     btnStartCvC = std::make_unique<Button>(cx - 200, 750, 400, 80, "START GAME", font);
     
-    // Set Default Times
-    timePvC->value = "5"; timePvC->inputText.setString("5");
-    timeCvC->value = "5"; timeCvC->inputText.setString("5");
-    incPvC->value = "0"; incPvC->inputText.setString("0");
-    incCvC->value = "0"; incCvC->inputText.setString("0");
+    // Popup System
+    popupBg.setSize(sf::Vector2f(600, 250));
+    popupBg.setFillColor(sf::Color(20, 20, 30, 240));
+    popupBg.setOutlineColor(sf::Color(0, 240, 255));
+    popupBg.setOutlineThickness(4.f);
+    popupBg.setPosition(cx - 300, cy - 125);
+
+    popupText.setFont(font);
+    popupText.setCharacterSize(30);
+    popupText.setFillColor(sf::Color::White);
+
+    btnPopupYes = std::make_unique<Button>(cx - 160, cy + 30, 120, 50, "YES", font);
+    btnPopupNo  = std::make_unique<Button>(cx + 40, cy + 30, 120, 50, "NO", font);
+    btnPopupOk  = std::make_unique<Button>(cx - 60, cy + 30, 120, 50, "OK", font);
+
+    timePvC->setValue("5");
+    timeCvC->setValue("5");
+    incPvC->setValue("0");
+    incCvC->setValue("0");
+}
+
+void Application::showPopup(PopupType type, const std::string& message) {
+    currentPopup = type;
+    popupText.setString(message);
+    sf::FloatRect bounds = popupText.getLocalBounds();
+    popupText.setPosition(LOGICAL_WIDTH / 2.f - bounds.width / 2.f, LOGICAL_HEIGHT / 2.f - 60.f);
 }
 
 void Application::run() {
@@ -100,7 +132,44 @@ void Application::processEvents() {
             mouseClicked = true;
         }
 
-        // Text Input Routing
+        // Heavy Sanitation for Pasted Engine Paths
+        if (event.type == sf::Event::KeyPressed) {
+            bool isCtrl = sf::Keyboard::isKeyPressed(sf::Keyboard::LControl) || 
+                          sf::Keyboard::isKeyPressed(sf::Keyboard::RControl) || 
+                          sf::Keyboard::isKeyPressed(sf::Keyboard::LSystem) || 
+                          sf::Keyboard::isKeyPressed(sf::Keyboard::RSystem);
+            
+            if (event.key.code == sf::Keyboard::V && isCtrl) {
+                std::string clip = sf::Clipboard::getString().toAnsiString();
+                
+                // Erase weird characters 
+                clip.erase(std::remove(clip.begin(), clip.end(), '\n'), clip.end());
+                clip.erase(std::remove(clip.begin(), clip.end(), '\r'), clip.end());
+                clip.erase(std::remove(clip.begin(), clip.end(), '\t'), clip.end());
+                
+                // Trim trailing/leading spaces safely
+                size_t first = clip.find_first_not_of(" ");
+                if (first != std::string::npos) {
+                    size_t last = clip.find_last_not_of(" ");
+                    clip = clip.substr(first, (last - first + 1));
+                } else {
+                    clip = "";
+                }
+
+                // File managers copy paths as URLs. Wipe it out.
+                if (clip.find("file://") == 0) {
+                    clip = clip.substr(7);
+                }
+
+                if (state == AppState::PvCMenu) {
+                    pathPvC->append(clip);
+                } else if (state == AppState::CvCMenu) {
+                    path1CvC->append(clip);
+                    path2CvC->append(clip);
+                }
+            }
+        }
+
         if (event.type == sf::Event::TextEntered) {
             if (state == AppState::PvCMenu) {
                 pathPvC->handleText(event.text.unicode);
@@ -123,6 +192,8 @@ void Application::processEvents() {
 }
 
 void Application::handlePlayingEvents(const sf::Event& event, const sf::Vector2f& mousePos) {
+    if (currentPopup != PopupType::None || board->getGameState() != Board::GameResult::Ongoing) return;
+
     bool isPlayerTurn = (board->getIsWhiteTurn() && isWhiteSide) || (!board->getIsWhiteTurn() && !isWhiteSide);
     if (!isPlayerTurn) return;
 
@@ -160,8 +231,54 @@ void Application::update(const sf::Vector2f& mousePos, bool mouseClicked) {
     else if (state == AppState::PvCMenu) updatePvCMenu(mousePos, mouseClicked);
     else if (state == AppState::CvCMenu) updateCvCMenu(mousePos, mouseClicked);
     else if (state == AppState::Playing) {
-        // Let the engine think and make its move
+        
+        if (currentPopup != PopupType::None) {
+            if (currentPopup == PopupType::ConfirmQuit) {
+                btnPopupYes->update(mousePos);
+                btnPopupNo->update(mousePos);
+                if (mouseClicked) {
+                    if (btnPopupYes->isHovered) {
+                        state = AppState::MainMenu;
+                        currentPopup = PopupType::None;
+                        if (engine) engine->stopEngine();
+                        board.reset();
+                    } else if (btnPopupNo->isHovered) {
+                        currentPopup = PopupType::None;
+                    }
+                }
+            } else if (currentPopup == PopupType::GameOver) {
+                btnPopupOk->update(mousePos);
+                if (mouseClicked && btnPopupOk->isHovered) {
+                    currentPopup = PopupType::None;
+                }
+            }
+            return;
+        }
+
+        btnBackPlaying->update(mousePos);
+        if (mouseClicked && btnBackPlaying->isHovered) {
+            if (board->getGameState() != Board::GameResult::Ongoing) {
+                state = AppState::MainMenu;
+                if (engine) engine->stopEngine();
+                board.reset();
+            } else {
+                showPopup(PopupType::ConfirmQuit, "Are you sure you want to leave the game?");
+            }
+            return;
+        }
+
+        if (!gameOverPopupShown && board->getGameState() != Board::GameResult::Ongoing) {
+            std::string msg;
+            Board::GameResult res = board->getGameState();
+            if (res == Board::GameResult::WhiteWins) msg = "Game Over: White Wins!";
+            else if (res == Board::GameResult::BlackWins) msg = "Game Over: Black Wins!";
+            else msg = "Game Over: Draw!";
+            showPopup(PopupType::GameOver, msg);
+            gameOverPopupShown = true;
+        }
+
         processEngineTurn();
+        
         if (mouseLeftButtonIsPressed && isDraggingPiece && draggingPieceTexture) {
             sf::FloatRect bounds = draggingPieceSprite.getLocalBounds();
             sf::Vector2f scale = draggingPieceSprite.getScale();
@@ -182,49 +299,63 @@ void Application::updateMainMenu(const sf::Vector2f& mousePos, bool mouseClicked
 void Application::updatePvCMenu(const sf::Vector2f& mousePos, bool mouseClicked) {
     btnBackTopLeft->update(mousePos);
     pathPvC->update(mousePos, mouseClicked);
+    btnBrowsePvC->update(mousePos);
     timePvC->update(mousePos, mouseClicked);
     incPvC->update(mousePos, mouseClicked);
     btnSide->update(mousePos);
     btnStartPvC->update(mousePos);
 
     if (mouseClicked) {
-            if (btnBackTopLeft->isHovered) state = AppState::MainMenu;
-            if (btnSide->isHovered) {
-                isWhiteSide = !isWhiteSide;
-                btnSide->label.setString(isWhiteSide ? "Side: WHITE" : "Side: BLACK");
-            }
-            if (btnStartPvC->isHovered) {
-                board = std::make_unique<Board>(window);
-                
-                // Boot the engine
-                engine = std::make_unique<UciEngine>();
-                if (engine->startEngine(pathPvC->value)) {
-                    engine->sendCommand("uci");
-                    engine->sendCommand("isready");
-                    engine->sendCommand("ucinewgame");
-                } else {
-                    std::cerr << "Failed to start engine at: " << pathPvC->value << "\n";
-                }
-                
-                isEngineSearching = false;
-                state = AppState::Playing;
-            }
+        if (btnBackTopLeft->isHovered) state = AppState::MainMenu;
+        if (btnBrowsePvC->isHovered) {
+            std::string p = openFileDialog();
+            if (!p.empty()) pathPvC->setValue(p);
         }
+        if (btnSide->isHovered) {
+            isWhiteSide = !isWhiteSide;
+            btnSide->label.setString(isWhiteSide ? "Side: WHITE" : "Side: BLACK");
+        }
+        if (btnStartPvC->isHovered) {
+            board = std::make_unique<Board>(window);
+            engine = std::make_unique<UciEngine>();
+            if (engine->startEngine(pathPvC->value)) {
+                engine->sendCommand("uci");
+                engine->sendCommand("isready");
+                engine->sendCommand("ucinewgame");
+            } else {
+                std::cerr << "Failed to start engine at: " << pathPvC->value << "\n";
+            }
+            
+            isEngineSearching = false;
+            gameOverPopupShown = false;
+            state = AppState::Playing;
+        }
+    }
 }
-
 
 void Application::updateCvCMenu(const sf::Vector2f& mousePos, bool mouseClicked) {
     btnBackTopLeft->update(mousePos);
     path1CvC->update(mousePos, mouseClicked);
+    btnBrowse1CvC->update(mousePos);
     path2CvC->update(mousePos, mouseClicked);
+    btnBrowse2CvC->update(mousePos);
     timeCvC->update(mousePos, mouseClicked);
     incCvC->update(mousePos, mouseClicked);
     btnStartCvC->update(mousePos);
 
     if (mouseClicked) {
         if (btnBackTopLeft->isHovered) state = AppState::MainMenu;
+        if (btnBrowse1CvC->isHovered) {
+            std::string p = openFileDialog();
+            if (!p.empty()) path1CvC->setValue(p);
+        }
+        if (btnBrowse2CvC->isHovered) {
+            std::string p = openFileDialog();
+            if (!p.empty()) path2CvC->setValue(p);
+        }
         if (btnStartCvC->isHovered) {
             board = std::make_unique<Board>(window);
+            gameOverPopupShown = false;
             state = AppState::Playing;
         }
     }
@@ -241,6 +372,7 @@ void Application::render() {
         btnBackTopLeft->draw(window);
         window.draw(titlePvC);
         pathPvC->draw(window);
+        btnBrowsePvC->draw(window);
         btnSide->draw(window);
         timePvC->draw(window);
         incPvC->draw(window);
@@ -249,7 +381,9 @@ void Application::render() {
         btnBackTopLeft->draw(window);
         window.draw(titleCvC);
         path1CvC->draw(window);
+        btnBrowse1CvC->draw(window);
         path2CvC->draw(window);
+        btnBrowse2CvC->draw(window);
         timeCvC->draw(window);
         incCvC->draw(window);
         btnStartCvC->draw(window);
@@ -258,28 +392,39 @@ void Application::render() {
         if (mouseLeftButtonIsPressed && isDraggingPiece) {
             window.draw(draggingPieceSprite);
         }
+        
+        btnBackPlaying->draw(window);
+
+        if (currentPopup != PopupType::None) {
+            window.draw(popupBg);
+            window.draw(popupText);
+            if (currentPopup == PopupType::ConfirmQuit) {
+                btnPopupYes->draw(window);
+                btnPopupNo->draw(window);
+            } else if (currentPopup == PopupType::GameOver) {
+                btnPopupOk->draw(window);
+            }
+        }
     }
     window.display();
 }
 
 void Application::processEngineTurn() {
+    if (board->getGameState() != Board::GameResult::Ongoing) return;
+    
     bool isPlayerTurn = (board->getIsWhiteTurn() && isWhiteSide) || (!board->getIsWhiteTurn() && !isWhiteSide);
     
-    // If it is the Engine's turn
     if (!isPlayerTurn && engine && engine->isEngineRunning()) {
         if (!isEngineSearching) {
-            // Tell engine current board state via move history
             std::string history = board->getUciMoveHistoryString();
             engine->sendCommand("position startpos moves " + history);
             
-            // Fixed base time calculation for now
-            int moveTimeMs = 1000; // Default 1 second
+            int moveTimeMs = 1000; 
             engine->sendCommand("go movetime " + std::to_string(moveTimeMs));
             
             isEngineSearching = true;
         }
 
-        // Check continuously for a response
         std::string move = engine->getBestMove();
         if (!move.empty()) {
             board->applyUciMove(move);

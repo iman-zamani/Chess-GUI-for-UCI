@@ -113,6 +113,9 @@ public:
     bool getIsWhiteTurn() const { return isWhiteTurn; }
     std::string getUciMoveHistoryString() const;
     bool applyUciMove(const std::string& moveStr);
+    // 
+    enum class GameResult { Ongoing, WhiteWins, BlackWins, Draw_Stalemate, Draw_50Move, Draw_Repetition };
+    GameResult getGameState() const { return currentGameState; }
 private:
     // methods to get legal moves for each piece type
     // white pieces 
@@ -130,7 +133,6 @@ private:
     void findLegalMovesBlackQueen();
     void findLegalMovesBlackKing();
     // --- GAME END TRACKING ---
-    enum class GameResult { Ongoing, WhiteWins, BlackWins, Draw_Stalemate, Draw_50Move, Draw_Repetition };
     GameResult currentGameState = GameResult::Ongoing;
     std::vector<std::string> positionHistory;
 

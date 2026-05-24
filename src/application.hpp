@@ -1,11 +1,13 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 #include <memory>
+#include <string>
 #include "board.hpp"
 #include "ui_components.hpp"
 #include "uci_engine.hpp"
 
 enum class AppState { MainMenu, PvCMenu, CvCMenu, Playing };
+enum class PopupType { None, ConfirmQuit, GameOver };
 
 class Application {
 public:
@@ -23,12 +25,12 @@ private:
     void updateMainMenu(const sf::Vector2f& mousePos, bool mouseClicked);
     void updatePvCMenu(const sf::Vector2f& mousePos, bool mouseClicked);
     void updateCvCMenu(const sf::Vector2f& mousePos, bool mouseClicked);
+    void showPopup(PopupType type, const std::string& message);
 
     // Engine Integration
     std::unique_ptr<UciEngine> engine;
     bool isEngineSearching;
     void processEngineTurn();
-
 
     // Core SFML 
     sf::RenderWindow window;
@@ -49,9 +51,17 @@ private:
     sf::Texture* draggingPieceTexture;
     sf::Vector2f dragStartPos;
 
-    // UI Elements (Using unique_ptr so we can initialize them AFTER the font loads)
+    // UI Elements
     std::unique_ptr<Button> btnBackTopLeft, btnPvC, btnCvC, btnSide, btnStartPvC, btnStartCvC;
+    std::unique_ptr<Button> btnBackPlaying;
+    std::unique_ptr<Button> btnBrowsePvC, btnBrowse1CvC, btnBrowse2CvC;
     std::unique_ptr<TextInput> pathPvC, timePvC, incPvC, path1CvC, path2CvC, timeCvC, incCvC;
     sf::Text titleMain, titlePvC, titleCvC;
 
+    // Popup UI
+    PopupType currentPopup;
+    bool gameOverPopupShown;
+    sf::RectangleShape popupBg;
+    sf::Text popupText;
+    std::unique_ptr<Button> btnPopupYes, btnPopupNo, btnPopupOk;
 };

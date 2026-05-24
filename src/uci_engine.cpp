@@ -66,7 +66,10 @@ bool UciEngine::startEngine(const std::string& path) {
         close(pipeIn[0]); close(pipeIn[1]);
 
         execlp(path.c_str(), path.c_str(), nullptr);
-        exit(1); 
+        
+        // CRITICAL FIX: Use _exit() instead of exit() so the failed fork 
+        // doesn't trigger parent destructors and destroy the X11 connection!
+        _exit(1); 
     } else {
         close(pipeOut[0]);
         close(pipeIn[1]);

@@ -10,9 +10,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # --- MACOS FIX: Prioritize SFML 2.x (Homebrew) ---
 if(APPLE)
-    # Homebrew installs SFML 3 by default now. SFML 2 is "keg-only" (hidden).
+    # Homebrew installs SFML 3 by default now.
+    # SFML 2 is "keg-only" (hidden).
     # We must explicitly add the sfml@2 path to CMAKE_PREFIX_PATH so CMake finds it first.
-    
     set(POSSIBLE_SFML2_PATHS
         "/opt/homebrew/opt/sfml@2"  # Apple Silicon default
         "/usr/local/opt/sfml@2"     # Intel Mac default
@@ -49,6 +49,7 @@ add_executable(chess-gui
     src/ui_components.cpp
     src/application.cpp
     src/uci_engine.cpp
+    src/utils.cpp 
 )
 
 # Link against the found SFML libraries

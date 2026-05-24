@@ -1,4 +1,5 @@
 #include "ui_components.hpp"
+#include <algorithm>
 
 // --- BUTTON IMPLEMENTATION ---
 Button::Button(float x, float y, float w, float h, const std::string& text, sf::Font& font) {
@@ -7,11 +8,11 @@ Button::Button(float x, float y, float w, float h, const std::string& text, sf::
     shape.setSize(sf::Vector2f(w, h));
     shape.setFillColor(sf::Color(15, 15, 26)); 
     shape.setOutlineColor(sf::Color(0, 240, 255)); 
-    shape.setOutlineThickness(3.f); // Made slightly thicker for high-res scaling
+    shape.setOutlineThickness(3.f); 
 
     label.setFont(font);
     label.setString(text);
-    label.setCharacterSize(24); // Increased base size for 1080p logical view
+    label.setCharacterSize(24); 
     label.setFillColor(sf::Color::White);
     
     sf::FloatRect bounds = label.getLocalBounds();
@@ -29,8 +30,8 @@ void Button::draw(sf::RenderWindow& window) {
 }
 
 // --- TEXT INPUT IMPLEMENTATION ---
-TextInput::TextInput(float x, float y, float w, float h, const std::string& placeholder, sf::Font& font) {
-    isFocused = false;
+TextInput::TextInput(float x, float y, float w, float h, const std::string& placeholder, sf::Font& font, bool numericOnly) 
+    : isFocused(false), isNumericOnly(numericOnly) {
     shape.setPosition(x, y);
     shape.setSize(sf::Vector2f(w, h));
     shape.setFillColor(sf::Color(10, 10, 15));
@@ -56,18 +57,44 @@ void TextInput::update(sf::Vector2f mousePos, bool mouseClicked) {
     }
 }
 
+void TextInput::updateDisplayString() {
+    std::string display = value;
+    inputText.setString(display);
+    
+    // Smooth trailing horizontal clip if the string gets too long
+    while (inputText.getLocalBounds().width > shape.getSize().x - 30 && !display.empty()) {
+        display.erase(0, 1);
+        inputText.setString(display);
+    }
+}
+
 void TextInput::handleText(sf::Uint32 unicode) {
     if (!isFocused) return;
-    if (unicode == '\b') { // Backspace
+    if (unicode == '\b') { 
         if (!value.empty()) value.pop_back();
     } else if (unicode < 128 && unicode > 31) {
+        if (isNumericOnly && (unicode < '0' || unicode > '9')) return;
         value += static_cast<char>(unicode);
     }
-    inputText.setString(value);
+    updateDisplayString();
+}
+
+void TextInput::append(const std::string& str) {
+    if (!isFocused) return;
+    value += str;
+    updateDisplayString();
+}
+
+void TextInput::setValue(const std::string& newVal) {
+    value = newVal;
+    updateDisplayString();
 }
 
 void TextInput::draw(sf::RenderWindow& window) {
     window.draw(label);
     window.draw(shape);
+    
+    // Standard SFML view clipping doesn't strictly clip sf::Text without complex setups,
+    // but our updateDisplayString() manages horizontal length overflow cleanly.
     window.draw(inputText);
 }

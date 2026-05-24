@@ -20,9 +20,15 @@ public:
     sf::Text inputText;
     std::string value;
     bool isFocused;
+    bool isNumericOnly;
 
-    TextInput(float x, float y, float w, float h, const std::string& placeholder, sf::Font& font);
+    TextInput(float x, float y, float w, float h, const std::string& placeholder, sf::Font& font, bool numericOnly = false);
     void update(sf::Vector2f mousePos, bool mouseClicked);
     void handleText(sf::Uint32 unicode);
+    void append(const std::string& text);
+    void setValue(const std::string& newVal);
     void draw(sf::RenderWindow& window);
+
+private:
+    void updateDisplayString();
 };
