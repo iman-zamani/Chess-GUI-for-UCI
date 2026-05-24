@@ -125,5 +125,14 @@ private:
     void findLegalMovesBlackBishop();
     void findLegalMovesBlackQueen();
     void findLegalMovesBlackKing();
+    // --- GAME END TRACKING ---
+    enum class GameResult { Ongoing, WhiteWins, BlackWins, Draw_Stalemate, Draw_50Move, Draw_Repetition };
+    GameResult currentGameState = GameResult::Ongoing;
+    std::vector<std::string> positionHistory;
+
+    // Helper functions for end-game detection
+    bool hasAnyLegalMoves(bool forWhite);
+    std::string generatePositionHash() const;
+    void checkGameEndConditions();
 };
 

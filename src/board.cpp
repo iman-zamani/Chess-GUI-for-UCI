@@ -42,10 +42,9 @@ void Board::constructor(const std::string &FEN){
     this->isPromotionWaiting = false;
     
     // the board is going to be set for x: WINDOW_WIDTH_RATIO to y: WINDOW_HEIGHT_RATIO windows
-    sf::Vector2u size = this->window.getSize();
-    
-    int windowWidth = size.x;
-    int windowHeight = size.y;
+    sf::Vector2f size = this->window.getView().getSize();
+    int windowWidth = static_cast<int>(size.x);
+    int windowHeight = static_cast<int>(size.y);
     // we will find the smaller side and we will devid it by the number of squares that we want 
     this->squareSideLength = (windowHeight>windowWidth ? windowWidth : windowHeight) / 9 ;
 
@@ -692,6 +691,9 @@ void Board::endDragging(sf::Vector2f clickPos) {
     bool isPawn = (selectedPieceType == WHITE_PAWN || selectedPieceType == BLACK_PAWN);
     bool isEnPassantCapture = isPawn && (pointedSquareX == enPassantX && pointedSquareY == enPassantY) && (piecePositions[targetIdx] == 0);
 
+    // FIX: Evaluate capture BEFORE the piece actually moves and overwrites the target square!
+    bool isCapture = (piecePositions[targetIdx] != 0) || isEnPassantCapture;
+
     int nextEnPassantX = -1;
     int nextEnPassantY = -1;
 
@@ -752,7 +754,6 @@ void Board::endDragging(sf::Vector2f clickPos) {
     this->enPassantX = nextEnPassantX;
     this->enPassantY = nextEnPassantY;
 
-
     // --- EXECUTE ROOK TELEPORTATION IF CASTLING ---
     if (isCastlingMove) {
         int rookOriginalX = (pointedSquareX == 6) ? 7 : 0;
@@ -788,7 +789,6 @@ void Board::endDragging(sf::Vector2f clickPos) {
     if (originalIdx == 0 * 8 + 7 || targetIdx == 0 * 8 + 7) this->blackKingSideCastle = false;
     if (originalIdx == 0 * 8 + 0 || targetIdx == 0 * 8 + 0) this->blackQueenSideCastle = false;
 
-
     // --- INTERCEPT PROMOTION WAITING LOOP ---
     if (isPawn && (pointedSquareY == 0 || pointedSquareY == 7)) {
         this->isPromotionWaiting = true;
@@ -797,8 +797,20 @@ void Board::endDragging(sf::Vector2f clickPos) {
         this->promotionPawnVectorIdx = pieceSelected;
         return; // Exit early to wait for user to click the menu!
     }
+
+    // --- UPDATE 50-MOVE RULE TRACKER ---
+    if (isPawn || isCapture) {
+        this->halfMovesFromLastCaptureOrPawnMove = 0;
+    } else {
+        //std::cout << "number of half moves passed:" << this->halfMovesFromLastCaptureOrPawnMove << std::endl;
+        this->halfMovesFromLastCaptureOrPawnMove++;
+    }
+
     // --- ENFORCE TURN SWITCHING ---
     this->isWhiteTurn = !this->isWhiteTurn;
+    
+    // --- CHECK FOR CHECKMATE / DRAWS ---
+    this->checkGameEndConditions();
 
     // Reset move generation states
     std::fill(legalSquaresForTargetPiece.begin(), legalSquaresForTargetPiece.end(), false);
@@ -942,7 +954,6 @@ void Board::drawBoardBackground(sf::RenderTarget& target) const {
     }
 }
 
-
 void Board::handleSquareClick(sf::Vector2f clickPos) {
     // 1. If waiting for promotion, handle choice sub-menu clicks first
     if (this->isPromotionWaiting) {
@@ -1014,6 +1025,9 @@ void Board::handleSquareClick(sf::Vector2f clickPos) {
         bool isCastlingMove = (selectedPieceType == WHITE_KING || selectedPieceType == BLACK_KING) && (std::abs(gridX - originalPos.x) == 2);
         bool isEnPassantCapture = isPawn && (gridX == enPassantX && gridY == enPassantY) && (piecePositions[clickedIdx] == 0);
 
+        // FIX: Evaluate capture BEFORE the piece moves!
+        bool isCapture = (piecePositions[clickedIdx] != 0) || isEnPassantCapture;
+
         // Remove Captured Pieces
         int victimY = isEnPassantCapture ? originalPos.y : gridY;
         for (int i = 0; i < this->piecesVectorSize; i++) {
@@ -1077,7 +1091,20 @@ void Board::handleSquareClick(sf::Vector2f clickPos) {
             return; 
         }
 
+        // --- UPDATE 50-MOVE RULE TRACKER ---
+        if (isPawn || isCapture) {
+            this->halfMovesFromLastCaptureOrPawnMove = 0;
+        } else {
+            //std::cout << "number of half moves passed:" << this->halfMovesFromLastCaptureOrPawnMove << std::endl;
+            this->halfMovesFromLastCaptureOrPawnMove++;
+        }
+
+        // --- ENFORCE TURN SWITCHING ---
         this->isWhiteTurn = !this->isWhiteTurn;
+        
+        // --- CHECK FOR CHECKMATE / DRAWS ---
+        this->checkGameEndConditions();
+
         std::fill(legalSquaresForTargetPiece.begin(), legalSquaresForTargetPiece.end(), false);
         this->pieceSelected = -1;
         this->isPieceSelectedState = false;
@@ -1155,5 +1182,87 @@ void Board::draw(sf::RenderTarget& target, sf::RenderStates states) const {
     // Overlay choice modal panels directly over back-rank square zones
     if (this->isPromotionWaiting) {
         drawPromotionMenu(target);
+    }
+}
+
+
+
+// --- GAME END LOGIC ---
+
+bool Board::hasAnyLegalMoves(bool forWhite) {
+    int previousSelected = this->pieceSelected;
+    std::vector<bool> backupLegals = this->legalSquaresForTargetPiece;
+    
+    bool foundMove = false;
+    for (int i = 0; i < this->piecesVectorSize; ++i) {
+        int pType = this->pieces[i].getType();
+        if ((forWhite && pType > 0) || (!forWhite && pType < 0)) {
+            this->pieceSelected = i;
+            this->findLegalMoves(); 
+            
+            for (bool isLegal : this->legalSquaresForTargetPiece) {
+                if (isLegal) {
+                    foundMove = true;
+                    break;
+                }
+            }
+        }
+        if (foundMove) break;
+    }
+    
+    // Restore state cleanly so we don't mess up the UI
+    this->pieceSelected = previousSelected;
+    this->legalSquaresForTargetPiece = backupLegals;
+    
+    return foundMove;
+}
+
+std::string Board::generatePositionHash() const {
+    std::string hash = "";
+    for (int i = 0; i < 64; ++i) {
+        hash += std::to_string(piecePositions[i]) + ",";
+    }
+    // Include rights that alter the true state of the board
+    hash += std::to_string(whiteKingSideCastle) + std::to_string(whiteQueenSideCastle) + 
+            std::to_string(blackKingSideCastle) + std::to_string(blackQueenSideCastle) + 
+            std::to_string(enPassantX);
+    return hash;
+}
+
+void Board::checkGameEndConditions() {
+    // 1. 50-Move Rule (100 half-moves)
+    if (halfMovesFromLastCaptureOrPawnMove >= 100) {
+        currentGameState = GameResult::Draw_50Move;
+        std::cout << "GAME OVER: Draw by 50-Move Rule\n";
+        return;
+    }
+
+    // 2. 3-Fold Repetition
+    std::string currentHash = generatePositionHash();
+    positionHistory.push_back(currentHash);
+    
+    int repetitionCount = 0;
+    for (const std::string& h : positionHistory) {
+        if (h == currentHash) repetitionCount++;
+    }
+    if (repetitionCount >= 3) {
+        currentGameState = GameResult::Draw_Repetition;
+        std::cout << "GAME OVER: Draw by 3-Fold Repetition\n";
+        return;
+    }
+
+    // 3. Checkmate & Stalemate Detection
+    bool canMove = hasAnyLegalMoves(this->isWhiteTurn);
+    if (!canMove) {
+        sf::Vector2i kingPos = findKingGridPosition(this->isWhiteTurn);
+        bool inCheck = isSquareAttacked(kingPos.x, kingPos.y, !this->isWhiteTurn);
+        
+        if (inCheck) {
+            currentGameState = this->isWhiteTurn ? GameResult::BlackWins : GameResult::WhiteWins;
+            std::cout << "GAME OVER: Checkmate! " << (this->isWhiteTurn ? "Black" : "White") << " wins.\n";
+        } else {
+            currentGameState = GameResult::Draw_Stalemate;
+            std::cout << "GAME OVER: Draw by Stalemate\n";
+        }
     }
 }
