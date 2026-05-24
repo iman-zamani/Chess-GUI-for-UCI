@@ -805,6 +805,11 @@ void Board::endDragging(sf::Vector2f clickPos) {
         //std::cout << "number of half moves passed:" << this->halfMovesFromLastCaptureOrPawnMove << std::endl;
         this->halfMovesFromLastCaptureOrPawnMove++;
     }
+    // 
+    char promotionChar = 0;
+    if (isPawn && (pointedSquareY == 0 || pointedSquareY == 7)) promotionChar = 'q'; // Default record for now, updated on click
+    std::string moveStr = formatUciMove(originalPos.x, originalPos.y, pointedSquareX, pointedSquareY, promotionChar);
+    this->uciMoveHistory.push_back(moveStr);
 
     // --- ENFORCE TURN SWITCHING ---
     this->isWhiteTurn = !this->isWhiteTurn;
@@ -1098,7 +1103,10 @@ void Board::handleSquareClick(sf::Vector2f clickPos) {
             //std::cout << "number of half moves passed:" << this->halfMovesFromLastCaptureOrPawnMove << std::endl;
             this->halfMovesFromLastCaptureOrPawnMove++;
         }
-
+        char promotionChar = 0;
+        if (isPawn && (gridY == 0 || gridY == 7)) promotionChar = 'q'; // Default record for now, updated on click
+        std::string moveStr = formatUciMove(originalPos.x, originalPos.y, gridX, gridY, promotionChar);
+        this->uciMoveHistory.push_back(moveStr);
         // --- ENFORCE TURN SWITCHING ---
         this->isWhiteTurn = !this->isWhiteTurn;
         
@@ -1265,4 +1273,65 @@ void Board::checkGameEndConditions() {
             std::cout << "GAME OVER: Draw by Stalemate\n";
         }
     }
+}
+
+std::string Board::formatUciMove(int startX, int startY, int endX, int endY, char promotion) const {
+    std::string move = "";
+    move += (char)('a' + startX);
+    move += std::to_string(8 - startY);
+    move += (char)('a' + endX);
+    move += std::to_string(8 - endY);
+    if (promotion != 0) move += promotion;
+    return move;
+}
+
+std::string Board::getUciMoveHistoryString() const {
+    std::string history = "";
+    for (const auto& m : uciMoveHistory) {
+        history += m + " ";
+    }
+    return history;
+}
+bool Board::applyUciMove(const std::string& moveStr) {
+    if (moveStr.length() < 4) return false;
+    
+    int sx = moveStr[0] - 'a';
+    int sy = 8 - (moveStr[1] - '0');
+    int ex = moveStr[2] - 'a';
+    int ey = 8 - (moveStr[3] - '0');
+
+    // Select the piece
+    this->pieceSelected = -1;
+    for (int i = 0; i < piecesVectorSize; i++) {
+        sf::Vector2i pGrid = pieces[i].getGridPosition();
+        if (pGrid.x == sx && pGrid.y == sy) {
+            this->pieceSelected = i;
+            break;
+        }
+    }
+    if (this->pieceSelected == -1) return false;
+
+    this->findLegalMoves();
+    this->selectedPieceIdx = this->pieceSelected;
+    this->isPieceSelectedState = true;
+
+    // Simulate clicking the destination square
+    float upAndLeft = squareSideLength / 2.f;
+    float clickX = ex * squareSideLength + upAndLeft + 1.f;
+    float clickY = ey * squareSideLength + upAndLeft + 1.f;
+    this->handleSquareClick(sf::Vector2f(clickX, clickY));
+
+    // Resolve silent promotion if engine ordered it
+    if (moveStr.length() == 5 && this->isPromotionWaiting) {
+        char p = moveStr[4];
+        int option = 0; // Default Queen
+        if (p == 'r') option = 1;
+        if (p == 'b') option = 2;
+        if (p == 'n') option = 3;
+
+        float px = this->promotionTargetX * squareSideLength + upAndLeft + 1.f;
+        float py = (this->promotionTargetY == 0) ? (option * squareSideLength + upAndLeft + 1.f) : ((this->promotionTargetY - option) * squareSideLength + upAndLeft + 1.f);
+        this->handleSquareClick(sf::Vector2f(px, py));
+    }
+    return true;
 }

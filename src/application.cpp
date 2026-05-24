@@ -123,6 +123,9 @@ void Application::processEvents() {
 }
 
 void Application::handlePlayingEvents(const sf::Event& event, const sf::Vector2f& mousePos) {
+    bool isPlayerTurn = (board->getIsWhiteTurn() && isWhiteSide) || (!board->getIsWhiteTurn() && !isWhiteSide);
+    if (!isPlayerTurn) return;
+
     if (!mouseLeftButtonIsPressed && event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
         dragStartPos = mousePos;
         mouseLeftButtonIsPressed = true; 
@@ -156,10 +159,14 @@ void Application::update(const sf::Vector2f& mousePos, bool mouseClicked) {
     if (state == AppState::MainMenu) updateMainMenu(mousePos, mouseClicked);
     else if (state == AppState::PvCMenu) updatePvCMenu(mousePos, mouseClicked);
     else if (state == AppState::CvCMenu) updateCvCMenu(mousePos, mouseClicked);
-    else if (state == AppState::Playing && mouseLeftButtonIsPressed && isDraggingPiece && draggingPieceTexture) {
-        sf::FloatRect bounds = draggingPieceSprite.getLocalBounds();
-        sf::Vector2f scale = draggingPieceSprite.getScale();
-        draggingPieceSprite.setPosition(mousePos.x - (bounds.width * scale.x / 2), mousePos.y - (bounds.height * scale.y / 2));
+    else if (state == AppState::Playing) {
+        // Let the engine think and make its move
+        processEngineTurn();
+        if (mouseLeftButtonIsPressed && isDraggingPiece && draggingPieceTexture) {
+            sf::FloatRect bounds = draggingPieceSprite.getLocalBounds();
+            sf::Vector2f scale = draggingPieceSprite.getScale();
+            draggingPieceSprite.setPosition(mousePos.x - (bounds.width * scale.x / 2), mousePos.y - (bounds.height * scale.y / 2));
+        }
     }
 }
 
@@ -181,17 +188,30 @@ void Application::updatePvCMenu(const sf::Vector2f& mousePos, bool mouseClicked)
     btnStartPvC->update(mousePos);
 
     if (mouseClicked) {
-        if (btnBackTopLeft->isHovered) state = AppState::MainMenu;
-        if (btnSide->isHovered) {
-            isWhiteSide = !isWhiteSide;
-            btnSide->label.setString(isWhiteSide ? "Side: WHITE" : "Side: BLACK");
+            if (btnBackTopLeft->isHovered) state = AppState::MainMenu;
+            if (btnSide->isHovered) {
+                isWhiteSide = !isWhiteSide;
+                btnSide->label.setString(isWhiteSide ? "Side: WHITE" : "Side: BLACK");
+            }
+            if (btnStartPvC->isHovered) {
+                board = std::make_unique<Board>(window);
+                
+                // Boot the engine
+                engine = std::make_unique<UciEngine>();
+                if (engine->startEngine(pathPvC->value)) {
+                    engine->sendCommand("uci");
+                    engine->sendCommand("isready");
+                    engine->sendCommand("ucinewgame");
+                } else {
+                    std::cerr << "Failed to start engine at: " << pathPvC->value << "\n";
+                }
+                
+                isEngineSearching = false;
+                state = AppState::Playing;
+            }
         }
-        if (btnStartPvC->isHovered) {
-            board = std::make_unique<Board>(window);
-            state = AppState::Playing;
-        }
-    }
 }
+
 
 void Application::updateCvCMenu(const sf::Vector2f& mousePos, bool mouseClicked) {
     btnBackTopLeft->update(mousePos);
@@ -240,4 +260,30 @@ void Application::render() {
         }
     }
     window.display();
+}
+
+void Application::processEngineTurn() {
+    bool isPlayerTurn = (board->getIsWhiteTurn() && isWhiteSide) || (!board->getIsWhiteTurn() && !isWhiteSide);
+    
+    // If it is the Engine's turn
+    if (!isPlayerTurn && engine && engine->isEngineRunning()) {
+        if (!isEngineSearching) {
+            // Tell engine current board state via move history
+            std::string history = board->getUciMoveHistoryString();
+            engine->sendCommand("position startpos moves " + history);
+            
+            // Fixed base time calculation for now
+            int moveTimeMs = 1000; // Default 1 second
+            engine->sendCommand("go movetime " + std::to_string(moveTimeMs));
+            
+            isEngineSearching = true;
+        }
+
+        // Check continuously for a response
+        std::string move = engine->getBestMove();
+        if (!move.empty()) {
+            board->applyUciMove(move);
+            isEngineSearching = false;
+        }
+    }
 }

@@ -109,6 +109,10 @@ public:
     void placeThePiece(sf::Vector2f clickPos);
     void handleSquareClick(sf::Vector2f clickPos);
     void drawPromotionMenu(sf::RenderTarget& target) const;
+    // 
+    bool getIsWhiteTurn() const { return isWhiteTurn; }
+    std::string getUciMoveHistoryString() const;
+    bool applyUciMove(const std::string& moveStr);
 private:
     // methods to get legal moves for each piece type
     // white pieces 
@@ -134,5 +138,8 @@ private:
     bool hasAnyLegalMoves(bool forWhite);
     std::string generatePositionHash() const;
     void checkGameEndConditions();
+    // uci compatibility 
+    std::vector<std::string> uciMoveHistory;
+    std::string formatUciMove(int startX, int startY, int endX, int endY, char promotion = 0) const;
 };
 

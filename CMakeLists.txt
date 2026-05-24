@@ -48,6 +48,7 @@ add_executable(chess-gui
     src/piece.cpp
     src/ui_components.cpp
     src/application.cpp
+    src/uci_engine.cpp
 )
 
 # Link against the found SFML libraries
