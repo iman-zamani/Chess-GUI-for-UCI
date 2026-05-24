@@ -752,16 +752,6 @@ void Board::endDragging(sf::Vector2f clickPos) {
     this->enPassantX = nextEnPassantX;
     this->enPassantY = nextEnPassantY;
 
-    // --- EXECUTE PAWN PROMOTION ---
-    if (isPawn && (pointedSquareY == 0 || pointedSquareY == 7)) {
-        int promotedPieceType = (selectedPieceType > 0) ? WHITE_QUEEN : BLACK_QUEEN;
-        
-        // 1. Update layout board tracking state
-        piecePositions[targetIdx] = promotedPieceType;
-
-        // 2. Re-initialize the Piece object safely as a Queen to load the correct textures
-        this->pieces[pieceSelected] = Piece(promotedPieceType, pointedSquareX, pointedSquareY, squareSideLength);
-    }
 
     // --- EXECUTE ROOK TELEPORTATION IF CASTLING ---
     if (isCastlingMove) {
@@ -798,6 +788,15 @@ void Board::endDragging(sf::Vector2f clickPos) {
     if (originalIdx == 0 * 8 + 7 || targetIdx == 0 * 8 + 7) this->blackKingSideCastle = false;
     if (originalIdx == 0 * 8 + 0 || targetIdx == 0 * 8 + 0) this->blackQueenSideCastle = false;
 
+
+    // --- INTERCEPT PROMOTION WAITING LOOP ---
+    if (isPawn && (pointedSquareY == 0 || pointedSquareY == 7)) {
+        this->isPromotionWaiting = true;
+        this->promotionTargetX = pointedSquareX;
+        this->promotionTargetY = pointedSquareY;
+        this->promotionPawnVectorIdx = pieceSelected;
+        return; // Exit early to wait for user to click the menu!
+    }
     // --- ENFORCE TURN SWITCHING ---
     this->isWhiteTurn = !this->isWhiteTurn;
 
