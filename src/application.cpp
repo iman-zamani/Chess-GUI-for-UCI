@@ -7,7 +7,7 @@
 Application::Application() 
     : state(AppState::MainMenu), isWhiteSide(true), 
       mouseLeftButtonIsPressed(false), isDraggingPiece(false), draggingPieceTexture(nullptr),
-      currentPopup(PopupType::None), gameOverPopupShown(false)
+      currentPopup(PopupType::None), gameOverPopupShown(false), currentDialogTarget(DialogTarget::None)
 {
     sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
     unsigned int winW = static_cast<unsigned int>(desktop.width * 0.6f);
@@ -67,12 +67,12 @@ void Application::initUI() {
     incCvC = std::make_unique<TextInput>(cx - 200, 580, 150, 60, "Inc (s)", font, true);
     btnStartCvC = std::make_unique<Button>(cx - 200, 750, 400, 80, "START GAME", font);
     
-    // Popup System
-    popupBg.setSize(sf::Vector2f(600, 250));
+    // Popup System (Widened background to 800px so text won't overflow)
+    popupBg.setSize(sf::Vector2f(800, 250));
     popupBg.setFillColor(sf::Color(20, 20, 30, 240));
     popupBg.setOutlineColor(sf::Color(0, 240, 255));
     popupBg.setOutlineThickness(4.f);
-    popupBg.setPosition(cx - 300, cy - 125);
+    popupBg.setPosition(cx - 400, cy - 125);
 
     popupText.setFont(font);
     popupText.setCharacterSize(30);
@@ -104,6 +104,8 @@ void Application::run() {
 }
 
 void Application::processEvents() {
+    pollFileDialog(); // Check async thread responses non-blockingly
+
     sf::Event event;
     bool mouseClicked = false;
     sf::Vector2f mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window), logicalView);
@@ -156,14 +158,10 @@ void Application::processEvents() {
                     clip = "";
                 }
 
-                // File managers copy paths as URLs. Wipe it out.
-                if (clip.find("file://") == 0) {
-                    clip = clip.substr(7);
-                }
+                if (clip.find("file://") == 0) clip = clip.substr(7);
 
-                if (state == AppState::PvCMenu) {
-                    pathPvC->append(clip);
-                } else if (state == AppState::CvCMenu) {
+                if (state == AppState::PvCMenu) pathPvC->append(clip);
+                else if (state == AppState::CvCMenu) {
                     path1CvC->append(clip);
                     path2CvC->append(clip);
                 }
@@ -197,10 +195,15 @@ void Application::handlePlayingEvents(const sf::Event& event, const sf::Vector2f
     bool isPlayerTurn = (board->getIsWhiteTurn() && isWhiteSide) || (!board->getIsWhiteTurn() && !isWhiteSide);
     if (!isPlayerTurn) return;
 
+    // Offset the mouse so the board's internal collision math stays valid
+    sf::Vector2f boardMousePos = mousePos;
+    boardMousePos.x -= BOARD_SHIFT_X;
+    boardMousePos.y -= BOARD_SHIFT_Y;
+
     if (!mouseLeftButtonIsPressed && event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
-        dragStartPos = mousePos;
+        dragStartPos = mousePos; // Drag start needs true screen position
         mouseLeftButtonIsPressed = true; 
-        draggingPieceTexture = board->startDragging(mousePos);
+        draggingPieceTexture = board->startDragging(boardMousePos);
         if (draggingPieceTexture && draggingPieceTexture->getSize() != sf::Vector2u(0, 0)) {
             draggingPieceSprite.setTexture(*draggingPieceTexture);
             draggingPieceSprite.setScale(board->getSelectedPieceSpriteScale());
@@ -217,13 +220,66 @@ void Application::handlePlayingEvents(const sf::Event& event, const sf::Vector2f
         float deltaY = std::abs(mousePos.y - dragStartPos.y);
 
         if (deltaX < 5.f && deltaY < 5.f) {
-            if (isDraggingPiece) { board->endDragging(mousePos); }
-            board->handleSquareClick(mousePos);
+            if (isDraggingPiece) { board->endDragging(boardMousePos); }
+            board->handleSquareClick(boardMousePos);
         } else {
-            if (isDraggingPiece) { board->endDragging(mousePos); }
+            if (isDraggingPiece) { board->endDragging(boardMousePos); }
         }
         isDraggingPiece = false;
     }
+}
+
+void Application::render() {
+    window.clear(state == AppState::Playing ? sf::Color::Black : sf::Color(10, 10, 15));
+
+    if (state == AppState::MainMenu) {
+        window.draw(titleMain);
+        btnPvC->draw(window);
+        btnCvC->draw(window);
+    } else if (state == AppState::PvCMenu) {
+        btnBackTopLeft->draw(window);
+        window.draw(titlePvC);
+        pathPvC->draw(window);
+        btnBrowsePvC->draw(window);
+        btnSide->draw(window);
+        timePvC->draw(window);
+        incPvC->draw(window);
+        btnStartPvC->draw(window);
+    } else if (state == AppState::CvCMenu) {
+        btnBackTopLeft->draw(window);
+        window.draw(titleCvC);
+        path1CvC->draw(window);
+        btnBrowse1CvC->draw(window);
+        path2CvC->draw(window);
+        btnBrowse2CvC->draw(window);
+        timeCvC->draw(window);
+        incCvC->draw(window);
+        btnStartCvC->draw(window);
+    } else if (state == AppState::Playing && board) {
+        
+        // Translate the board rendering cleanly to the center
+        sf::RenderStates states;
+        states.transform.translate(BOARD_SHIFT_X, BOARD_SHIFT_Y);
+        window.draw(*board, states);
+        
+        if (mouseLeftButtonIsPressed && isDraggingPiece) {
+            window.draw(draggingPieceSprite); // Kept absolute so it follows mouse properly
+        }
+        
+        btnBackPlaying->draw(window);
+
+        if (currentPopup != PopupType::None) {
+            window.draw(popupBg);
+            window.draw(popupText);
+            if (currentPopup == PopupType::ConfirmQuit) {
+                btnPopupYes->draw(window);
+                btnPopupNo->draw(window);
+            } else if (currentPopup == PopupType::GameOver) {
+                btnPopupOk->draw(window);
+            }
+        }
+    }
+    window.display();
 }
 
 void Application::update(const sf::Vector2f& mousePos, bool mouseClicked) {
@@ -307,10 +363,13 @@ void Application::updatePvCMenu(const sf::Vector2f& mousePos, bool mouseClicked)
 
     if (mouseClicked) {
         if (btnBackTopLeft->isHovered) state = AppState::MainMenu;
-        if (btnBrowsePvC->isHovered) {
-            std::string p = openFileDialog();
-            if (!p.empty()) pathPvC->setValue(p);
+        
+        // Launch file dialog non-blockingly
+        if (btnBrowsePvC->isHovered && currentDialogTarget == DialogTarget::None) {
+            currentDialogTarget = DialogTarget::PvC;
+            fileDialogFuture = std::async(std::launch::async, openFileDialog);
         }
+        
         if (btnSide->isHovered) {
             isWhiteSide = !isWhiteSide;
             btnSide->label.setString(isWhiteSide ? "Side: WHITE" : "Side: BLACK");
@@ -345,14 +404,17 @@ void Application::updateCvCMenu(const sf::Vector2f& mousePos, bool mouseClicked)
 
     if (mouseClicked) {
         if (btnBackTopLeft->isHovered) state = AppState::MainMenu;
-        if (btnBrowse1CvC->isHovered) {
-            std::string p = openFileDialog();
-            if (!p.empty()) path1CvC->setValue(p);
+        
+        // Launch file dialogs non-blockingly
+        if (btnBrowse1CvC->isHovered && currentDialogTarget == DialogTarget::None) {
+            currentDialogTarget = DialogTarget::CvC1;
+            fileDialogFuture = std::async(std::launch::async, openFileDialog);
         }
-        if (btnBrowse2CvC->isHovered) {
-            std::string p = openFileDialog();
-            if (!p.empty()) path2CvC->setValue(p);
+        if (btnBrowse2CvC->isHovered && currentDialogTarget == DialogTarget::None) {
+            currentDialogTarget = DialogTarget::CvC2;
+            fileDialogFuture = std::async(std::launch::async, openFileDialog);
         }
+
         if (btnStartCvC->isHovered) {
             board = std::make_unique<Board>(window);
             gameOverPopupShown = false;
@@ -361,53 +423,7 @@ void Application::updateCvCMenu(const sf::Vector2f& mousePos, bool mouseClicked)
     }
 }
 
-void Application::render() {
-    window.clear(state == AppState::Playing ? sf::Color::Black : sf::Color(10, 10, 15));
 
-    if (state == AppState::MainMenu) {
-        window.draw(titleMain);
-        btnPvC->draw(window);
-        btnCvC->draw(window);
-    } else if (state == AppState::PvCMenu) {
-        btnBackTopLeft->draw(window);
-        window.draw(titlePvC);
-        pathPvC->draw(window);
-        btnBrowsePvC->draw(window);
-        btnSide->draw(window);
-        timePvC->draw(window);
-        incPvC->draw(window);
-        btnStartPvC->draw(window);
-    } else if (state == AppState::CvCMenu) {
-        btnBackTopLeft->draw(window);
-        window.draw(titleCvC);
-        path1CvC->draw(window);
-        btnBrowse1CvC->draw(window);
-        path2CvC->draw(window);
-        btnBrowse2CvC->draw(window);
-        timeCvC->draw(window);
-        incCvC->draw(window);
-        btnStartCvC->draw(window);
-    } else if (state == AppState::Playing && board) {
-        window.draw(*board);
-        if (mouseLeftButtonIsPressed && isDraggingPiece) {
-            window.draw(draggingPieceSprite);
-        }
-        
-        btnBackPlaying->draw(window);
-
-        if (currentPopup != PopupType::None) {
-            window.draw(popupBg);
-            window.draw(popupText);
-            if (currentPopup == PopupType::ConfirmQuit) {
-                btnPopupYes->draw(window);
-                btnPopupNo->draw(window);
-            } else if (currentPopup == PopupType::GameOver) {
-                btnPopupOk->draw(window);
-            }
-        }
-    }
-    window.display();
-}
 
 void Application::processEngineTurn() {
     if (board->getGameState() != Board::GameResult::Ongoing) return;
@@ -429,6 +445,20 @@ void Application::processEngineTurn() {
         if (!move.empty()) {
             board->applyUciMove(move);
             isEngineSearching = false;
+        }
+    }
+}
+
+void Application::pollFileDialog() {
+    if (currentDialogTarget != DialogTarget::None) {
+        if (fileDialogFuture.valid() && fileDialogFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+            std::string p = fileDialogFuture.get();
+            if (!p.empty()) {
+                if (currentDialogTarget == DialogTarget::PvC) pathPvC->setValue(p);
+                else if (currentDialogTarget == DialogTarget::CvC1) path1CvC->setValue(p);
+                else if (currentDialogTarget == DialogTarget::CvC2) path2CvC->setValue(p);
+            }
+            currentDialogTarget = DialogTarget::None;
         }
     }
 }

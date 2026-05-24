@@ -74,7 +74,7 @@ private:
     void setSquaresTexture();
     void constructor(const std::string &FEN);
     //draw the board squares 
-    void drawBoardBackground(sf::RenderTarget& target) const;
+    void drawBoardBackground(sf::RenderTarget& target, sf::RenderStates states) const;
     // draw all the elements 
     virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
     sf::Vector2i squareNameToXY(const std::string &square);
@@ -108,7 +108,7 @@ public:
     const sf::Vector2f getSelectedPieceSpriteScale()const;
     void placeThePiece(sf::Vector2f clickPos);
     void handleSquareClick(sf::Vector2f clickPos);
-    void drawPromotionMenu(sf::RenderTarget& target) const;
+    void drawPromotionMenu(sf::RenderTarget& target, sf::RenderStates states) const;
     // 
     bool getIsWhiteTurn() const { return isWhiteTurn; }
     std::string getUciMoveHistoryString() const;

@@ -2,12 +2,14 @@
 #include <SFML/Graphics.hpp>
 #include <memory>
 #include <string>
+#include <future>
 #include "board.hpp"
 #include "ui_components.hpp"
 #include "uci_engine.hpp"
 
 enum class AppState { MainMenu, PvCMenu, CvCMenu, Playing };
 enum class PopupType { None, ConfirmQuit, GameOver };
+enum class DialogTarget { None, PvC, CvC1, CvC2 };
 
 class Application {
 public:
@@ -32,12 +34,21 @@ private:
     bool isEngineSearching;
     void processEngineTurn();
 
+    // Async File Dialog
+    std::future<std::string> fileDialogFuture;
+    DialogTarget currentDialogTarget;
+    void pollFileDialog();
+
     // Core SFML 
     sf::RenderWindow window;
     sf::View logicalView;
     sf::Font font;
     const float LOGICAL_WIDTH = 1920.f;
     const float LOGICAL_HEIGHT = 1080.f;
+
+    // Board Offset (Centers the board and avoids top-left back button)
+    const float BOARD_SHIFT_X = 420.f; 
+    const float BOARD_SHIFT_Y = 0.f;
 
     // State & Board
     AppState state;

@@ -931,10 +931,10 @@ sf::Vector2i Board::findKingGridPosition(bool whiteKing) const {
 }
 
 
-void Board::drawBoardBackground(sf::RenderTarget& target) const {
+void Board::drawBoardBackground(sf::RenderTarget& target, sf::RenderStates states) const {
     // draw the basic squares
     for (sf::Sprite sp : spriteSquares){
-        window.draw(sp);
+        target.draw(sp, states);
     }
     
     // overlay indicators for legal squares if a piece is currently selected
@@ -953,11 +953,12 @@ void Board::drawBoardBackground(sf::RenderTarget& target) const {
                 int pixelY = sy * squareSideLength + (squareSideLength / 2);
                 targetIndicator.setPosition(pixelX, pixelY);
                 
-                window.draw(targetIndicator);
+                target.draw(targetIndicator, states);
             }
         }
     }
 }
+
 
 void Board::handleSquareClick(sf::Vector2f clickPos) {
     // 1. If waiting for promotion, handle choice sub-menu clicks first
@@ -1157,7 +1158,7 @@ void Board::handleSquareClick(sf::Vector2f clickPos) {
     this->selectedPieceIdx = -1;
 }
 
-void Board::drawPromotionMenu(sf::RenderTarget& target) const {
+void Board::drawPromotionMenu(sf::RenderTarget& target, sf::RenderStates states) const {
     if (!isPromotionWaiting) return;
 
     float upAndLeft = squareSideLength / 2;
@@ -1173,23 +1174,23 @@ void Board::drawPromotionMenu(sf::RenderTarget& target) const {
         blockFrame.setFillColor(sf::Color(80, 80, 80, 240));
         blockFrame.setOutlineColor(sf::Color::White);
         blockFrame.setOutlineThickness(2.f);
-        target.draw(blockFrame);
+        target.draw(blockFrame, states);
 
         // Instantiate a quick dummy Piece instance to pull standard sprite atlas cuts on-the-fly
         Piece optionVisual(optionTypes[i], promotionTargetX, promotionTargetY, squareSideLength);
         optionVisual.sprite.setPosition(ox, oy);
-        target.draw(optionVisual.sprite);
+        target.draw(optionVisual.sprite, states);
     }
 }
 
 void Board::draw(sf::RenderTarget& target, sf::RenderStates states) const {
-    drawBoardBackground(target);
+    drawBoardBackground(target, states);
     for (const auto& piece : pieces) {
-        target.draw(piece);
+        target.draw(piece, states);
     }
     // Overlay choice modal panels directly over back-rank square zones
     if (this->isPromotionWaiting) {
-        drawPromotionMenu(target);
+        drawPromotionMenu(target, states);
     }
 }
 
