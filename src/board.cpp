@@ -36,7 +36,10 @@ void Board::constructor(const std::string &FEN){
     // theres is no piece selected so there are no legal moves as well
     // it is resized to 64 for each square
     this->legalSquaresForTargetPiece.resize(64, false);
-    
+    // 
+    this->isPieceSelectedState = false;
+    this->selectedPieceIdx = -1;
+    this->isPromotionWaiting = false;
     
     // the board is going to be set for x: WINDOW_WIDTH_RATIO to y: WINDOW_HEIGHT_RATIO windows
     sf::Vector2u size = this->window.getSize();
@@ -617,24 +620,37 @@ void Board::findLegalMovesBlackBishop() {
 // we should call this on the start of the dragging 
 // it will return the texture of the pice user is trying to drag 
 sf::Texture* Board::startDragging(sf::Vector2f clickPos) {
-    //temp fix, this is not optimized way to find the piece
+    if (this->isPromotionWaiting) return emptyTextureToReturn;
+
     for (int i = 0; i < this->piecesVectorSize; i++) {
         sf::Vector2f piecePosF(static_cast<float>(this->pieces[i].getPosition().x),static_cast<float>(this->pieces[i].getPosition().y));
 
         float absDiffX = clickPos.x - piecePosF.x;
         float absDiffY = clickPos.y - piecePosF.y;
-        if (absDiffX <0 || absDiffY < 0){continue;}
+        if (absDiffX < 0 || absDiffY < 0){continue;}
+        
         if (absDiffX < squareSideLength && absDiffY < squareSideLength) {
-            pieceSelected = i;
-            this->pieces[pieceSelected].selectPiece();
-            return this->pieces[pieceSelected].getTexture();
+            int pType = this->pieces[i].getType();
+            // Ensure we only start dragging if it's our piece
+            if ((this->isWhiteTurn && pType > 0) || (!this->isWhiteTurn && pType < 0)) {
+                // Turn off ghost of previous piece if we clicked a different friendly piece
+                if (pieceSelected != -1 && pieceSelected != i) {
+                    this->pieces[pieceSelected].deselectPiece();
+                }
+                pieceSelected = i;
+                this->pieces[pieceSelected].selectPiece();
+                return this->pieces[pieceSelected].getTexture();
+            } else {
+                // We clicked an opponent piece. Don't grab it. 
+                return emptyTextureToReturn; 
+            }
         }
     }
-    // reset the selected piece 
-    pieceSelected = -1;
+    
+    // Clicked an empty square. DO NOT reset pieceSelected here. 
+    // We need to keep it intact so handleSquareClick knows what to move.
     return emptyTextureToReturn;
 }
-
 // we should call this when the dragging ends  
 void Board::endDragging(sf::Vector2f clickPos) {
     if (pieceSelected < 0 || pieceSelected >= piecesVectorSize){
@@ -788,6 +804,9 @@ void Board::endDragging(sf::Vector2f clickPos) {
     // Reset move generation states
     std::fill(legalSquaresForTargetPiece.begin(), legalSquaresForTargetPiece.end(), false);
     pieceSelected = -1;
+    this->pieceSelected = -1;
+    this->isPieceSelectedState = false;
+    this->selectedPieceIdx = -1;
 }
 const sf::Vector2f Board::getSelectedPieceSpriteScale()const{
     if (pieceSelected < 0 || pieceSelected >= piecesVectorSize){
@@ -921,5 +940,221 @@ void Board::drawBoardBackground(sf::RenderTarget& target) const {
                 window.draw(targetIndicator);
             }
         }
+    }
+}
+
+
+void Board::handleSquareClick(sf::Vector2f clickPos) {
+    // 1. If waiting for promotion, handle choice sub-menu clicks first
+    if (this->isPromotionWaiting) {
+        float upAndLeft = squareSideLength / 2;
+        int clickedOption = -1;
+        
+        for (int i = 0; i < 4; ++i) {
+            float ox = promotionTargetX * squareSideLength + upAndLeft;
+            float oy = (promotionTargetY == 0) ? (i * squareSideLength + upAndLeft) : ((promotionTargetY - i) * squareSideLength + upAndLeft);
+            
+            if (clickPos.x >= ox && clickPos.x < ox + squareSideLength &&
+                clickPos.y >= oy && clickPos.y < oy + squareSideLength) {
+                clickedOption = i; 
+                break;
+            }
+        }
+        
+        if (clickedOption != -1) {
+            int baseType = (piecePositions[promotionTargetY * 8 + promotionTargetX] > 0) ? 1 : -1;
+            int finalType = 0;
+            if (clickedOption == 0) finalType = baseType * 9;  // Queen
+            if (clickedOption == 1) finalType = baseType * 5;  // Rook
+            if (clickedOption == 2) finalType = baseType * 4;  // Bishop
+            if (clickedOption == 3) finalType = baseType * 3;  // Knight
+
+            piecePositions[promotionTargetY * 8 + promotionTargetX] = finalType;
+            this->pieces[promotionPawnVectorIdx] = Piece(finalType, promotionTargetX, promotionTargetY, squareSideLength);
+            
+            this->isPromotionWaiting = false;
+            this->isWhiteTurn = !this->isWhiteTurn;
+            std::fill(legalSquaresForTargetPiece.begin(), legalSquaresForTargetPiece.end(), false);
+            
+            // Turn off ghost rendering on unfreeze
+            if (this->pieceSelected != -1) this->pieces[this->pieceSelected].deselectPiece();
+            this->pieceSelected = -1;
+            this->isPieceSelectedState = false;
+            this->selectedPieceIdx = -1;
+        }
+        return;
+    }
+
+    // Translate absolute screen pixels into grid array coordinates
+    float upAndLeft = squareSideLength / 2;
+    int gridX = (clickPos.x - upAndLeft) / squareSideLength;
+    int gridY = (clickPos.y - upAndLeft) / squareSideLength;
+
+    // Check bounds and cleanly clear selection if click is off the board
+    if (clickPos.x < upAndLeft || clickPos.y < upAndLeft || gridX > 7 || gridY > 7) {
+        if (this->selectedPieceIdx != -1) {
+            this->pieces[this->selectedPieceIdx].deselectPiece();
+        }
+        std::fill(legalSquaresForTargetPiece.begin(), legalSquaresForTargetPiece.end(), false);
+        this->pieceSelected = -1;
+        this->isPieceSelectedState = false;
+        this->selectedPieceIdx = -1;
+        return;
+    }
+
+    int clickedIdx = gridY * 8 + gridX;
+
+    // --- STATE 1: DESTINATION CLICK HANDLING ---
+    // If a piece was already selected and we clicked a square marked TRUE in our legality array:
+    if (isPieceSelectedState && legalSquaresForTargetPiece[clickedIdx]) {
+        int selectedPieceType = this->pieces[selectedPieceIdx].getType();
+        sf::Vector2i originalPos = this->pieces[selectedPieceIdx].getGridPosition();
+        int originalIdx = originalPos.y * 8 + originalPos.x;
+
+        bool isPawn = (selectedPieceType == WHITE_PAWN || selectedPieceType == BLACK_PAWN);
+        bool isCastlingMove = (selectedPieceType == WHITE_KING || selectedPieceType == BLACK_KING) && (std::abs(gridX - originalPos.x) == 2);
+        bool isEnPassantCapture = isPawn && (gridX == enPassantX && gridY == enPassantY) && (piecePositions[clickedIdx] == 0);
+
+        // Remove Captured Pieces
+        int victimY = isEnPassantCapture ? originalPos.y : gridY;
+        for (int i = 0; i < this->piecesVectorSize; i++) {
+            if (i == selectedPieceIdx) continue;
+            sf::Vector2i pGrid = this->pieces[i].getGridPosition();
+            if (pGrid.x == gridX && pGrid.y == victimY) {
+                this->pieces.erase(this->pieces.begin() + i);
+                this->piecesVectorSize--;
+                if (i < selectedPieceIdx) selectedPieceIdx--;
+                break;
+            }
+        }
+
+        // Teleport piece data maps permanently
+        this->pieces[selectedPieceIdx].moveTo(gridX, gridY);
+        piecePositions[originalIdx] = 0;
+        piecePositions[clickedIdx] = selectedPieceType;
+
+        // Manage En Passant status markers
+        int nextEnPassantX = -1, nextEnPassantY = -1;
+        if (isPawn && std::abs(gridY - originalPos.y) == 2) {
+            nextEnPassantX = gridX;
+            nextEnPassantY = (originalPos.y + gridY) / 2;
+        }
+        this->enPassantX = nextEnPassantX;
+        this->enPassantY = nextEnPassantY;
+
+        // Manage Castling Teleportations
+        if (isCastlingMove) {
+            int rookOriginalX = (gridX == 6) ? 7 : 0;
+            int rookTargetX = (gridX == 6) ? 5 : 3;
+            piecePositions[gridY * 8 + rookOriginalX] = 0;
+            piecePositions[gridY * 8 + rookTargetX] = (selectedPieceType > 0) ? WHITE_ROOK : BLACK_ROOK;
+
+            for (int i = 0; i < this->piecesVectorSize; i++) {
+                sf::Vector2i pGrid = this->pieces[i].getGridPosition();
+                if (pGrid.x == rookOriginalX && pGrid.y == gridY) {
+                    this->pieces[i].moveTo(rookTargetX, gridY);
+                    break;
+                }
+            }
+        }
+
+        // Drop Castling Rights Flags permanently if piece moved
+        if (selectedPieceType == WHITE_KING) { this->whiteKingSideCastle = false; this->whiteQueenSideCastle = false; }
+        if (selectedPieceType == BLACK_KING) { this->blackKingSideCastle = false; this->blackQueenSideCastle = false; }
+        if (originalIdx == 7 * 8 + 7 || clickedIdx == 7 * 8 + 7) this->whiteKingSideCastle = false;
+        if (originalIdx == 7 * 8 + 0 || clickedIdx == 7 * 8 + 0) this->whiteQueenSideCastle = false;
+        if (originalIdx == 0 * 8 + 7 || clickedIdx == 0 * 8 + 7) this->blackKingSideCastle = false;
+        if (originalIdx == 0 * 8 + 0 || clickedIdx == 0 * 8 + 0) this->blackQueenSideCastle = false;
+
+        // Turn off ghost texture rendering layout properties cleanly on execution
+        this->pieces[selectedPieceIdx].deselectPiece();
+
+        // --- INTERCEPT PROMOTION WAITING LOOP ---
+        if (isPawn && (gridY == 0 || gridY == 7)) {
+            this->isPromotionWaiting = true;
+            this->promotionTargetX = gridX;
+            this->promotionTargetY = gridY;
+            this->promotionPawnVectorIdx = selectedPieceIdx;
+            return; 
+        }
+
+        this->isWhiteTurn = !this->isWhiteTurn;
+        std::fill(legalSquaresForTargetPiece.begin(), legalSquaresForTargetPiece.end(), false);
+        this->pieceSelected = -1;
+        this->isPieceSelectedState = false;
+        this->selectedPieceIdx = -1;
+        return;
+    }
+
+    // --- STATE 0: HIGHLIGHT SELECTION INTERACTION ---
+    int targetedVectorIdx = -1;
+    for (int i = 0; i < this->piecesVectorSize; i++) {
+        sf::Vector2i pGrid = this->pieces[i].getGridPosition();
+        if (pGrid.x == gridX && pGrid.y == gridY) {
+            targetedVectorIdx = i;
+            break;
+        }
+    }
+
+    if (targetedVectorIdx != -1) {
+        int pType = this->pieces[targetedVectorIdx].getType();
+        // Verify targeted item aligns safely with current turn
+        if ((this->isWhiteTurn && pType > 0) || (!this->isWhiteTurn && pType < 0)) {
+            // If another friendly piece was already selected, make sure to clear its ghost state first!
+            if (this->selectedPieceIdx != -1) {
+                this->pieces[this->selectedPieceIdx].deselectPiece();
+            }
+
+            this->pieceSelected = targetedVectorIdx;
+            this->selectedPieceIdx = targetedVectorIdx;
+            this->isPieceSelectedState = true;
+            this->findLegalMoves(); 
+            return;
+        }
+    }
+
+    // Reset layout maps if user clicked blank spaces out of bounds or an opponent piece
+    if (this->selectedPieceIdx != -1) {
+        this->pieces[this->selectedPieceIdx].deselectPiece();
+    }
+    std::fill(legalSquaresForTargetPiece.begin(), legalSquaresForTargetPiece.end(), false);
+    this->pieceSelected = -1;
+    this->isPieceSelectedState = false;
+    this->selectedPieceIdx = -1;
+}
+
+void Board::drawPromotionMenu(sf::RenderTarget& target) const {
+    if (!isPromotionWaiting) return;
+
+    float upAndLeft = squareSideLength / 2;
+    int baseColor = (piecePositions[promotionTargetY * 8 + promotionTargetX] > 0) ? 1 : -1;
+    std::vector<int> optionTypes = { baseColor * 9, baseColor * 5, baseColor * 4, baseColor * 3 };
+
+    for (size_t i = 0; i < 4; ++i) {
+        sf::RectangleShape blockFrame(sf::Vector2f(squareSideLength, squareSideLength));
+        float ox = promotionTargetX * squareSideLength + upAndLeft;
+        float oy = (promotionTargetY == 0) ? (i * squareSideLength + upAndLeft) : ((promotionTargetY - i) * squareSideLength + upAndLeft);
+        
+        blockFrame.setPosition(ox, oy);
+        blockFrame.setFillColor(sf::Color(80, 80, 80, 240));
+        blockFrame.setOutlineColor(sf::Color::White);
+        blockFrame.setOutlineThickness(2.f);
+        target.draw(blockFrame);
+
+        // Instantiate a quick dummy Piece instance to pull standard sprite atlas cuts on-the-fly
+        Piece optionVisual(optionTypes[i], promotionTargetX, promotionTargetY, squareSideLength);
+        optionVisual.sprite.setPosition(ox, oy);
+        target.draw(optionVisual.sprite);
+    }
+}
+
+void Board::draw(sf::RenderTarget& target, sf::RenderStates states) const {
+    drawBoardBackground(target);
+    for (const auto& piece : pieces) {
+        target.draw(piece);
+    }
+    // Overlay choice modal panels directly over back-rank square zones
+    if (this->isPromotionWaiting) {
+        drawPromotionMenu(target);
     }
 }

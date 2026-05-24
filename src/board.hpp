@@ -59,18 +59,24 @@ private:
     std::vector<bool> legalSquaresForTargetPiece;
     // this texture is empty and .getSize() on it will always return sf::Vector2u(0, 0)
     sf::Texture* emptyTextureToReturn;
-    //
+
+    // all vars about the promotion of pawns 
+    bool isPieceSelectedState; // true if a piece is waiting for a target destination click
+    int selectedPieceIdx;       // tracks which piece vector index is highlighted
+    bool isPromotionWaiting;    // Freezes main inputs when a pawn reaches the end
+    int promotionTargetX;       // Remembers where the pawn landed during selection
+    int promotionTargetY;       // Remembers where the pawn landed during selection
+    int promotionPawnVectorIdx; // Remembers which piece index to mutate into a chosen type
+    std::vector<sf::Sprite> promotionOptionSprites;
+    std::vector<sf::Texture*> promotionOptionTextures;
+
+    // methods 
     void setSquaresTexture();
     void constructor(const std::string &FEN);
     //draw the board squares 
     void drawBoardBackground(sf::RenderTarget& target) const;
     // draw all the elements 
-    virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const override {
-        drawBoardBackground(target);
-        for (const auto& piece : pieces) {
-            target.draw(piece);
-        }
-    }
+    virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
     sf::Vector2i squareNameToXY(const std::string &square);
     bool isSquareAttacked(int targetX, int targetY, bool attackedByWhite) const;
     sf::Vector2i findKingGridPosition(bool whiteKing) const;
@@ -101,6 +107,8 @@ public:
     void endDragging(sf::Vector2f clickPos);
     const sf::Vector2f getSelectedPieceSpriteScale()const;
     void placeThePiece(sf::Vector2f clickPos);
+    void handleSquareClick(sf::Vector2f clickPos);
+    void drawPromotionMenu(sf::RenderTarget& target) const;
 private:
     // methods to get legal moves for each piece type
     // white pieces 
