@@ -1,170 +1,264 @@
+/* Chess-GUI-for-UCI — UCI engine process wrapper. GPL-2.0 */
 #include "uci_engine.hpp"
-#include <iostream>
 #include <sstream>
+#include <chrono>
+#include <thread>
+#include <cstring>
 
 #ifdef _WIN32
 #include <windows.h>
 #else
 #include <unistd.h>
+#include <sys/wait.h>
+#include <sys/select.h>
 #include <signal.h>
 #include <fcntl.h>
 #endif
 
-UciEngine::UciEngine() : isRunning(false) {
+using clk = std::chrono::steady_clock;
+static long long msSince(clk::time_point t){
+    return std::chrono::duration_cast<std::chrono::milliseconds>(clk::now()-t).count();
+}
+
+UciEngine::~UciEngine(){ quit(); }
+
 #ifdef _WIN32
-    hChildStd_IN_Rd = NULL; hChildStd_IN_Wr = NULL;
-    hChildStd_OUT_Rd = NULL; hChildStd_OUT_Wr = NULL;
-    hProcess = NULL;
+bool UciEngine::start(const std::string& exePath){
+    SECURITY_ATTRIBUTES sa{sizeof(sa), nullptr, TRUE};
+    HANDLE outR=0,outW=0,inR=0,inW=0;
+    if (!CreatePipe(&outR,&outW,&sa,0) || !CreatePipe(&inR,&inW,&sa,0)){ errMsg="pipe failed"; return false; }
+    SetHandleInformation(outR, HANDLE_FLAG_INHERIT, 0);
+    SetHandleInformation(inW,  HANDLE_FLAG_INHERIT, 0);
+    STARTUPINFOA si{}; si.cb=sizeof(si);
+    si.dwFlags = STARTF_USESTDHANDLES;
+    si.hStdInput = inR; si.hStdOutput = outW; si.hStdError = outW;
+    PROCESS_INFORMATION pi{};
+    std::string cmd = "\"" + exePath + "\"";
+    if (!CreateProcessA(nullptr, cmd.data(), nullptr, nullptr, TRUE,
+                        CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi)){
+        errMsg = "cannot launch: " + exePath; return false;
+    }
+    CloseHandle(inR); CloseHandle(outW); CloseHandle(pi.hThread);
+    hChildIn = inW; hChildOut = outR; hProc = pi.hProcess;
+    running = true;
 #else
-    childPid = -1;
+bool UciEngine::start(const std::string& exePath){
+    int toChild[2], fromChild[2];
+    if (pipe(toChild) || pipe(fromChild)){ errMsg="pipe failed"; return false; }
+    pid_t p = fork();
+    if (p < 0){ errMsg="fork failed"; return false; }
+    if (p == 0){
+        dup2(toChild[0], 0); dup2(fromChild[1], 1); dup2(fromChild[1], 2);
+        close(toChild[0]); close(toChild[1]); close(fromChild[0]); close(fromChild[1]);
+        execl(exePath.c_str(), exePath.c_str(), (char*)nullptr);
+        _exit(127);
+    }
+    close(toChild[0]); close(fromChild[1]);
+    inFd = toChild[1]; outFd = fromChild[0]; pid = p;
+    fcntl(outFd, F_SETFL, O_NONBLOCK);
+    running = true;
+#endif
+    // UCI handshake
+    sendRaw("uci");
+    auto t0 = clk::now();
+    bool ok = false;
+    while (msSince(t0) < 6000){
+        std::string ln = readLine(200);
+        if (ln.empty()) continue;
+        if (ln.rfind("id name ",0)==0) engName = ln.substr(8);
+        if (ln == "uciok"){ ok=true; break; }
+    }
+    if (!ok){ errMsg = "no uciok (not a UCI engine?)"; quit(); return false; }
+    sendRaw("isready");
+    t0 = clk::now();
+    while (msSince(t0) < 6000){
+        if (readLine(200) == "readyok") return true;
+    }
+    errMsg = "no readyok"; quit(); return false;
+}
+
+void UciEngine::sendRaw(const std::string& line){
+    if (!running) return;
+    std::string s = line + "\n";
+#ifdef _WIN32
+    DWORD written=0;
+    WriteFile((HANDLE)hChildIn, s.c_str(), (DWORD)s.size(), &written, nullptr);
+#else
+    ssize_t r = write(inFd, s.c_str(), s.size()); (void)r;
 #endif
 }
 
-UciEngine::~UciEngine() {
-    stopEngine();
+std::string UciEngine::readLine(int timeoutMs){
+    auto t0 = clk::now();
+    while (true){
+        size_t nl = rbuf.find('\n');
+        if (nl != std::string::npos){
+            std::string ln = rbuf.substr(0, nl);
+            if (!ln.empty() && ln.back()=='\r') ln.pop_back();
+            rbuf.erase(0, nl+1);
+            return ln;
+        }
+        if (!running || msSince(t0) >= timeoutMs) return "";
+        char buf[4096];
+#ifdef _WIN32
+        DWORD avail=0;
+        if (!PeekNamedPipe((HANDLE)hChildOut, nullptr,0,nullptr,&avail,nullptr)){ running=false; return ""; }
+        if (!avail){ std::this_thread::sleep_for(std::chrono::milliseconds(5)); continue; }
+        DWORD got=0;
+        if (!ReadFile((HANDLE)hChildOut, buf, sizeof(buf), &got, nullptr) || !got){ running=false; return ""; }
+        rbuf.append(buf, got);
+#else
+        fd_set fds; FD_ZERO(&fds); FD_SET(outFd,&fds);
+        timeval tv{0, 5000};
+        int r = select(outFd+1, &fds, nullptr, nullptr, &tv);
+        if (r > 0){
+            ssize_t got = read(outFd, buf, sizeof(buf));
+            if (got <= 0){ running=false; return ""; }
+            rbuf.append(buf, (size_t)got);
+        }
+#endif
+    }
 }
 
-bool UciEngine::startEngine(const std::string& path) {
-    if (isRunning) stopEngine();
-
+void UciEngine::quit(){
+    if (!running){
+#ifndef _WIN32
+        if (pid > 0){ int st; waitpid((pid_t)pid, &st, WNOHANG); }
+#endif
+        return;
+    }
+    sendRaw("quit");
+    std::this_thread::sleep_for(std::chrono::milliseconds(150));
+    running = false;
 #ifdef _WIN32
-    SECURITY_ATTRIBUTES saAttr;
-    saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
-    saAttr.bInheritHandle = TRUE;
-    saAttr.lpSecurityDescriptor = NULL;
-
-    if (!CreatePipe(&hChildStd_OUT_Rd, &hChildStd_OUT_Wr, &saAttr, 0)) return false;
-    if (!SetHandleInformation(hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0)) return false;
-    if (!CreatePipe(&hChildStd_IN_Rd, &hChildStd_IN_Wr, &saAttr, 0)) return false;
-    if (!SetHandleInformation(hChildStd_IN_Wr, HANDLE_FLAG_INHERIT, 0)) return false;
-
-    STARTUPINFOA siStartInfo;
-    PROCESS_INFORMATION piProcInfo;
-    ZeroMemory(&piProcInfo, sizeof(PROCESS_INFORMATION));
-    ZeroMemory(&siStartInfo, sizeof(STARTUPINFO));
-    siStartInfo.cb = sizeof(STARTUPINFO);
-    siStartInfo.hStdError = hChildStd_OUT_Wr;
-    siStartInfo.hStdOutput = hChildStd_OUT_Wr;
-    siStartInfo.hStdInput = hChildStd_IN_Rd;
-    siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
-
-    bool success = CreateProcessA(NULL, (LPSTR)path.c_str(), NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &siStartInfo, &piProcInfo);
-    if (!success) return false;
-
-    hProcess = piProcInfo.hProcess;
-    CloseHandle(piProcInfo.hThread);
+    if (hProc){ WaitForSingleObject((HANDLE)hProc, 500); TerminateProcess((HANDLE)hProc, 0);
+        CloseHandle((HANDLE)hProc); CloseHandle((HANDLE)hChildIn); CloseHandle((HANDLE)hChildOut); hProc=nullptr; }
 #else
-    if (pipe(pipeIn) == -1 || pipe(pipeOut) == -1) return false;
-
-    childPid = fork();
-    if (childPid < 0) return false;
-
-    if (childPid == 0) {
-        dup2(pipeOut[0], STDIN_FILENO);
-        dup2(pipeIn[1], STDOUT_FILENO);
-        close(pipeOut[0]); close(pipeOut[1]);
-        close(pipeIn[0]); close(pipeIn[1]);
-
-        execlp(path.c_str(), path.c_str(), nullptr);
-        
-        // CRITICAL FIX: Use _exit() instead of exit() so the failed fork 
-        // doesn't trigger parent destructors and destroy the X11 connection!
-        _exit(1); 
-    } else {
-        close(pipeOut[0]);
-        close(pipeIn[1]);
+    if (pid > 0){
+        int st;
+        if (waitpid((pid_t)pid, &st, WNOHANG) == 0){ kill((pid_t)pid, SIGKILL); waitpid((pid_t)pid, &st, 0); }
+        close(inFd); close(outFd); pid=-1;
     }
 #endif
-
-    isRunning = true;
-    readerThread = std::thread(&UciEngine::readOutput, this);
-    return true;
 }
 
-void UciEngine::stopEngine() {
-    if (!isRunning) return;
-    isRunning = false;
-
-    sendCommand("quit");
-
-#ifdef _WIN32
-    if (hProcess) {
-        WaitForSingleObject(hProcess, 1000);
-        TerminateProcess(hProcess, 0);
-        CloseHandle(hProcess);
-        CloseHandle(hChildStd_IN_Rd); CloseHandle(hChildStd_IN_Wr);
-        CloseHandle(hChildStd_OUT_Rd); CloseHandle(hChildStd_OUT_Wr);
-        hProcess = NULL;
+void UciEngine::setOption(const std::string& n, const std::string& v){
+    sendRaw("setoption name " + n + " value " + v);
+}
+void UciEngine::newGame(){
+    sendRaw("ucinewgame"); sendRaw("isready");
+    auto t0 = clk::now();
+    while (msSince(t0) < 5000) if (readLine(100)=="readyok") break;
+}
+void UciEngine::setPosition(const std::string& fen, const std::vector<std::string>& mv){
+    std::string cmd = "position fen " + fen;
+    if (!mv.empty()){
+        cmd += " moves";
+        for (auto& m : mv) cmd += " " + m;
     }
-#else
-    if (childPid > 0) {
-        kill(childPid, SIGKILL);
-        close(pipeIn[0]);
-        close(pipeOut[1]);
-        childPid = -1;
+    sendRaw(cmd);
+}
+
+void UciEngine::parseInfo(const std::string& line){
+    if (line.rfind("info",0)!=0) return;
+    EngineInfo e; e.valid=true;
+    std::istringstream ss(line);
+    std::string tok; ss >> tok;
+    {
+        std::lock_guard<std::mutex> lk(infoMx);
+        e = info; e.valid = true;   // keep previous fields; update what's present
     }
-#endif
-
-    if (readerThread.joinable()) {
-        readerThread.join();
-    }
-}
-
-void UciEngine::sendCommand(const std::string& cmd) {
-    if (!isRunning) return;
-    std::string fullCmd = cmd + "\n";
-#ifdef _WIN32
-    DWORD written;
-    WriteFile(hChildStd_IN_Wr, fullCmd.c_str(), fullCmd.length(), &written, NULL);
-#else
-    write(pipeOut[1], fullCmd.c_str(), fullCmd.length());
-#endif
-}
-
-std::string UciEngine::getBestMove() {
-    std::lock_guard<std::mutex> lock(moveMutex);
-    std::string move = latestBestMove;
-    latestBestMove = ""; 
-    return move;
-}
-
-bool UciEngine::isEngineRunning() const {
-    return isRunning;
-}
-
-void UciEngine::readOutput() {
-    char buffer[4096];
-    std::string accumulated = "";
-
-    while (isRunning) {
-        int bytesRead = 0;
-#ifdef _WIN32
-        DWORD read;
-        if (!ReadFile(hChildStd_OUT_Rd, buffer, sizeof(buffer) - 1, &read, NULL) || read == 0) break;
-        bytesRead = read;
-#else
-        bytesRead = read(pipeIn[0], buffer, sizeof(buffer) - 1);
-        if (bytesRead <= 0) break;
-#endif
-        buffer[bytesRead] = '\0';
-        accumulated += buffer;
-
-        size_t pos;
-        while ((pos = accumulated.find('\n')) != std::string::npos) {
-            std::string line = accumulated.substr(0, pos);
-            accumulated.erase(0, pos + 1);
-
-            if (!line.empty() && line.back() == '\r') line.pop_back();
-
-            if (line.find("bestmove") == 0) {
-                std::istringstream iss(line);
-                std::string token, move;
-                iss >> token >> move;
-                
-                std::lock_guard<std::mutex> lock(moveMutex);
-                latestBestMove = move;
-            }
+    bool sawPv=false;
+    while (ss >> tok){
+        if (tok=="depth") ss >> e.depth;
+        else if (tok=="score"){
+            std::string kind; ss >> kind;
+            int v; ss >> v;
+            if (kind=="cp"){ e.isMate=false; e.scoreCp=v; }
+            else if (kind=="mate"){ e.isMate=true; e.mateIn=v; }
+        }
+        else if (tok=="pv"){
+            e.pv.clear();
+            std::string m;
+            while (ss >> m){ if(!e.pv.empty())e.pv+=" "; e.pv+=m; }
+            sawPv=true;
         }
     }
-    isRunning = false;
+    (void)sawPv;
+    std::lock_guard<std::mutex> lk(infoMx);
+    info = e;
+}
+EngineInfo UciEngine::lastInfo(){
+    std::lock_guard<std::mutex> lk(infoMx);
+    return info;
+}
+
+std::string UciEngine::waitBestmove(int timeoutMs){
+    auto t0 = clk::now();
+    while (msSince(t0) < timeoutMs && running){
+        std::string ln = readLine(100);
+        if (ln.empty()) continue;
+        parseInfo(ln);
+        if (ln.rfind("bestmove",0)==0){
+            std::istringstream ss(ln);
+            std::string a,b; ss >> a >> b;
+            return b=="(none)" ? "" : b;
+        }
+    }
+    return "";
+}
+std::string UciEngine::goMovetime(int ms){
+    { std::lock_guard<std::mutex> lk(infoMx); info = EngineInfo{}; }
+    sendRaw("go movetime " + std::to_string(ms));
+    return waitBestmove(ms + 8000);
+}
+std::string UciEngine::goDepth(int d){
+    { std::lock_guard<std::mutex> lk(infoMx); info = EngineInfo{}; }
+    sendRaw("go depth " + std::to_string(d));
+    return waitBestmove(600000);
+}
+std::string UciEngine::goClock(int wt,int bt,int wi,int bi){
+    { std::lock_guard<std::mutex> lk(infoMx); info = EngineInfo{}; }
+    std::ostringstream o;
+    o << "go wtime "<<wt<<" btime "<<bt<<" winc "<<wi<<" binc "<<bi;
+    sendRaw(o.str());
+    return waitBestmove(wt + bt + 20000);
+}
+void UciEngine::goInfinite(){
+    { std::lock_guard<std::mutex> lk(infoMx); info = EngineInfo{}; }
+    sendRaw("go infinite");
+}
+std::string UciEngine::stopAndWait(int timeoutMs){
+    sendRaw("stop");
+    return waitBestmove(timeoutMs);
+}
+long long UciEngine::goPerft(int depth, int timeoutMs){
+    // Stockfish and many engines: "go perft N" prints "Nodes searched: X"
+    sendRaw("go perft " + std::to_string(depth));
+    auto t0 = clk::now();
+    long long nodes = -1;
+    while (msSince(t0) < timeoutMs && running){
+        std::string ln = readLine(100);
+        if (ln.empty()) continue;
+        size_t p = ln.find("Nodes searched:");
+        if (p != std::string::npos){
+            nodes = atoll(ln.c_str()+p+15);
+            break;
+        }
+        if (ln.rfind("bestmove",0)==0) break;         // engine ignored perft
+        if (ln.rfind("Unknown command",0)==0 || ln.find("nknown")!=std::string::npos) break;
+    }
+    // make sure engine is idle again
+    sendRaw("isready");
+    auto t1 = clk::now();
+    while (msSince(t1) < 3000){ if (readLine(100)=="readyok") break; }
+    return nodes;
+}
+
+void UciEngine::pump(){
+    for (int i=0;i<64;i++){
+        std::string ln = readLine(1);
+        if (ln.empty()) break;
+        parseInfo(ln);
+    }
 }

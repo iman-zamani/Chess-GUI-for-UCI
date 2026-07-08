@@ -59,27 +59,23 @@ private:
     std::vector<bool> legalSquaresForTargetPiece;
     // this texture is empty and .getSize() on it will always return sf::Vector2u(0, 0)
     sf::Texture* emptyTextureToReturn;
-
-    // all vars about the promotion of pawns 
-    bool isPieceSelectedState; // true if a piece is waiting for a target destination click
-    int selectedPieceIdx;       // tracks which piece vector index is highlighted
-    bool isPromotionWaiting;    // Freezes main inputs when a pawn reaches the end
-    int promotionTargetX;       // Remembers where the pawn landed during selection
-    int promotionTargetY;       // Remembers where the pawn landed during selection
-    int promotionPawnVectorIdx; // Remembers which piece index to mutate into a chosen type
-    std::vector<sf::Sprite> promotionOptionSprites;
-    std::vector<sf::Texture*> promotionOptionTextures;
-
-    // methods 
+    //
     void setSquaresTexture();
     void constructor(const std::string &FEN);
     //draw the board squares 
-    void drawBoardBackground(sf::RenderTarget& target, sf::RenderStates states) const;
+    void drawBoardBackground(sf::RenderTarget& target) const {
+        for (sf::Sprite sp : spriteSquares){
+            window.draw(sp);
+        }
+    }
     // draw all the elements 
-    virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
+    virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const override {
+        drawBoardBackground(target);
+        for (const auto& piece : pieces) {
+            target.draw(piece);
+        }
+    }
     sf::Vector2i squareNameToXY(const std::string &square);
-    bool isSquareAttacked(int targetX, int targetY, bool attackedByWhite) const;
-    sf::Vector2i findKingGridPosition(bool whiteKing) const;
 public:
 
     Board(sf::RenderWindow &win,const std::string &FEN): window(win){this->constructor(FEN);};
@@ -107,15 +103,6 @@ public:
     void endDragging(sf::Vector2f clickPos);
     const sf::Vector2f getSelectedPieceSpriteScale()const;
     void placeThePiece(sf::Vector2f clickPos);
-    void handleSquareClick(sf::Vector2f clickPos);
-    void drawPromotionMenu(sf::RenderTarget& target, sf::RenderStates states) const;
-    // 
-    bool getIsWhiteTurn() const { return isWhiteTurn; }
-    std::string getUciMoveHistoryString() const;
-    bool applyUciMove(const std::string& moveStr);
-    // 
-    enum class GameResult { Ongoing, WhiteWins, BlackWins, Draw_Stalemate, Draw_50Move, Draw_Repetition };
-    GameResult getGameState() const { return currentGameState; }
 private:
     // methods to get legal moves for each piece type
     // white pieces 
@@ -132,16 +119,5 @@ private:
     void findLegalMovesBlackBishop();
     void findLegalMovesBlackQueen();
     void findLegalMovesBlackKing();
-    // --- GAME END TRACKING ---
-    GameResult currentGameState = GameResult::Ongoing;
-    std::vector<std::string> positionHistory;
-
-    // Helper functions for end-game detection
-    bool hasAnyLegalMoves(bool forWhite);
-    std::string generatePositionHash() const;
-    void checkGameEndConditions();
-    // uci compatibility 
-    std::vector<std::string> uciMoveHistory;
-    std::string formatUciMove(int startX, int startY, int endX, int endY, char promotion = 0) const;
 };
 

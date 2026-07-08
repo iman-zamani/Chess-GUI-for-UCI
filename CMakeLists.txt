@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15) # Bumped slightly for better path handling features
+cmake_minimum_required(VERSION 3.15)
 project(chess-gui LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -7,21 +7,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # =============================================================================
 # 1. PLATFORM SPECIFIC SETUP
 # =============================================================================
-
-# --- MACOS FIX: Prioritize SFML 2.x (Homebrew) ---
 if(APPLE)
-    # Homebrew installs SFML 3 by default now.
-    # SFML 2 is "keg-only" (hidden).
-    # We must explicitly add the sfml@2 path to CMAKE_PREFIX_PATH so CMake finds it first.
     set(POSSIBLE_SFML2_PATHS
         "/opt/homebrew/opt/sfml@2"  # Apple Silicon default
         "/usr/local/opt/sfml@2"     # Intel Mac default
     )
-
     foreach(PATH ${POSSIBLE_SFML2_PATHS})
         if(EXISTS "${PATH}")
             message(STATUS "Detected Homebrew SFML 2.x path: ${PATH}")
-            # Prepend to ensuring we look here BEFORE system paths (where SFML 3 might be)
             list(PREPEND CMAKE_PREFIX_PATH "${PATH}")
         endif()
     endforeach()
@@ -30,62 +23,47 @@ endif()
 # =============================================================================
 # 2. FIND DEPENDENCIES
 # =============================================================================
-
-# We request version 2.5. 
-# Since SFML 3 is not backward compatible, CMake will automatically reject 
-# SFML 3.x installations even if found, provided we help it find the 2.x version above.
 find_package(SFML 2.5 CONFIG REQUIRED
     COMPONENTS graphics window system
 )
+find_package(Threads REQUIRED)          # <-- NEW: engine/tournament/test threads
 
 # =============================================================================
 # 3. BUILD TARGETS
 # =============================================================================
-
 add_executable(chess-gui
     src/main.cpp
-    src/board.cpp
-    src/piece.cpp
-    src/ui_components.cpp
-    src/application.cpp
+    src/chess.cpp                       # <-- NEW source list
     src/uci_engine.cpp
-    src/utils.cpp 
+    src/testing.cpp
+    src/tournament.cpp
+    src/gui.cpp
 )
+# board.cpp / piece.cpp intentionally removed — superseded by gui.cpp/chess.cpp
 
-# Link against the found SFML libraries
 if(TARGET SFML::Graphics)
-    # Standard Modern CMake target names (SFML 2.5+)
     target_link_libraries(chess-gui PRIVATE SFML::Graphics SFML::Window SFML::System)
 elseif(TARGET sfml-graphics)
-    # Legacy target names (sometimes used in older Linux packages)
     target_link_libraries(chess-gui PRIVATE sfml-graphics sfml-window sfml-system)
 else()
     message(FATAL_ERROR "SFML found but targets are missing. Check installation.")
 endif()
 
-# =============================================================================
-# 4. RESOURCE HANDLING
-# =============================================================================
+target_link_libraries(chess-gui PRIVATE Threads::Threads)   # <-- NEW
 
-# Track all files in the Resources directory. 
-# CONFIGURE_DEPENDS ensures CMake automatically re-runs if you add or delete files.
+# =============================================================================
+# 4. RESOURCE HANDLING (unchanged)
+# =============================================================================
 file(GLOB_RECURSE RESOURCE_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/Resources/*")
 
-# Create a custom command to copy the directory. 
-# It outputs a ".stamp" file so the build system knows when the copy is complete.
 add_custom_command(
     OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/Resources.stamp"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory 
-        "${CMAKE_CURRENT_SOURCE_DIR}/Resources" 
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/Resources"
         "${CMAKE_CURRENT_BINARY_DIR}/Resources"
     COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_CURRENT_BINARY_DIR}/Resources.stamp"
     DEPENDS ${RESOURCE_FILES}
     COMMENT "Syncing Resources directory to build folder..."
 )
-
-# Bind the custom command to a target so it can be built
 add_custom_target(SyncResources DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/Resources.stamp")
-
-# Make the main executable depend on the resource syncing target.
-# This ensures resources are always updated *before* the executable finishes building.
 add_dependencies(chess-gui SyncResources)
