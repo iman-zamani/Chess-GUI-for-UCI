@@ -430,3 +430,89 @@ std::string Game::toPGN() const{
     o << resultString() << "\n";
     return o.str();
 }
+
+// ---------------- PGN import ----------------
+std::vector<PgnGame> parsePGN(const std::string& text){
+    std::vector<PgnGame> games;
+    PgnGame cur; bool inGame=false, sawMoves=false;
+    std::istringstream ss(text);
+    std::string line;
+    auto flush=[&](){
+        if (inGame && (sawMoves || !cur.movetext.empty())) games.push_back(cur);
+        cur = PgnGame{}; inGame=false; sawMoves=false;
+    };
+    while (std::getline(ss, line)){
+        while (!line.empty() && (line.back()=='\r'||line.back()==' ')) line.pop_back();
+        if (!line.empty() && line[0]=='['){
+            if (sawMoves) flush();               // header after movetext = next game
+            inGame = true;
+            size_t sp = line.find(' ');
+            size_t q1 = line.find('"');
+            size_t q2 = line.rfind('"');
+            if (sp!=std::string::npos && q1!=std::string::npos && q2>q1){
+                std::string key = line.substr(1, sp-1);
+                std::string val = line.substr(q1+1, q2-q1-1);
+                if (key=="White") cur.white = val;
+                else if (key=="Black") cur.black = val;
+                else if (key=="Result") cur.result = val;
+                else if (key=="Event") cur.event = val;
+                else if (key=="FEN") cur.fenTag = val;
+            }
+            continue;
+        }
+        if (line.empty()) continue;
+        inGame = true; sawMoves = true;
+        cur.movetext += line + " ";
+    }
+    flush();
+    return games;
+}
+
+bool gameFromPGN(const PgnGame& pg, Game& out, std::string* err){
+    Position start = Position::startpos();
+    if (!pg.fenTag.empty()){
+        bool ok=false;
+        Position p = Position::fromFEN(pg.fenTag,&ok);
+        if (ok) start = p;
+        else { if (err) *err = "Invalid FEN tag"; return false; }
+    }
+    out.reset(start);
+    out.whiteName = pg.white; out.blackName = pg.black;
+    const std::string& s = pg.movetext;
+    size_t i=0, n=s.size();
+    int ply=0, depth=0;
+    while (i<n){
+        char ch = s[i];
+        if (ch==' '||ch=='\t'){ i++; continue; }
+        if (ch=='{'){ while (i<n && s[i]!='}') i++; i++; continue; }        // comment
+        if (ch=='('){ depth++; i++;                                          // variation
+            while (i<n && depth>0){ if(s[i]=='(')depth++; if(s[i]==')')depth--; i++; }
+            continue; }
+        if (ch=='$'){ while (i<n && s[i]!=' ') i++; continue; }              // NAG
+        size_t j=i;
+        while (j<n && s[j]!=' ' && s[j]!='{' && s[j]!='(') j++;
+        std::string tok = s.substr(i, j-i);
+        i = j;
+        if (tok.empty()) continue;
+        if (tok=="1-0"||tok=="0-1"||tok=="1/2-1/2"||tok=="*") break;
+        // strip leading move numbers "12." / "12..."
+        size_t k=0; while (k<tok.size() && (std::isdigit((unsigned char)tok[k])||tok[k]=='.')) k++;
+        tok = tok.substr(k);
+        if (tok.empty()) continue;
+        Move m;
+        if (!out.pos.sanToMove(tok, m)){
+            if (err) *err = "Illegal/unreadable move '"+tok+"' at ply "+std::to_string(ply+1);
+            return false;
+        }
+        out.tryMove(m);
+        ply++;
+    }
+    // keep PGN's stated result if the moves alone did not decide the game
+    if (out.result==GameResult::ONGOING){
+        if (pg.result=="1-0") out.result=GameResult::WHITE_WINS;
+        else if (pg.result=="0-1") out.result=GameResult::BLACK_WINS;
+        else if (pg.result=="1/2-1/2") out.result=GameResult::DRAW;
+        if (out.result!=GameResult::ONGOING) out.reason=ResultReason::AGREEMENT;
+    }
+    return true;
+}

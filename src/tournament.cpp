@@ -4,6 +4,10 @@
 #include <sstream>
 
 using clk = std::chrono::steady_clock;
+static long long nowMs(){
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+        clk::now().time_since_epoch()).count();
+}
 
 std::string TimeControl::label() const{
     std::ostringstream o;
@@ -47,14 +51,17 @@ void MatchRunner::playOneGame(UciEngine& we, UciEngine& be, TimeControl tc, Game
     post([&](Snapshot& s){
         s.pos = g.pos; s.sans.clear();
         s.whiteName=g.whiteName; s.blackName=g.blackName;
-        s.wClockMs=wClock; s.bClockMs=bClock;
+        s.wClockMs=wClock; s.bClockMs=bClock; s.postedAtMs=nowMs();
         s.result=GameResult::ONGOING; s.reason=ResultReason::NONE;
         s.scoreCpWhitePOV=0; s.scoreIsMate=false;
+        s.lastFrom=-1; s.lastTo=-1;
     });
     while (g.result == GameResult::ONGOING && !abort_){
         bool whiteMoves = g.pos.whiteToMove;
         UciEngine& e = whiteMoves ? we : be;
         e.setPosition(startFen, uciMoves);
+        // post fresh clocks + timestamp so the GUI can tick the mover's clock live
+        post([&](Snapshot& s){ s.wClockMs=wClock; s.bClockMs=bClock; s.postedAtMs=nowMs(); });
         auto t0 = clk::now();
         std::string bm = e.goClock((int)wClock,(int)bClock,tc.incMs,tc.incMs);
         long long spent = std::chrono::duration_cast<std::chrono::milliseconds>(clk::now()-t0).count();
@@ -78,7 +85,8 @@ void MatchRunner::playOneGame(UciEngine& we, UciEngine& be, TimeControl tc, Game
         uciMoves.push_back(bm);
         post([&](Snapshot& s){
             s.pos = g.pos; s.sans = g.sans;
-            s.wClockMs=wClock; s.bClockMs=bClock;
+            s.wClockMs=wClock; s.bClockMs=bClock; s.postedAtMs=nowMs();
+            if (!g.moves.empty()){ s.lastFrom=g.moves.back().from; s.lastTo=g.moves.back().to; }
             int cp = inf.isMate ? (inf.mateIn>0?10000:-10000) : inf.scoreCp;
             s.scoreCpWhitePOV = whiteMoves ? cp : -cp;   // engine reports for mover
             s.scoreIsMate = inf.isMate; s.mateIn = inf.mateIn;
@@ -90,12 +98,12 @@ void MatchRunner::playOneGame(UciEngine& we, UciEngine& be, TimeControl tc, Game
 }
 
 void MatchRunner::startMatch(EngineEntry a, EngineEntry b, TimeControl tc, int games,
-                             const std::string& startFen){
-    startTournament({a,b}, tc, games, startFen);
+                             const std::vector<std::string>& startFens){
+    startTournament({a,b}, tc, games, startFens);
 }
 
 void MatchRunner::startTournament(std::vector<EngineEntry> engines, TimeControl tc, int gamesPerPair,
-                                  const std::string& startFen){
+                                  const std::vector<std::string>& startFens){
     abort();
     done_ = false;
     {
@@ -103,14 +111,15 @@ void MatchRunner::startTournament(std::vector<EngineEntry> engines, TimeControl 
         snap_ = Snapshot{};
         pgns_.clear();
     }
-    thread_ = std::thread([this, engines, tc, gamesPerPair, startFen](){
-        Position startPos = Position::startpos();
-        if (!startFen.empty()){
+    thread_ = std::thread([this, engines, tc, gamesPerPair, startFens](){
+        std::vector<Position> starts;
+        for (auto& f : startFens){
             bool ok=false;
-            Position p = Position::fromFEN(startFen, &ok);
-            if (ok) startPos = p;
-            else logMsg("Invalid start FEN, using standard position.");
+            Position p = Position::fromFEN(f, &ok);
+            if (ok) starts.push_back(p);
+            else logMsg("Skipping invalid start FEN: " + f.substr(0,40));
         }
+        if (starts.empty()) starts.push_back(Position::startpos());
         // launch all engines
         std::vector<std::unique_ptr<UciEngine>> eng;
         std::vector<Standing> table;
@@ -128,12 +137,15 @@ void MatchRunner::startTournament(std::vector<EngineEntry> engines, TimeControl 
         }
         post([&](Snapshot& s){ s.standings = table; });
         // build pairings
-        struct Pair{int a,b;};
+        struct Pair{int a,b,fen;};
         std::vector<Pair> pairs;
         for (size_t i=0;i<eng.size();i++)
             for (size_t j=i+1;j<eng.size();j++)
-                for (int g=0; g<gamesPerPair; g++)
-                    pairs.push_back(g%2==0 ? Pair{(int)i,(int)j} : Pair{(int)j,(int)i});
+                for (int g=0; g<gamesPerPair; g++){
+                    // same opening for each color pair (g/2), cycling the list
+                    int fi = (g/2) % (int)starts.size();
+                    pairs.push_back(g%2==0 ? Pair{(int)i,(int)j,fi} : Pair{(int)j,(int)i,fi});
+                }
         int total = (int)pairs.size();
         post([&](Snapshot& s){ s.totalGames = total; });
         for (int gi=0; gi<total && !abort_; gi++){
@@ -142,7 +154,7 @@ void MatchRunner::startTournament(std::vector<EngineEntry> engines, TimeControl 
                    + eng[pairs[gi].a]->name() + " vs " + eng[pairs[gi].b]->name()
                    + " (" + tc.label() + ")");
             Game g;
-            playOneGame(*eng[pairs[gi].a], *eng[pairs[gi].b], tc, g, startPos);
+            playOneGame(*eng[pairs[gi].a], *eng[pairs[gi].b], tc, g, starts[pairs[gi].fen]);
             if (abort_) break;
             // record
             {

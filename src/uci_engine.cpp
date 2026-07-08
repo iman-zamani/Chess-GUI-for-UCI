@@ -195,36 +195,52 @@ void UciEngine::setPosition(const std::string& fen, const std::vector<std::strin
 
 void UciEngine::parseInfo(const std::string& line){
     if (line.rfind("info",0)!=0) return;
-    EngineInfo e; e.valid=true;
     std::istringstream ss(line);
     std::string tok; ss >> tok;
-    {
-        std::lock_guard<std::mutex> lk(infoMx);
-        e = info; e.valid = true;   // keep previous fields; update what's present
-    }
-    bool sawPv=false;
+    int mpv = 1, depth = 0, cp = 0, mateIn = 0;
+    bool isMate=false, sawScore=false, sawPv=false, sawDepth=false;
+    std::string pv;
     while (ss >> tok){
-        if (tok=="depth") ss >> e.depth;
+        if (tok=="depth"){ ss >> depth; sawDepth=true; }
+        else if (tok=="multipv") ss >> mpv;
         else if (tok=="score"){
             std::string kind; ss >> kind;
             int v; ss >> v;
-            if (kind=="cp"){ e.isMate=false; e.scoreCp=v; }
-            else if (kind=="mate"){ e.isMate=true; e.mateIn=v; }
+            if (kind=="cp"){ isMate=false; cp=v; sawScore=true; }
+            else if (kind=="mate"){ isMate=true; mateIn=v; sawScore=true; }
         }
         else if (tok=="pv"){
-            e.pv.clear();
             std::string m;
-            while (ss >> m){ if(!e.pv.empty())e.pv+=" "; e.pv+=m; }
+            while (ss >> m){ if(!pv.empty())pv+=" "; pv+=m; }
             sawPv=true;
         }
     }
-    (void)sawPv;
+    if (mpv < 1) mpv = 1;
     std::lock_guard<std::mutex> lk(infoMx);
-    info = e;
+    if (mpv==1){                       // legacy single-line info follows the best line
+        info.valid = true;
+        if (sawDepth) info.depth = depth;
+        if (sawScore){ info.isMate=isMate; info.scoreCp=cp; info.mateIn=mateIn; }
+        if (sawPv) info.pv = pv;
+    }
+    if (sawPv && sawScore && mpv<=64){
+        if ((int)pvs_.size() < mpv) pvs_.resize(mpv);
+        PvLine& L = pvs_[mpv-1];
+        L.multipv=mpv; L.depth=depth; L.scoreCp=cp; L.isMate=isMate;
+        L.mateIn=mateIn; L.pv=pv; L.valid=true;
+    }
 }
 EngineInfo UciEngine::lastInfo(){
     std::lock_guard<std::mutex> lk(infoMx);
     return info;
+}
+std::vector<PvLine> UciEngine::lastPvs(){
+    std::lock_guard<std::mutex> lk(infoMx);
+    return pvs_;
+}
+std::string UciEngine::lastPonder(){
+    std::lock_guard<std::mutex> lk(infoMx);
+    return ponder_;
 }
 
 std::string UciEngine::waitBestmove(int timeoutMs){
@@ -235,32 +251,40 @@ std::string UciEngine::waitBestmove(int timeoutMs){
         parseInfo(ln);
         if (ln.rfind("bestmove",0)==0){
             std::istringstream ss(ln);
-            std::string a,b; ss >> a >> b;
+            std::string a,b,c2,d; ss >> a >> b >> c2 >> d;
+            if (c2=="ponder"){ std::lock_guard<std::mutex> lk(infoMx); ponder_=d; }
             return b=="(none)" ? "" : b;
         }
     }
     return "";
 }
 std::string UciEngine::goMovetime(int ms){
-    { std::lock_guard<std::mutex> lk(infoMx); info = EngineInfo{}; }
+    { std::lock_guard<std::mutex> lk(infoMx); info = EngineInfo{}; pvs_.clear(); ponder_.clear(); }
     sendRaw("go movetime " + std::to_string(ms));
     return waitBestmove(ms + 8000);
 }
 std::string UciEngine::goDepth(int d){
-    { std::lock_guard<std::mutex> lk(infoMx); info = EngineInfo{}; }
+    { std::lock_guard<std::mutex> lk(infoMx); info = EngineInfo{}; pvs_.clear(); ponder_.clear(); }
     sendRaw("go depth " + std::to_string(d));
     return waitBestmove(600000);
 }
 std::string UciEngine::goClock(int wt,int bt,int wi,int bi){
-    { std::lock_guard<std::mutex> lk(infoMx); info = EngineInfo{}; }
+    { std::lock_guard<std::mutex> lk(infoMx); info = EngineInfo{}; pvs_.clear(); ponder_.clear(); }
     std::ostringstream o;
     o << "go wtime "<<wt<<" btime "<<bt<<" winc "<<wi<<" binc "<<bi;
     sendRaw(o.str());
     return waitBestmove(wt + bt + 20000);
 }
 void UciEngine::goInfinite(){
-    { std::lock_guard<std::mutex> lk(infoMx); info = EngineInfo{}; }
+    { std::lock_guard<std::mutex> lk(infoMx); info = EngineInfo{}; pvs_.clear(); ponder_.clear(); }
     sendRaw("go infinite");
+}
+std::string UciEngine::goPonderWait(int wt,int bt,int wi,int bi,int timeoutMs){
+    { std::lock_guard<std::mutex> lk(infoMx); info = EngineInfo{}; pvs_.clear(); ponder_.clear(); }
+    std::ostringstream o;
+    o << "go ponder wtime "<<wt<<" btime "<<bt<<" winc "<<wi<<" binc "<<bi;
+    sendRaw(o.str());
+    return waitBestmove(timeoutMs);
 }
 std::string UciEngine::stopAndWait(int timeoutMs){
     sendRaw("stop");

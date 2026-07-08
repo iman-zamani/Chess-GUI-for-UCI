@@ -14,6 +14,17 @@ struct UciOption {
     std::vector<std::string> vars;   // for combo
 };
 
+// One line of a MultiPV search (multipv k). pvs()[0] is the engine's best line.
+struct PvLine {
+    int multipv = 1, depth = 0, scoreCp = 0, mateIn = 0;
+    bool isMate = false, valid = false;
+    std::string pv;                  // space separated UCI moves
+    std::string firstMove() const {
+        size_t sp = pv.find(' ');
+        return sp==std::string::npos ? pv : pv.substr(0,sp);
+    }
+};
+
 struct EngineInfo {
     int depth = 0;
     int scoreCp = 0;        // from engine's point of view (side to move)
@@ -43,12 +54,18 @@ public:
     // infinite analysis: call goInfinite, poll lastInfo(), then stopAndWait()
     void goInfinite();
     std::string stopAndWait(int timeoutMs = 3000);
+    // Pondering: send "go ponder <clocks>" and block until bestmove arrives
+    // (which only happens after "stop" or after "ponderhit" completes).
+    std::string goPonderWait(int wtimeMs, int btimeMs, int wincMs, int bincMs,
+                             int timeoutMs = 7200000);
 
     // engine-side perft: sends "go perft d" (Stockfish-style). Returns node
     // count or -1 if the engine doesn't support it.
     long long goPerft(int depth, int timeoutMs = 120000);
 
     EngineInfo lastInfo();
+    std::vector<PvLine> lastPvs();               // MultiPV lines (index 0 = best)
+    std::string lastPonder();                    // ponder hint from last bestmove
     const std::vector<UciOption>& options() const { return opts; }
     std::string name() const { return engName; }
     std::string lastError() const { return errMsg; }
@@ -66,6 +83,8 @@ private:
     std::string engName = "engine", errMsg;
     std::atomic<bool> running{false};
     EngineInfo info;
+    std::vector<PvLine> pvs_;
+    std::string ponder_;
     std::mutex infoMx;
     std::string rbuf;
 #ifdef _WIN32

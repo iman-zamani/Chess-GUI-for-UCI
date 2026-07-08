@@ -39,6 +39,9 @@ public:
         GameResult result = GameResult::ONGOING;
         ResultReason reason = ResultReason::NONE;
         int scoreCpWhitePOV = 0; bool scoreIsMate=false; int mateIn=0;
+        int lastFrom=-1, lastTo=-1;         // last move squares for highlighting
+        long long postedAtMs=0;             // steady-clock ms when clocks were posted
+                                            // (GUI subtracts elapsed time for live display)
         std::string status;                 // human readable
         int gameIndex=0, totalGames=0;
         std::vector<Standing> standings;    // tournaments only
@@ -49,10 +52,12 @@ public:
     ~MatchRunner(){ abort(); }
     // Single match: engineA vs engineB, `games` games, colors alternate.
     void startMatch(EngineEntry a, EngineEntry b, TimeControl tc, int games,
-                    const std::string& startFen = "");
-    // Round-robin tournament. startFen empty => standard start position.
+                    const std::vector<std::string>& startFens = {});
+    // Round-robin tournament. Empty startFens => standard start position.
+    // With multiple openings, each opening is played twice per pairing
+    // (colors alternate), cycling through the list.
     void startTournament(std::vector<EngineEntry> engines, TimeControl tc, int gamesPerPair,
-                         const std::string& startFen = "");
+                         const std::vector<std::string>& startFens = {});
     void abort();
     bool running() const { return thread_.joinable() && !done_; }
     Snapshot snapshot();

@@ -73,5 +73,16 @@ struct Game {
     std::string resultString() const;
 };
 
+// ---------------- PGN import ----------------
+struct PgnGame {
+    std::string white="?", black="?", result="*", event, fenTag;
+    std::string movetext;
+};
+// Split a PGN file/text into games (headers parsed, movetext kept raw).
+std::vector<PgnGame> parsePGN(const std::string& text);
+// Build a playable Game from one PGN game. Returns false on first illegal
+// move (out contains the moves parsed up to that point; *err explains).
+bool gameFromPGN(const PgnGame& pg, Game& out, std::string* err);
+
 std::string squareName(int sq);
 int nameToSquare(const std::string& n);   // -1 if invalid

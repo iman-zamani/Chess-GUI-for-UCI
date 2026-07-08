@@ -128,73 +128,118 @@ std::vector<std::string> defaultAccuracyPositions(){
     };
 }
 
-static double acplToAccuracy(double acpl){
-    // Lichess-style logistic mapping
-    double a = 103.1668 * std::exp(-0.04354 * acpl) - 3.1669;
+std::vector<std::string> loadFenList(const std::string& path){
+    std::vector<std::string> out;
+    std::ifstream f(path);
+    if (!f) return out;
+    std::string line;
+    while (std::getline(f, line)){
+        while (!line.empty() && (line.back()=='\r'||line.back()==' ')) line.pop_back();
+        if (line.empty() || line[0]=='#') continue;
+        bool ok=false; Position::fromFEN(line,&ok);
+        if (ok) out.push_back(line);
+    }
+    return out;
+}
+
+// cp (mover POV) -> expected win percentage (lichess model)
+double cpToWinPct(int cp){
+    return 50.0 + 50.0 * (2.0 / (1.0 + std::exp(-0.00368208 * cp)) - 1.0);
+}
+// accuracy of ONE move from its win-percentage drop (lichess model).
+// Note: the 103.1668*exp(-0.04354*x) constants take a WIN% DROP, not raw
+// centipawns — feeding acpl straight in is what makes strong engines look ~80%.
+double moveAccuracyFromWinDrop(double drop){
+    if (drop < 0) drop = 0;
+    double a = 103.1668 * std::exp(-0.04354 * drop) - 3.1669;
     if (a > 100) a = 100; if (a < 0) a = 0;
     return a;
+}
+double acplToAccuracy(double acpl){                 // legacy rough mapping
+    return moveAccuracyFromWinDrop(acpl * 0.12);
 }
 
 AccuracyReport runAccuracyTest(
     UciEngine& test, UciEngine& ref,
     const std::vector<std::string>& fens,
-    int testMs, int refMs,
+    int testMs, int refMs, int multiPV,
     std::function<void(int,int,const AccuracyMoveReport&)> progress,
     std::atomic<bool>& abortFlag)
 {
     AccuracyReport rep;
+    double accSum = 0;
+    if (multiPV < 1) multiPV = 1;
+    ref.setOption("MultiPV", std::to_string(multiPV));
     long long totalLoss = 0; int counted = 0;
     int total = (int)fens.size();
-    auto evalCpForMover = [&](const Position& p)->int{
-        ref.setPosition(p.toFEN(), {});
-        ref.goMovetime(refMs);
-        EngineInfo i = ref.lastInfo();
-        if (i.isMate) return i.mateIn > 0 ? 10000 : -10000;
-        return i.scoreCp;
+    auto lineScore=[](const PvLine& L)->int{
+        if (L.isMate) return L.mateIn>0 ? 32000-L.mateIn : -32000-L.mateIn;
+        return L.scoreCp;
     };
     for (int idx=0; idx<total; idx++){
         if (abortFlag) break;
+        if (!test.alive() || !ref.alive()) break;
         bool ok=false;
         Position p = Position::fromFEN(fens[idx], &ok);
         if (!ok) continue;
-        // reference: best score for side to move + best move
-        ref.newGame();
-        ref.setPosition(p.toFEN(), {});
+        // one MultiPV reference search scores ALL the top moves consistently
+        ref.setPosition(fens[idx], {});
         std::string refBest = ref.goMovetime(refMs);
-        EngineInfo refInfo = ref.lastInfo();
-        int bestScore = refInfo.isMate ? (refInfo.mateIn>0?10000:-10000) : refInfo.scoreCp;
-        // test engine plays
-        test.newGame();
-        test.setPosition(p.toFEN(), {});
+        std::vector<PvLine> pvs = ref.lastPvs();
+        if (pvs.empty() || !pvs[0].valid || refBest.empty()) continue;
+        int bestScore = lineScore(pvs[0]);
+        // test engine picks its move
+        test.setPosition(fens[idx], {});
         std::string played = test.goMovetime(testMs);
         AccuracyMoveReport m;
-        m.refBest = refBest; m.played = played;
+        m.refBest = refBest; m.played = played; m.fen = fens[idx];
+        for (size_t k=1;k<pvs.size();k++){
+            if (!pvs[k].valid) continue;
+            int d = bestScore - lineScore(pvs[k]);
+            if (d < 0) d = 0;                        // MultiPV lines can jitter a few cp
+            Move am;
+            std::string san = p.uciToMove(pvs[k].firstMove(), am) ? p.moveToSAN(am)
+                                                                  : pvs[k].firstMove();
+            if (!m.alternatives.empty()) m.alternatives += ", ";
+            m.alternatives += san + (d > 1000 ? " (-1000+)" : " (-" + std::to_string(d) + ")");
+        }
         Move mv;
         if (played.empty() || !p.uciToMove(played, mv)){
             m.san = "(illegal: " + played + ")";
             m.cpLoss = 1000;
         } else {
             m.san = p.moveToSAN(mv);
-            if (played == refBest) m.cpLoss = 0;
-            else {
+            int rank = -1;
+            for (size_t k=0;k<pvs.size();k++)
+                if (pvs[k].valid && pvs[k].firstMove()==played){ rank=(int)k; break; }
+            m.rank = rank;
+            if (rank >= 0){
+                m.cpLoss = bestScore - lineScore(pvs[rank]);   // same-search gap: fair credit
+            } else {
+                // outside the top lines: evaluate the position after the move
                 Position after = p; after.makeMove(mv);
-                // eval after our move is from opponent's POV -> negate
-                int ourScoreAfter = -evalCpForMover(after);
-                m.cpLoss = bestScore - ourScoreAfter;
-                if (m.cpLoss < 0) m.cpLoss = 0;
-                if (m.cpLoss > 1000) m.cpLoss = 1000;
+                ref.setPosition(after.toFEN(), {});
+                ref.goMovetime(refMs);
+                std::vector<PvLine> pa = ref.lastPvs();
+                int oppScore = (!pa.empty() && pa[0].valid) ? lineScore(pa[0]) : 0;
+                m.cpLoss = bestScore - (-oppScore);
             }
+            if (m.cpLoss < 0) m.cpLoss = 0;
+            if (m.cpLoss > 1000) m.cpLoss = 1000;
         }
         if (m.cpLoss >= 300) rep.blunders++;
         else if (m.cpLoss >= 100) rep.mistakes++;
         else if (m.cpLoss >= 50) rep.inaccuracies++;
+        accSum += moveAccuracyFromWinDrop(
+            cpToWinPct(bestScore) - cpToWinPct(bestScore - m.cpLoss));
         totalLoss += m.cpLoss; counted++;
         rep.moves.push_back(m);
         if (progress) progress(idx+1, total, m);
     }
+    ref.setOption("MultiPV", "1");
     if (counted){
         rep.avgCpLoss = (double)totalLoss / counted;
-        rep.accuracyPct = acplToAccuracy(rep.avgCpLoss);
+        rep.accuracyPct = accSum / counted;
     }
     return rep;
 }
