@@ -1,3 +1,5 @@
 # Ignore everything in the build directory
 build/*
-.DS_Store
+**/.DS_Store
+
+Resources/engines
