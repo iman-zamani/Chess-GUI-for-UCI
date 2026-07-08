@@ -36,8 +36,9 @@ void MatchRunner::abort(){
     abort_ = false;
 }
 
-void MatchRunner::playOneGame(UciEngine& we, UciEngine& be, TimeControl tc, Game& g){
-    g.reset(Position::startpos());
+void MatchRunner::playOneGame(UciEngine& we, UciEngine& be, TimeControl tc, Game& g,
+                              const Position& startPos){
+    g.reset(startPos);
     g.whiteName = we.name(); g.blackName = be.name();
     we.newGame(); be.newGame();
     long long wClock = tc.baseMs, bClock = tc.baseMs;
@@ -88,11 +89,13 @@ void MatchRunner::playOneGame(UciEngine& we, UciEngine& be, TimeControl tc, Game
     post([&](Snapshot& s){ s.result=g.result; s.reason=g.reason; });
 }
 
-void MatchRunner::startMatch(EngineEntry a, EngineEntry b, TimeControl tc, int games){
-    startTournament({a,b}, tc, games);
+void MatchRunner::startMatch(EngineEntry a, EngineEntry b, TimeControl tc, int games,
+                             const std::string& startFen){
+    startTournament({a,b}, tc, games, startFen);
 }
 
-void MatchRunner::startTournament(std::vector<EngineEntry> engines, TimeControl tc, int gamesPerPair){
+void MatchRunner::startTournament(std::vector<EngineEntry> engines, TimeControl tc, int gamesPerPair,
+                                  const std::string& startFen){
     abort();
     done_ = false;
     {
@@ -100,7 +103,14 @@ void MatchRunner::startTournament(std::vector<EngineEntry> engines, TimeControl 
         snap_ = Snapshot{};
         pgns_.clear();
     }
-    thread_ = std::thread([this, engines, tc, gamesPerPair](){
+    thread_ = std::thread([this, engines, tc, gamesPerPair, startFen](){
+        Position startPos = Position::startpos();
+        if (!startFen.empty()){
+            bool ok=false;
+            Position p = Position::fromFEN(startFen, &ok);
+            if (ok) startPos = p;
+            else logMsg("Invalid start FEN, using standard position.");
+        }
         // launch all engines
         std::vector<std::unique_ptr<UciEngine>> eng;
         std::vector<Standing> table;
@@ -112,6 +122,7 @@ void MatchRunner::startTournament(std::vector<EngineEntry> engines, TimeControl 
                 post([](Snapshot& s){ s.finished = true; });
                 return;
             }
+            for (auto& opt : e.options) u->setOption(opt.first, opt.second);
             table.push_back({u->name(),0,0,0});
             eng.push_back(std::move(u));
         }
@@ -131,7 +142,7 @@ void MatchRunner::startTournament(std::vector<EngineEntry> engines, TimeControl 
                    + eng[pairs[gi].a]->name() + " vs " + eng[pairs[gi].b]->name()
                    + " (" + tc.label() + ")");
             Game g;
-            playOneGame(*eng[pairs[gi].a], *eng[pairs[gi].b], tc, g);
+            playOneGame(*eng[pairs[gi].a], *eng[pairs[gi].b], tc, g, startPos);
             if (abort_) break;
             // record
             {

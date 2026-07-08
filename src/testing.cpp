@@ -117,7 +117,7 @@ std::vector<std::string> defaultAccuracyPositions(){
         "r1bqk2r/2ppbppp/p1n2n2/1p2p3/4P3/1B3N2/PPPP1PPP/RNBQR1K1 w kq - 0 7",
         "2rq1rk1/pb2bppp/1pn1pn2/2pp4/3P4/1P2PNP1/PBPN1PBP/R2Q1RK1 w - - 0 11",
         "r4rk1/pp2ppbp/2n3p1/q7/3P4/2N1BN2/PP2QPPP/2R2RK1 w - - 4 14",
-        "8/5pk1/6p1/8/3Q4/6PK/5P2/2q5 w - - 0 40",
+        "6k1/5pp1/4p2p/8/3Q4/6P1/5PKP/3q4 w - - 4 38",
         "8/8/4kpp1/3p1b2/p6P/2B5/6P1/6K1 b - - 2 47",
         "4rrk1/1pp1qppp/p1np1n2/4p3/2B1P3/2NP1N2/PPP1QPPP/2KR3R w - - 0 12",
         "r3kb1r/pp3ppp/2n1bn2/2p1p3/4P3/2NP1N2/PPP2PPP/R1B1KB1R w KQkq - 0 8",

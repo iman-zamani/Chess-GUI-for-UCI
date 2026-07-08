@@ -5,6 +5,15 @@
 #include <mutex>
 #include <atomic>
 
+// A UCI option advertised by the engine ("option name ... type ...").
+struct UciOption {
+    std::string name;
+    std::string type;        // check | spin | combo | string | button
+    std::string defVal;
+    long long minV = 0, maxV = 0;
+    std::vector<std::string> vars;   // for combo
+};
+
 struct EngineInfo {
     int depth = 0;
     int scoreCp = 0;        // from engine's point of view (side to move)
@@ -40,6 +49,7 @@ public:
     long long goPerft(int depth, int timeoutMs = 120000);
 
     EngineInfo lastInfo();
+    const std::vector<UciOption>& options() const { return opts; }
     std::string name() const { return engName; }
     std::string lastError() const { return errMsg; }
 
@@ -51,6 +61,8 @@ private:
     std::string waitBestmove(int timeoutMs);
     void parseInfo(const std::string& line);
 
+    void parseOptionLine(const std::string& line);
+    std::vector<UciOption> opts;
     std::string engName = "engine", errMsg;
     std::atomic<bool> running{false};
     EngineInfo info;

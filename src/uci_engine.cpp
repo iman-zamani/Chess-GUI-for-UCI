@@ -43,6 +43,10 @@ bool UciEngine::start(const std::string& exePath){
     running = true;
 #else
 bool UciEngine::start(const std::string& exePath){
+    // A crashed/killed engine must never take the GUI down with it:
+    // without this, writing to a dead engine's pipe raises SIGPIPE and
+    // terminates the whole application.
+    signal(SIGPIPE, SIG_IGN);
     int toChild[2], fromChild[2];
     if (pipe(toChild) || pipe(fromChild)){ errMsg="pipe failed"; return false; }
     pid_t p = fork();
@@ -66,6 +70,7 @@ bool UciEngine::start(const std::string& exePath){
         std::string ln = readLine(200);
         if (ln.empty()) continue;
         if (ln.rfind("id name ",0)==0) engName = ln.substr(8);
+        if (ln.rfind("option ",0)==0) parseOptionLine(ln);
         if (ln == "uciok"){ ok=true; break; }
     }
     if (!ok){ errMsg = "no uciok (not a UCI engine?)"; quit(); return false; }
@@ -75,6 +80,35 @@ bool UciEngine::start(const std::string& exePath){
         if (readLine(200) == "readyok") return true;
     }
     errMsg = "no readyok"; quit(); return false;
+}
+
+void UciEngine::parseOptionLine(const std::string& line){
+    // option name <name...> type <t> [default <d...>] [min N] [max N] [var V]...
+    std::istringstream ss(line);
+    std::string tok; ss >> tok;                     // "option"
+    UciOption o;
+    std::string key;
+    auto isKey=[](const std::string& s){
+        return s=="name"||s=="type"||s=="default"||s=="min"||s=="max"||s=="var";
+    };
+    std::vector<std::string> toks;
+    while (ss >> tok) toks.push_back(tok);
+    for (size_t i=0;i<toks.size();){
+        if (!isKey(toks[i])){ i++; continue; }
+        key = toks[i++];
+        std::string val;
+        while (i<toks.size() && !isKey(toks[i])){
+            if (!val.empty()) val += " ";
+            val += toks[i++];
+        }
+        if (key=="name") o.name = val;
+        else if (key=="type") o.type = val;
+        else if (key=="default") o.defVal = (val=="<empty>"? "" : val);
+        else if (key=="min") o.minV = atoll(val.c_str());
+        else if (key=="max") o.maxV = atoll(val.c_str());
+        else if (key=="var") o.vars.push_back(val);
+    }
+    if (!o.name.empty() && !o.type.empty()) opts.push_back(o);
 }
 
 void UciEngine::sendRaw(const std::string& line){
