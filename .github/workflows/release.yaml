@@ -14,33 +14,21 @@ jobs:
   # ==========================================================
   build-windows:
     runs-on: windows-latest
-    env:
-      VCPKG_ROOT: "C:/vcpkg"
     steps:
       - uses: actions/checkout@v4
 
-      # --- FIX: Downgrade vcpkg to ensure we get SFML 2.x, not 3.x ---
-      - name: Pin vcpkg to SFML 2.x
+      - name: Download and Extract SFML 2.6.2
         shell: pwsh
         run: |
-          cd $env:VCPKG_ROOT
-          git fetch --unshallow
-          # This commit is from late 2024, ensuring SFML 2.6.1
-          git checkout 5e5d0e1cd7785623065e77eff011afdeec1a3574
-          ./bootstrap-vcpkg.bat
-
-      - name: Install SFML via vcpkg
-        shell: pwsh
-        run: |
-          vcpkg install sfml:x64-windows
+          Invoke-WebRequest -Uri "https://www.sfml-dev.org/files/SFML-2.6.2-windows-vc17-64-bit.zip" -OutFile "sfml.zip"
+          Expand-Archive -Path "sfml.zip" -DestinationPath "${{ github.workspace }}\sfml"
 
       - name: Configure CMake
         shell: pwsh
         run: |
           cmake -S . -B build `
             -DCMAKE_BUILD_TYPE=Release `
-            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" `
-            -DVCPKG_TARGET_TRIPLET=x64-windows
+            -DSFML_DIR="${{ github.workspace }}/sfml/SFML-2.6.2/lib/cmake/SFML"
 
       - name: Build
         shell: pwsh
@@ -53,17 +41,17 @@ jobs:
           DIST_NAME="chess-gui-${VERSION}-windows-x64"
           mkdir "$DIST_NAME"
 
-          # 1. Copy Executable & DLLs
+          # 1. Copy Executable
           if [ -f "build/Release/chess-gui.exe" ]; then
             cp "build/Release/chess-gui.exe" "$DIST_NAME/"
-            cp "build/Release/"*.dll "$DIST_NAME/"
           else
             cp "build/chess-gui.exe" "$DIST_NAME/"
-            find "build" -name "*.dll" -exec cp {} "$DIST_NAME/" \;
           fi
+          
+          # 2. Copy SFML DLLs (including openal32.dll)
+          cp sfml/SFML-2.6.2/bin/*.dll "$DIST_NAME/"
 
-          # 2. Copy Resources (Including Icon)
-          # We prefer the one in build/Resources if it exists (e.g. if copied by CMake)
+          # 3. Copy Resources (Including Icon)
           mkdir -p "$DIST_NAME/Resources"
           
           if [ -d "build/Resources" ]; then
@@ -72,7 +60,6 @@ jobs:
              cp -r "Resources/"* "$DIST_NAME/Resources/"
           fi
 
-          # Explicit check to ensure icon.png is there (for window icon loading)
           if [ -f "build/Resources/icon.png" ]; then
              cp "build/Resources/icon.png" "$DIST_NAME/Resources/icon.png"
           fi
@@ -84,7 +71,6 @@ jobs:
         with:
           name: windows-x64
           path: "*.zip"
-
   # ==========================================================
   # 2. MACOS BUILD (Intel & Apple Silicon)
   # ==========================================================
