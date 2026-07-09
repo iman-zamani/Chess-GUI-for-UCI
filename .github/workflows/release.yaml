@@ -20,7 +20,8 @@ jobs:
       - name: Download and Extract SFML 2.6.2
         shell: pwsh
         run: |
-          Invoke-WebRequest -Uri "https://www.sfml-dev.org/files/SFML-2.6.2-windows-vc17-64-bit.zip" -OutFile "sfml.zip"
+          $Url = "https://github.com/SFML/SFML/releases/download/2.6.2/SFML-2.6.2-windows-vc17-64-bit.zip"
+          Invoke-WebRequest -Uri $Url -OutFile "sfml.zip"
           Expand-Archive -Path "sfml.zip" -DestinationPath "${{ github.workspace }}\sfml"
 
       - name: Configure CMake
@@ -47,13 +48,13 @@ jobs:
           else
             cp "build/chess-gui.exe" "$DIST_NAME/"
           fi
-          
+
           # 2. Copy SFML DLLs (including openal32.dll)
           cp sfml/SFML-2.6.2/bin/*.dll "$DIST_NAME/"
 
           # 3. Copy Resources (Including Icon)
           mkdir -p "$DIST_NAME/Resources"
-          
+
           if [ -d "build/Resources" ]; then
              cp -r "build/Resources/"* "$DIST_NAME/Resources/"
           elif [ -d "Resources" ]; then
@@ -83,7 +84,7 @@ jobs:
           - target_arch: x86_64
             runs_on: macos-15-intel
           - target_arch: arm64
-            runs_on: macos-14 
+            runs_on: macos-14
     steps:
       - uses: actions/checkout@v4
 
@@ -101,9 +102,9 @@ jobs:
           VOL_NAME="ChessGUI"
           DMG_NAME="chess-gui-${VERSION}-macos-${{ matrix.target_arch }}.dmg"
           STAGING="dist"
-          
+
           mkdir -p "$STAGING"
-          
+
           # 1. Copy Binary
           BIN="build/chess-gui"
           if [ ! -f "$BIN" ] && [ -f "build/Release/chess-gui" ]; then BIN="build/Release/chess-gui"; fi
@@ -120,16 +121,16 @@ jobs:
 
           # 3. Handle Icon for DMG
           ICON_PATH="$STAGING/Resources/icon.png"
-          
+
           # Force copy from build folder if missing in staging
           if [ ! -f "$ICON_PATH" ] && [ -f "build/Resources/icon.png" ]; then
              cp "build/Resources/icon.png" "$ICON_PATH"
           fi
-          
-          # Note: create-dmg expects an .icns or can use a raw file, 
+
+          # Note: create-dmg expects an .icns or can use a raw file,
           # but usually requires an App Bundle (.app) for full icon support.
           # Since this is a raw binary, we just ensure the file is inside the folder.
-          
+
           create-dmg \
             --volname "$VOL_NAME" \
             --window-pos 200 120 \
@@ -160,7 +161,7 @@ jobs:
           # Added 'imagemagick' to fix 'convert: command not found'
           sudo apt-get install -y build-essential cmake libsfml-dev ruby ruby-dev rpm libfuse2 imagemagick
           sudo gem install --no-document fpm
-          
+
           wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
           chmod +x linuxdeploy-x86_64.AppImage
           sudo mv linuxdeploy-x86_64.AppImage /usr/local/bin/linuxdeploy
@@ -173,11 +174,11 @@ jobs:
       - name: Prepare Staging
         run: |
           mkdir -p AppDir/usr/bin
-          
+
           BIN="build/chess-gui"
           if [ ! -f "$BIN" ] && [ -f "build/Release/chess-gui" ]; then BIN="build/Release/chess-gui"; fi
           cp "$BIN" AppDir/usr/bin/chess-gui
-          
+
           # Copy resources to be next to binary
           if [ -d "build/Resources" ]; then cp -r "build/Resources" AppDir/usr/bin/;
           elif [ -d "Resources" ]; then cp -r "Resources" AppDir/usr/bin/; fi
@@ -185,7 +186,7 @@ jobs:
       - name: Create AppImage
         run: |
           VERSION="${GITHUB_REF#refs/tags/}"
-          
+
           # 1. Create Desktop File
           cat > chess-gui.desktop <<EOF
           [Desktop Entry]
@@ -195,11 +196,11 @@ jobs:
           Icon=chess-gui
           Categories=Game;
           EOF
-          
+
           # 2. Prepare Icon
           mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
           ICON_DEST="AppDir/usr/share/icons/hicolor/256x256/apps/chess-gui.png"
-          
+
           # Look for the icon in build/Resources first
           if [ -f "build/Resources/icon.png" ]; then
             echo "Using icon from build/Resources/icon.png"
@@ -211,7 +212,7 @@ jobs:
             echo "Icon not found, generating fallback red square"
             convert -size 256x256 xc:red "$ICON_DEST"
           fi
-          
+
           # Copy icon to .DirIcon so the AppImage file itself looks right in file explorer
           cp "$ICON_DEST" "AppDir/.DirIcon"
 
@@ -223,24 +224,24 @@ jobs:
         run: |
           VERSION="${GITHUB_REF#refs/tags/}"
           CLEAN_VERSION="${VERSION#v}"
-          
+
           PKG_ROOT="pkg-root"
           mkdir -p "$PKG_ROOT/opt/chess-gui"
           cp -r AppDir/usr/bin/* "$PKG_ROOT/opt/chess-gui/"
-          
+
           # Copy Icon for system integration
           mkdir -p "$PKG_ROOT/usr/share/icons/hicolor/256x256/apps"
           cp "AppDir/usr/share/icons/hicolor/256x256/apps/chess-gui.png" "$PKG_ROOT/usr/share/icons/hicolor/256x256/apps/chess-gui.png"
-          
+
           # Copy Desktop file
           mkdir -p "$PKG_ROOT/usr/share/applications"
           cp chess-gui.desktop "$PKG_ROOT/usr/share/applications/"
-          
+
           echo '#!/bin/bash' > post-install.sh
           echo 'ln -sf /opt/chess-gui/chess-gui /usr/bin/chess-gui' >> post-install.sh
           echo 'gtk-update-icon-cache /usr/share/icons/hicolor || true' >> post-install.sh
           echo 'update-desktop-database /usr/share/applications || true' >> post-install.sh
-          
+
           echo '#!/bin/bash' > post-uninstall.sh
           echo 'rm -f /usr/bin/chess-gui' >> post-uninstall.sh
           echo 'gtk-update-icon-cache /usr/share/icons/hicolor || true' >> post-uninstall.sh
