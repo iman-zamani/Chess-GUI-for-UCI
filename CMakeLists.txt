@@ -16,7 +16,7 @@ endif()
 find_package(SFML 2.5 COMPONENTS graphics window system REQUIRED)
 find_package(Threads REQUIRED)
 
-add_executable(chess-gui
+set(CHESS_SOURCES
     src/main.cpp
     src/chess.cpp
     src/uci_engine.cpp
@@ -24,6 +24,8 @@ add_executable(chess-gui
     src/tournament.cpp
     src/gui.cpp
 )
+
+add_executable(chess-gui ${CHESS_SOURCES})
 target_include_directories(chess-gui PRIVATE src)
 target_link_libraries(chess-gui PRIVATE
     sfml-graphics sfml-window sfml-system Threads::Threads)
@@ -37,3 +39,35 @@ endif()
 add_custom_command(TARGET chess-gui POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_SOURCE_DIR}/Resources $<TARGET_FILE_DIR:chess-gui>/Resources)
+
+# =============================================================================
+# macOS Retina (HiDPI)
+# Without NSHighResolutionCapable, macOS renders the whole window at 1x and
+# upscales it, so EVERYTHING looks blurry. A loose Info.plist file next to the
+# binary does NOTHING - the plist must either be linked INTO the executable
+# (path A) or live inside a real .app bundle (path B). Both are built here.
+# =============================================================================
+if(APPLE)
+    # Path A: embed Info.plist into the plain ./chess-gui binary.
+    # Verify after building:  otool -P ./chess-gui   -> must print the XML.
+    target_link_options(chess-gui PRIVATE
+        "LINKER:-sectcreate,__TEXT,__info_plist,${CMAKE_SOURCE_DIR}/Info.plist")
+
+    # Path B (guaranteed): a real bundle -> "Chess GUI for UCI.app".
+    add_executable(chess-gui-app MACOSX_BUNDLE ${CHESS_SOURCES})
+    target_include_directories(chess-gui-app PRIVATE src)
+    target_link_libraries(chess-gui-app PRIVATE
+        sfml-graphics sfml-window sfml-system Threads::Threads)
+    set_target_properties(chess-gui-app PROPERTIES
+        OUTPUT_NAME "Chess GUI for UCI"
+        MACOSX_BUNDLE_BUNDLE_NAME "Chess GUI for UCI"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "org.chessgui.uci"
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/BundleInfo.plist.in")
+    # The app chdirs to its own executable dir at startup, so copying
+    # Resources next to the binary (Contents/MacOS/) makes it self-contained.
+    add_custom_command(TARGET chess-gui-app POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/Resources
+            "$<TARGET_FILE_DIR:chess-gui-app>/Resources"
+        COMMENT "Copying Resources into the app bundle...")
+endif()
