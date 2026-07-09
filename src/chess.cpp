@@ -431,6 +431,50 @@ std::string Game::toPGN() const{
     return o.str();
 }
 
+std::string enginePositionProblem(const Position& p){
+    int wc=0,bc=0,wp=0,bp=0,wk=0,bk=0;
+    for (int i=0;i<64;i++){
+        int v=p.board[i];
+        if (!v) continue;
+        if (v>0){ wc++; if (v==WHITE_PAWN) wp++; if (v==WHITE_KING) wk++; }
+        else    { bc++; if (v==BLACK_PAWN) bp++; if (v==BLACK_KING) bk++; }
+        if (std::abs(v)==1 && (i/8==0 || i/8==7))
+            return "pawns cannot stand on the 1st or 8th rank";
+    }
+    if (wk!=1 || bk!=1) return "each side needs exactly one king";
+    if (wp>8 || bp>8) return "more than 8 pawns on one side";
+    if (wc>16 || bc>16) return "more than 16 pieces on one side - UCI engines cannot handle this";
+    if (p.inCheck(!p.whiteToMove))
+        return std::string(p.whiteToMove? "Black":"White") + " is in check but it isn't their turn";
+    return "";
+}
+
+bool premovePlausible(const Position& p, int from, int to){
+    if (from<0||from>63||to<0||to>63||from==to) return false;
+    int v = p.board[from];
+    if (!v) return false;
+    int a = std::abs(v);
+    int fx=from%8, fy=from/8, tx=to%8, ty=to/8;
+    int dx=tx-fx, dy=ty-fy, ax=std::abs(dx), ay=std::abs(dy);
+    switch (a){
+    case 1: {                                   // pawn
+        int dir = v>0? -1 : 1;
+        if (dy==dir && ax==1) return true;      // capture / recapture
+        if (dx==0 && dy==dir) return true;      // push
+        int startRank = v>0? 6 : 1;
+        if (dx==0 && fy==startRank && dy==2*dir) return true;
+        return false; }
+    case 3: return (ax==1&&ay==2)||(ax==2&&ay==1);
+    case 4: return ax==ay;
+    case 5: return ax==0||ay==0;
+    case 9: return ax==ay||ax==0||ay==0;
+    case 20:
+        if (ax<=1 && ay<=1) return true;
+        return ay==0 && ax==2 && fx==4 && fy==(v>0?7:0);   // castling gesture
+    }
+    return false;
+}
+
 // ---------------- PGN import ----------------
 std::vector<PgnGame> parsePGN(const std::string& text){
     std::vector<PgnGame> games;

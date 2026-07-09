@@ -848,8 +848,16 @@ void App::copyFEN(){
 void App::pasteFEN(){
     std::string fen = sf::Clipboard::getString();
     bool ok=false; Position p = Position::fromFEN(fen,&ok);
-    if (ok){ newGame(p); showToast("Position set from FEN"); }
-    else showToast("Clipboard does not contain a valid FEN");
+    if (!ok){ showToast("Clipboard does not contain a valid FEN"); return; }
+    std::string prob = enginePositionProblem(p);
+    bool engineInvolved = (mode!=GameMode::HUMAN_VS_HUMAN) || analysing;
+    if (!prob.empty() && engineInvolved){
+        showToast("Engines cannot play this position: "+prob);
+        return;
+    }
+    newGame(p);
+    showToast(prob.empty()? "Position set from FEN"
+                          : "Position set (note: "+prob+" - engines would reject it)");
 }
 void App::saveTournamentPGNs(){
     auto pgns = runner.collectedPGNs();
@@ -873,21 +881,8 @@ std::string App::editorFEN() const{
     return p.toFEN();
 }
 std::string App::editorProblem() const{
-    int wk=0, bk=0;
-    for (int i=0;i<64;i++){
-        int v = editPos.board[i];
-        if (v==WHITE_KING) wk++;
-        if (v==BLACK_KING) bk++;
-        if (std::abs(v)==1 && (i/8==0 || i/8==7))
-            return "Pawns cannot stand on the 1st or 8th rank";
-    }
-    if (wk!=1 || bk!=1) return "Each side needs exactly one king";
-    bool ok=false;
-    Position p = Position::fromFEN(editorFEN(), &ok);
-    if (!ok) return "Position is not valid";
-    if (p.inCheck(!p.whiteToMove))
-        return std::string(p.whiteToMove? "Black":"White") + " is in check but it isn't their turn";
-    return "";
+    // same limits UCI engines assume (piece counts, kings, pawn ranks, checks)
+    return enginePositionProblem(editPos);
 }
 
 // =============================================================== PGN analysis
@@ -913,7 +908,7 @@ void App::openPgnGame(int idx){
     clocksRunning = false;
     selectedSq=-1; legalForSelected.clear(); pendingPromotion.reset();
     premoveFrom=premoveTo=-1;
-    viewPly = game.moves.empty()? -1 : 0;      // open at the start, step through with > 
+    viewPly = game.moves.empty()? -1 : 0;      // open at the start, step through with >
     boardFlipped = false;
     screen = Screen::GAME;
     if (!ok) showToast("Loaded partially: "+err);
@@ -1109,10 +1104,12 @@ void App::commitTextInput(){
             showToast("File not found: "+enginePathInput);
     } else if (t == TextTarget::MATCH_FEN){
         if (!matchFenInput.empty()){
-            bool ok=false; Position::fromFEN(matchFenInput,&ok);
-            if (ok){ matchFens.push_back(matchFenInput); matchFenInput.clear();
-                     showToast("Position added ("+std::to_string(matchFens.size())+" total)"); }
-            else showToast("That FEN is invalid - not added");
+            bool ok=false; Position p = Position::fromFEN(matchFenInput,&ok);
+            std::string prob = ok ? enginePositionProblem(p) : "";
+            if (!ok) showToast("That FEN is invalid - not added");
+            else if (!prob.empty()) showToast("Not added: "+prob);
+            else { matchFens.push_back(matchFenInput); matchFenInput.clear();
+                   showToast("Position added ("+std::to_string(matchFens.size())+" total)"); }
         }
     } else if (t == TextTarget::FILE_PATH){
         if (!filePathInput.empty()){
@@ -1124,8 +1121,9 @@ void App::commitTextInput(){
                 while (std::getline(f,line)){
                     while (!line.empty() && (line.back()=='\r'||line.back()==' ')) line.pop_back();
                     if (line.empty()||line[0]=='#') continue;
-                    bool ok=false; Position::fromFEN(line,&ok);
-                    if (ok){ matchFens.push_back(line); added++; } else bad++;
+                    bool ok=false; Position p = Position::fromFEN(line,&ok);
+                    if (ok && enginePositionProblem(p).empty()){ matchFens.push_back(line); added++; }
+                    else bad++;
                 }
                 showToast("Added "+std::to_string(added)+" positions"
                           +(bad? " ("+std::to_string(bad)+" invalid skipped)":""));
@@ -1221,14 +1219,23 @@ void App::handleEvent(const sf::Event& e){
                     }
                 } else if (mode==GameMode::HUMAN_VS_ENGINE && viewPly<0
                            && game.result==GameResult::ONGOING){
-                    // premove: pick up own piece / choose its destination
+                    // premove. Second click is a DESTINATION whenever the gesture is
+                    // geometrically plausible for the picked-up piece - including onto
+                    // one's own pieces (recaptures). Otherwise it re-selects/cancels.
                     int v = game.pos.board[sq];
-                    if (v && (v>0)==humanIsWhite){
-                        premoveFrom=sq; premoveTo=-1;
-                        dragging=true; dragFromSq=-2; dragPos=m;   // -2 = premove drag marker
-                    } else if (premoveFrom>=0 && sq!=premoveFrom){
-                        premoveTo=sq;
-                    } else { premoveFrom=premoveTo=-1; }
+                    bool own = v && (v>0)==humanIsWhite;
+                    if (premoveFrom>=0 && premoveTo<0){
+                        if (sq==premoveFrom){ premoveFrom=-1; }               // click again = cancel
+                        else if (premovePlausible(game.pos, premoveFrom, sq)){
+                            premoveTo=sq;                                     // set (own square OK)
+                        } else if (own){                                      // implausible: re-select
+                            premoveFrom=sq;
+                            dragging=true; dragFromSq=-2; dragPos=m;          // -2 = premove drag
+                        } else premoveFrom=-1;
+                    } else {
+                        premoveFrom=-1; premoveTo=-1;
+                        if (own){ premoveFrom=sq; dragging=true; dragFromSq=-2; dragPos=m; }
+                    }
                     forceRedraw=true;
                 }
             }
@@ -1283,7 +1290,8 @@ void App::handleEvent(const sf::Event& e){
             int sq = boardSquareAt(m, 20, 20, side, boardFlipped);
             int from = dragFromSq; dragFromSq=-1;
             if (premoveDrag){
-                if (sq>=0 && sq!=premoveFrom) premoveTo=sq;
+                if (sq>=0 && sq!=premoveFrom && premovePlausible(game.pos, premoveFrom, sq))
+                    premoveTo=sq;
             } else if (sq>=0 && sq!=from) trySquareAction(sq);
             forceRedraw = true;
         }
@@ -1373,10 +1381,12 @@ void App::onButton(int id){
     case 452: textFocus=TextTarget::MATCH_FEN; layout(); break;
     case 453: matchFens.clear(); showToast("Position list cleared - standard start"); layout(); break;
     case 454: { std::string c = sf::Clipboard::getString();
-                bool ok=false; Position::fromFEN(c,&ok);
-                if (ok){ matchFens.push_back(c);
-                         showToast("Position added ("+std::to_string(matchFens.size())+" total)"); }
-                else showToast("Clipboard does not contain a valid FEN");
+                bool ok=false; Position p = Position::fromFEN(c,&ok);
+                std::string prob = ok ? enginePositionProblem(p) : "";
+                if (!ok) showToast("Clipboard does not contain a valid FEN");
+                else if (!prob.empty()) showToast("Not added: "+prob);
+                else { matchFens.push_back(c);
+                       showToast("Position added ("+std::to_string(matchFens.size())+" total)"); }
                 layout(); break; }
     case 455: editorReturn=Screen::MATCH_SETUP; screen=Screen::EDITOR; layout(); break;
     case 456: pickPurpose=7; screen=Screen::PICK_ENGINE; scanEngines(); layout(); break;
@@ -1877,7 +1887,7 @@ void App::render(){
     case Screen::ACC_SETUP: {
         text("Accuracy Test Settings", WW/2, 56, 26, COL_ACCENT, true);
         float y=150;
-        text("Number of positions", 90, y+8, 15); 
+        text("Number of positions", 90, y+8, 15);
         text("(1000-position suite ships in Resources/accuracy.epd)", 90, y+28, 11, COL_DIM); y+=76;
         text("Your engine: time per move", 90, y+8, 15); y+=76;
         text("Reference: time per position", 90, y+8, 15);

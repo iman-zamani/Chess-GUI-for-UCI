@@ -77,7 +77,12 @@ void MatchRunner::playOneGame(UciEngine& we, UciEngine& be, TimeControl tc, Game
         if (bm.empty() || !g.pos.uciToMove(bm, m)){
             g.result = whiteMoves? GameResult::BLACK_WINS : GameResult::WHITE_WINS;
             g.reason = ResultReason::ILLEGAL_MOVE;
-            logMsg((whiteMoves?g.whiteName:g.blackName)+" played illegal/no move: '"+bm+"'");
+            std::string who = whiteMoves? g.whiteName : g.blackName;
+            if (bm.empty())
+                logMsg(who + (e.alive()? " returned no move - forfeits"
+                                        : " crashed / stopped responding - forfeits"));
+            else
+                logMsg(who + " played illegal move '"+bm+"' - forfeits");
             break;
         }
         EngineInfo inf = e.lastInfo();
@@ -116,8 +121,10 @@ void MatchRunner::startTournament(std::vector<EngineEntry> engines, TimeControl 
         for (auto& f : startFens){
             bool ok=false;
             Position p = Position::fromFEN(f, &ok);
-            if (ok) starts.push_back(p);
-            else logMsg("Skipping invalid start FEN: " + f.substr(0,40));
+            if (!ok){ logMsg("Skipping invalid start FEN: " + f.substr(0,40)); continue; }
+            std::string prob = enginePositionProblem(p);
+            if (!prob.empty()){ logMsg("Skipping position ("+prob+")"); continue; }
+            starts.push_back(p);
         }
         if (starts.empty()) starts.push_back(Position::startpos());
         // launch all engines

@@ -73,6 +73,17 @@ struct Game {
     std::string resultString() const;
 };
 
+// Returns "" if UCI engines can handle this position, else a human-readable
+// reason. Engines like Stockfish assume real-game material limits (max 16
+// pieces and 8 pawns per side, exactly one king each); beyond that their
+// behavior is undefined - they crash or silently return no move.
+std::string enginePositionProblem(const Position& p);
+
+// Geometric plausibility of a premove (ignores occupancy and legality - the
+// board will look different once the opponent has moved). Allows recaptures
+// onto squares currently occupied by one's own pieces.
+bool premovePlausible(const Position& p, int from, int to);
+
 // ---------------- PGN import ----------------
 struct PgnGame {
     std::string white="?", black="?", result="*", event, fenTag;
