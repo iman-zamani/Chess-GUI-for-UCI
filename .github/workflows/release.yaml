@@ -27,13 +27,16 @@ jobs:
       - name: Configure CMake
         shell: pwsh
         run: |
-          # Dynamically locate SFMLConfig.cmake so the extracted folder name doesn't matter
-          $SfmlConfig = Get-ChildItem -Path "${{ github.workspace }}\sfml" -Filter "SFMLConfig.cmake" -Recurse | Select-Object -First 1
-          if (-not $SfmlConfig) { throw "SFMLConfig.cmake not found!" }
+          # 1. Grab the root folder of the extracted SFML archive
+          $SfmlRoot = Get-ChildItem -Path "${{ github.workspace }}\sfml" -Directory | Select-Object -First 1
 
-          cmake -S . -B build `
-            -DCMAKE_BUILD_TYPE=Release `
-            -DSFML_DIR="$($SfmlConfig.Directory.FullName)"
+          # 2. Convert backslashes to forward slashes to prevent CMake escape character mangling
+          $CleanPath = $SfmlRoot.FullName.Replace('\', '/')
+          Write-Host "Using SFML path: $CleanPath"
+
+          # 3. Use CMAKE_PREFIX_PATH (much safer than SFML_DIR) so CMake finds SFMLConfig.cmake naturally.
+          # 4. Inject the lib directory directly into the linker so MSVC can find 'sfml-graphics.lib'.
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$CleanPath" -DCMAKE_EXE_LINKER_FLAGS="/LIBPATH:`"$CleanPath/lib`""
 
       - name: Build
         shell: pwsh
@@ -54,8 +57,8 @@ jobs:
           fi
 
           # 2. Copy SFML DLLs (including openal32.dll)
-          # Use a wildcard here to safely catch whatever the extracted root folder is named
-          cp sfml/*/bin/*.dll "$DIST_NAME/"
+          # Use 'find' to recursively grab all DLLs regardless of what the exact folder is named
+          find sfml -name "*.dll" -exec cp {} "$DIST_NAME/" \;
 
           # 3. Copy Resources (Including Icon)
           mkdir -p "$DIST_NAME/Resources"
