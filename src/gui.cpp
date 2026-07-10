@@ -1017,7 +1017,7 @@ void App::startPerftTest(const EngineEntry& ee){
                     +std::to_string(r.depth)+" want "+std::to_string(r.expected)+" got "
                     +(r.engineNodes<0? std::string("(no perft support)") : std::to_string(r.engineNodes))
                     +(r.pass? "  OK":"  FAIL");
-                if (!r.pass){ fails++; s += "   fen: "+r.fen; }
+                if (!r.pass){ fails++; s += "  fen: "+r.fen; }
                 pushTestLine(s);
             }, testAbort);
         if (!res.empty() && res.back().engineNodes<0)
@@ -1200,10 +1200,16 @@ void App::commitTextInput(){
 void App::handleEvent(const UiEvent& e){
     if (e.kind == UiEvent::Closed){ window.close(); return; }
     if (e.kind == UiEvent::Resized){
-        WW = e.width  / UIS;                   // stay in logical units
-        WH = e.height / UIS;
+        // Scale the whole UI with the window: refit the 1280x800 design canvas.
+        // Works in whatever units the event reports (points or pixels), since
+        // UIS is derived from the same numbers WW/WH are.
+        UIS = std::max(0.75f, std::min(e.width / 1280.f, e.height / 800.f));
+        WW  = e.width  / UIS;
+        WH  = e.height / UIS;
         window.setView(sf::View(FR(0,0,WW,WH)));
-        layout(); return;
+        layout();
+        forceRedraw = true;
+        return;
     }
     if (e.kind == UiEvent::KeyPressed){
         if (textFocus != TextTarget::NONE){
