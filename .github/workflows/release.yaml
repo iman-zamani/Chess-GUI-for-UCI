@@ -27,9 +27,13 @@ jobs:
       - name: Configure CMake
         shell: pwsh
         run: |
+          # Dynamically locate SFMLConfig.cmake so the extracted folder name doesn't matter
+          $SfmlConfig = Get-ChildItem -Path "${{ github.workspace }}\sfml" -Filter "SFMLConfig.cmake" -Recurse | Select-Object -First 1
+          if (-not $SfmlConfig) { throw "SFMLConfig.cmake not found!" }
+
           cmake -S . -B build `
             -DCMAKE_BUILD_TYPE=Release `
-            -DSFML_DIR="${{ github.workspace }}/sfml/SFML-2.6.2/lib/cmake/SFML"
+            -DSFML_DIR="$($SfmlConfig.Directory.FullName)"
 
       - name: Build
         shell: pwsh
@@ -50,7 +54,8 @@ jobs:
           fi
 
           # 2. Copy SFML DLLs (including openal32.dll)
-          cp sfml/SFML-2.6.2/bin/*.dll "$DIST_NAME/"
+          # Use a wildcard here to safely catch whatever the extracted root folder is named
+          cp sfml/*/bin/*.dll "$DIST_NAME/"
 
           # 3. Copy Resources (Including Icon)
           mkdir -p "$DIST_NAME/Resources"
