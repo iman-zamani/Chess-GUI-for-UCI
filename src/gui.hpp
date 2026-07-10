@@ -1,6 +1,6 @@
 /* Chess-GUI-for-UCI — SFML GUI. GPL-2.0 */
 #pragma once
-#include <SFML/Graphics.hpp>
+#include "sfml_compat.hpp"
 #include <optional>
 #include <map>
 #include "chess.hpp"
@@ -58,13 +58,14 @@ private:
     sf::Font font;
     sf::Texture pieceTexture;
     bool piecesOk = false;
+    int pieceCell = 150;                 // px per piece in the sprite sheet
     Screen screen = Screen::MENU;
     std::vector<Button> buttons;
     std::string toast; sf::Clock toastClock;
     bool forceRedraw = true;
 
     void layout();
-    void handleEvent(const sf::Event& e);
+    void handleEvent(const UiEvent& e);
     void update();
     void render();
     void onButton(int id);
@@ -87,7 +88,7 @@ private:
     void drawEvalBar(float x, float y, float h, int cpWhite, bool isMate, int mateIn);
     void drawMoveList(float x, float y, float w, float h,
                       const std::vector<std::string>& sans, int startMoveNo, bool startWhite);
-    void drawPiece(int piece, float x, float y, float size, sf::Uint8 alpha=255);
+    void drawPiece(int piece, float x, float y, float size, std::uint8_t alpha=255);
     int  boardSquareAt(sf::Vector2f mouse, float bx, float by, float side, bool flipped) const;
 
     // ---- engines & per-engine UCI option overrides ----

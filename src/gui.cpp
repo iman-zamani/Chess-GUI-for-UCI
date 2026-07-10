@@ -7,6 +7,13 @@
 #include <ctime>
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
 namespace fs = std::filesystem;
 
 static const sf::Color COL_BG(24,24,28);
@@ -28,7 +35,9 @@ static const sf::Color COL_WARN(230,180,120);
 static const sf::Color COL_ERR(255,130,130);
 static const sf::Color COL_GOOD(140,230,140);
 
-static float WW = 1280, WH = 800;
+static float WW = 1280, WH = 800;   // LOGICAL size; window pixels = logical * UIS
+static float UIS = 1.f;             // UI scale factor (1..3, auto-detected)
+static float snapPx(float v){ return std::round(v*UIS)/UIS; }  // land on physical pixels
 static long long nowMsSteady(){
     return std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::steady_clock::now().time_since_epoch()).count();
@@ -82,10 +91,37 @@ std::string AnalysisController::engineName(){ return eng? eng->name() : "engine"
 
 // =============================================================== init / run
 bool App::init(){
-    sf::VideoMode desk = sf::VideoMode::getDesktopMode();
-    WW = (float)std::min(1280u, desk.width);
-    WH = (float)std::min(800u, desk.height);
-    window.create(sf::VideoMode((unsigned)WW,(unsigned)WH), "Chess GUI for UCI", sf::Style::Default);
+#ifdef _WIN32
+    // Opt out of Windows DPI virtualization (which blurs by upscaling 96-dpi
+    // renders); we do our own scaling below.
+    SetProcessDPIAware();
+#endif
+    sf::Vector2u desk = desktopSize();
+    // UI scale: fit a 1280x800 logical canvas to the screen. 1080p -> 1x,
+    // 4K -> 2x, 5K+ -> 3x. Override with the CHESSGUI_SCALE env var (e.g. 1.5).
+    float fit = std::min(desk.x/1280.f, desk.y/800.f);
+    UIS = std::max(1.f, std::min(3.f, std::floor(fit)));
+    if (const char* env = std::getenv("CHESSGUI_SCALE")){
+        float v = (float)atof(env);
+        if (v >= 0.75f && v <= 4.f) UIS = v;
+    }
+    WW = std::min(1280.f, desk.x / UIS);
+    WH = std::min(800.f,  desk.y / UIS);
+    window.create(VM((unsigned)(WW*UIS),(unsigned)(WH*UIS)),
+                  "Chess GUI for UCI", sf::Style::Default);
+    // --- Retina self-check ---------------------------------------------------
+    // On macOS, VideoMode sizes are in points. If Retina backing was granted,
+    // the real framebuffer is scale-x bigger than what we asked for.
+    {
+        float bs = window.getSize().x / (WW*UIS);   // backing scale (1.0 or 2.0)
+        fprintf(stderr, "[hidpi] requested %.0fx%.0f, framebuffer %ux%u, backing scale %.2f\n",
+                WW*UIS, WH*UIS, window.getSize().x, window.getSize().y, bs);
+    #ifdef __APPLE__
+        if (bs < 1.5f)
+            fprintf(stderr, "[hidpi] NO Retina backing! Check SFML version and Info.plist.\n");
+    #endif
+    }
+    window.setView(sf::View(FR(0,0,WW,WH)));   // draw in logical units
     window.setFramerateLimit(60);
     const char* fontPaths[] = {
         "Resources/arial.ttf",
@@ -94,10 +130,18 @@ bool App::init(){
         "C:\\Windows\\Fonts\\arial.ttf"
     };
     bool fontOk=false;
-    for (auto p : fontPaths) if (font.loadFromFile(p)){ fontOk=true; break; }
+    for (auto p : fontPaths) if (loadFont(font, p)){ fontOk=true; break; }
     if (!fontOk){ fprintf(stderr,"No font found (put arial.ttf in Resources/)\n"); return false; }
-    piecesOk = pieceTexture.loadFromFile("Resources/pieceTexture.png");
-    if (piecesOk) pieceTexture.setSmooth(true);
+    // Prefer the high-resolution sheet: bitmaps only stay sharp when they are
+    // DOWNscaled. 150px pieces upscaled to ~190px on HiDPI screens is exactly
+    // the "blurry pieces" effect.
+    piecesOk = pieceTexture.loadFromFile("Resources/pieceTexture@2x.png");
+    if (!piecesOk) piecesOk = pieceTexture.loadFromFile("Resources/pieceTexture.png");
+    if (piecesOk){
+        pieceTexture.setSmooth(true);
+        pieceCell = (int)(pieceTexture.getSize().x / 6);
+        if (pieceCell <= 0) pieceCell = 150;
+    }
     loadOverrides();
     scanEngines();
     game.reset(Position::startpos());
@@ -122,8 +166,8 @@ void App::run(){
     sf::Clock bgClock;
     while (window.isOpen()){
         bool hadEvent = false;
-        sf::Event e;
-        while (window.pollEvent(e)){ handleEvent(e); hadEvent = true; }
+        UiEvent e;
+        while (pollUiEvent(window, e)){ handleEvent(e); hadEvent = true; }
         update();
         int act = activityLevel();
         if (act==2 || hadEvent || forceRedraw){
@@ -144,16 +188,19 @@ void App::run(){
 
 // =============================================================== drawing helpers
 void App::text(const std::string& s, float x, float y, unsigned size, sf::Color c, bool center){
-    // Rasterize glyphs at 2x and scale by 0.5: on Retina/HiDPI drawables the
-    // glyphs land on physical pixels (crisp); on 1x displays it supersamples.
-    sf::Text t(s, font, size*2);
-    t.setScale(0.5f, 0.5f);
+    // Rasterize glyphs at (at least) the physical pixel size and scale down:
+    // k >= UIS means the texture never gets upscaled on screen -> crisp text
+    // at every UI scale; on 1x displays it supersamples.
+    int k = std::max(2, (int)std::lround(UIS));
+    sf::Text t = makeText(font, s, size*(unsigned)k);
+    t.setScale({1.f/k, 1.f/k});
     t.setFillColor(c);
     if (center){
         auto b = t.getLocalBounds();
-        t.setOrigin(std::round(b.left + b.width/2.f), std::round(b.top + b.height/2.f));
+        t.setOrigin({std::round(rectL(b) + rectW(b)/2.f),
+                     std::round(rectT(b) + rectH(b)/2.f)});
     }
-    t.setPosition(std::round(x), std::round(y));
+    t.setPosition({snapPx(x), snapPx(y)});
     window.draw(t);
 }
 static bool hit(const sf::FloatRect& r, sf::Vector2f p){ return r.contains(p); }
@@ -161,30 +208,30 @@ static bool hit(const sf::FloatRect& r, sf::Vector2f p){ return r.contains(p); }
 void App::drawButtons(){
     sf::Vector2f m = window.mapPixelToCoords(sf::Mouse::getPosition(window));
     for (auto& b : buttons){
-        sf::RectangleShape r(sf::Vector2f(b.rect.width, b.rect.height));
-        r.setPosition(std::round(b.rect.left), std::round(b.rect.top));
+        sf::RectangleShape r(sf::Vector2f(rectW(b.rect), rectH(b.rect)));
+        r.setPosition({std::round(rectL(b.rect)), std::round(rectT(b.rect))});
         sf::Color c = b.toggled? COL_BTN_TOG : (hit(b.rect,m)&&b.enabled ? COL_BTN_HOT : COL_BTN);
         if (!b.enabled) c = sf::Color(45,45,50);
         r.setFillColor(c);
         r.setOutlineThickness(1); r.setOutlineColor(sf::Color(90,90,110));
         window.draw(r);
-        text(b.label, b.rect.left+b.rect.width/2, b.rect.top+b.rect.height/2,
-             (unsigned)std::min(17.f, b.rect.height*0.45f),
+        text(b.label, rectL(b.rect)+rectW(b.rect)/2, rectT(b.rect)+rectH(b.rect)/2,
+             (unsigned)std::min(17.f, rectH(b.rect)*0.45f),
              b.enabled? sf::Color::White : sf::Color(140,140,140), true);
     }
 }
 
-void App::drawPiece(int piece, float x, float y, float size, sf::Uint8 alpha){
+void App::drawPiece(int piece, float x, float y, float size, std::uint8_t alpha){
     if (!piece) return;
     if (piecesOk){
         int col=5;
         switch (std::abs(piece)){case 20:col=0;break;case 9:col=1;break;case 4:col=2;break;
                                   case 3:col=3;break;case 5:col=4;break;case 1:col=5;break;}
         int row = piece>0 ? 0 : 1;
-        sf::Sprite sp(pieceTexture, sf::IntRect(col*150,row*150,150,150));
-        sp.setScale(size/150.f, size/150.f);
+        sf::Sprite sp(pieceTexture, IR(col*pieceCell,row*pieceCell,pieceCell,pieceCell));
+        sp.setScale({size/(float)pieceCell, size/(float)pieceCell});
         sp.setColor(sf::Color(255,255,255,alpha));
-        sp.setPosition(std::round(x),std::round(y));
+        sp.setPosition({snapPx(x), snapPx(y)});
         window.draw(sp);
     } else {
         char c='P';
@@ -210,7 +257,7 @@ void App::drawSquareTint(int sq, float bx, float by, float side, bool flipped, s
     int x=sq%8, y=sq/8;
     if (flipped){ x=7-x; y=7-y; }
     sf::RectangleShape o(sf::Vector2f(s8,s8));
-    o.setPosition(bx+x*s8, by+y*s8);
+    o.setPosition({bx+x*s8, by+y*s8});
     o.setFillColor(c);
     window.draw(o);
 }
@@ -226,7 +273,7 @@ void App::drawBoard(float bx, float by, float side, const Position& p,
         int x=i%8, y=i/8;
         int dx = flipped? 7-x : x, dy = flipped? 7-y : y;
         sf::RectangleShape r(sf::Vector2f(sq,sq));
-        r.setPosition(bx+dx*sq, by+dy*sq);
+        r.setPosition({bx+dx*sq, by+dy*sq});
         r.setFillColor(((x+y)%2)? COL_DARK : COL_LIGHT);
         window.draw(r);
     }
@@ -240,8 +287,8 @@ void App::drawBoard(float bx, float by, float side, const Position& p,
             int x=m.to%8, y=m.to/8;
             int dx = flipped?7-x:x, dy = flipped?7-y:y;
             sf::CircleShape c(p.board[m.to]||m.isEnPassant ? sq*0.42f : sq*0.15f);
-            c.setOrigin(c.getRadius(), c.getRadius());
-            c.setPosition(bx+dx*sq+sq/2, by+dy*sq+sq/2);
+            c.setOrigin({c.getRadius(), c.getRadius()});
+            c.setPosition({bx+dx*sq+sq/2, by+dy*sq+sq/2});
             if (p.board[m.to]||m.isEnPassant){
                 c.setFillColor(sf::Color::Transparent);
                 c.setOutlineThickness(sq*0.07f);
@@ -265,7 +312,7 @@ void App::drawBoard(float bx, float by, float side, const Position& p,
     if (dragSq>=0 && p.board[dragSq])
         drawPiece(p.board[dragSq], dPos.x-sq/2, dPos.y-sq/2, sq, 230);
     sf::RectangleShape br(sf::Vector2f(side,side));
-    br.setPosition(bx,by); br.setFillColor(sf::Color::Transparent);
+    br.setPosition({bx,by}); br.setFillColor(sf::Color::Transparent);
     br.setOutlineThickness(2); br.setOutlineColor(sf::Color(90,90,110));
     window.draw(br);
 }
@@ -287,8 +334,8 @@ void App::drawArrow(float bx, float by, float side, int from, int to,
     float headLen = sq*0.38f, headW = sq*0.42f, shaftW = sq*0.20f;
     float ang = std::atan2(d.y, d.x) * 180.f / 3.14159265f;
     sf::RectangleShape shaft(sf::Vector2f(len-headLen, shaftW));
-    shaft.setOrigin(0, shaftW/2);
-    shaft.setPosition(a); shaft.setRotation(ang);
+    shaft.setOrigin({0, shaftW/2});
+    shaft.setPosition(a); setRotDeg(shaft, ang);
     shaft.setFillColor(c);
     window.draw(shaft);
     sf::Vector2f tipBase = b - u*headLen;
@@ -304,7 +351,7 @@ void App::drawArrow(float bx, float by, float side, int from, int to,
 void App::drawPvArrows(const std::vector<PvLine>& pvs, const Position& shown,
                        float bx, float by, float side, bool flipped, int count){
     // weakest first so the best line's arrow sits on top; opacity encodes rank
-    static const sf::Uint8 A[5] = {210, 120, 85, 62, 45};
+    static const std::uint8_t A[5] = {210, 120, 85, 62, 45};
     int n = std::min((int)pvs.size(), std::min(count, 5));
     for (int r=n-1; r>=0; r--){
         if (!pvs[r].valid) continue;
@@ -318,12 +365,12 @@ void App::drawEvalBar(float x, float y, float h, int cp, bool isMate, int mateIn
     float frac;
     if (isMate) frac = mateIn>0 ? 1.f : 0.f;
     else frac = 0.5f + 0.5f * std::tanh(cp/600.0f);
-    sf::RectangleShape black(sf::Vector2f(22, h)); black.setPosition(x,y);
+    sf::RectangleShape black(sf::Vector2f(22, h)); black.setPosition({x,y});
     black.setFillColor(sf::Color(30,30,30)); window.draw(black);
     sf::RectangleShape white(sf::Vector2f(22, h*frac));
-    white.setPosition(x, y+h*(1-frac));
+    white.setPosition({x, y+h*(1-frac)});
     white.setFillColor(sf::Color(230,230,230)); window.draw(white);
-    sf::RectangleShape mid(sf::Vector2f(22,2)); mid.setPosition(x, y+h/2);
+    sf::RectangleShape mid(sf::Vector2f(22,2)); mid.setPosition({x, y+h/2});
     mid.setFillColor(sf::Color(120,120,120)); window.draw(mid);
     std::string s;
     if (isMate) s = "M" + std::to_string(std::abs(mateIn));
@@ -333,7 +380,7 @@ void App::drawEvalBar(float x, float y, float h, int cp, bool isMate, int mateIn
 
 void App::drawMoveList(float x, float y, float w, float h,
                        const std::vector<std::string>& sans, int startNo, bool startWhite){
-    sf::RectangleShape r(sf::Vector2f(w,h)); r.setPosition(x,y);
+    sf::RectangleShape r(sf::Vector2f(w,h)); r.setPosition({x,y});
     r.setFillColor(COL_PANEL); window.draw(r);
     float lh = 20;
     int rows = (int)(h/lh) - 1;
@@ -410,7 +457,7 @@ std::string App::overrideOrDefault(const std::string& path, const UciOption& o){
 
 // =============================================================== layout
 static Button mk(float x,float y,float w,float h,const std::string& s,int id,bool tog=false){
-    Button b; b.rect={x,y,w,h}; b.label=s; b.id=id; b.toggled=tog; return b;
+    Button b; b.rect=FR(x,y,w,h); b.label=s; b.id=id; b.toggled=tog; return b;
 }
 static const char* TC_LABELS[7] = {"1+0","3+0","3+2","5+0","10+0","15+10","30+0"};
 static const int   TC_BASE[7]   = {60000,180000,180000,300000,600000,900000,1800000};
@@ -575,7 +622,7 @@ void App::layout(){
         for (int i=0;i<12;i++){
             float x = rx + (i%6)*cell, yy = py + (i/6)*cell;
             buttons.push_back(mk(x, yy, cell-2, cell-2, "", 800+i, editorBrush==PALETTE[i]));
-            paletteRects.push_back({x, yy, cell-2, cell-2});
+            paletteRects.push_back(FR(x, yy, cell-2, cell-2));
         }
         float y = py + 2*cell + 10;
         buttons.push_back(mk(rx, y, 110, 32, "Hand", 813, editorBrush==BRUSH_HAND));
@@ -1150,18 +1197,19 @@ void App::commitTextInput(){
 }
 
 // =============================================================== events
-void App::handleEvent(const sf::Event& e){
-    if (e.type == sf::Event::Closed){ window.close(); return; }
-    if (e.type == sf::Event::Resized){
-        WW = (float)e.size.width; WH = (float)e.size.height;
-        window.setView(sf::View(sf::FloatRect(0,0,WW,WH)));
+void App::handleEvent(const UiEvent& e){
+    if (e.kind == UiEvent::Closed){ window.close(); return; }
+    if (e.kind == UiEvent::Resized){
+        WW = e.width  / UIS;                   // stay in logical units
+        WH = e.height / UIS;
+        window.setView(sf::View(FR(0,0,WW,WH)));
         layout(); return;
     }
-    if (e.type == sf::Event::KeyPressed){
+    if (e.kind == UiEvent::KeyPressed){
         if (textFocus != TextTarget::NONE){
-            if (e.key.code==sf::Keyboard::Enter){ commitTextInput(); return; }
-            if (e.key.code==sf::Keyboard::Escape){ textFocus=TextTarget::NONE; editingOption=-1; layout(); return; }
-            if (e.key.code==sf::Keyboard::V && (e.key.control || e.key.system)){
+            if (e.key==sf::Keyboard::Key::Enter){ commitTextInput(); return; }
+            if (e.key==sf::Keyboard::Key::Escape){ textFocus=TextTarget::NONE; editingOption=-1; layout(); return; }
+            if (e.key==sf::Keyboard::Key::V && (e.ctrl || e.sys)){
                 std::string clip = sf::Clipboard::getString();
                 if (textFocus==TextTarget::ENGINE_PATH) enginePathInput += clip;
                 else if (textFocus==TextTarget::MATCH_FEN) matchFenInput += clip;
@@ -1171,38 +1219,38 @@ void App::handleEvent(const sf::Event& e){
             }
             return;
         }
-        if (e.key.code==sf::Keyboard::Escape){
+        if (e.key==sf::Keyboard::Key::Escape){
             if (screen==Screen::GAME || screen==Screen::TESTS || screen==Screen::EDITOR
                 || screen==Screen::PGN_LOAD || screen==Screen::PGN_LIST || screen==Screen::ACC_SETUP)
                 { screen=Screen::MENU; layout(); }
             return;
         }
         if (screen==Screen::GAME){
-            if (e.key.code==sf::Keyboard::F){ boardFlipped=!boardFlipped; forceRedraw=true; }
-            if (e.key.code==sf::Keyboard::Left)  onButton(209);
-            if (e.key.code==sf::Keyboard::Right) onButton(210);
-            if (e.key.code==sf::Keyboard::Up)    onButton(208);
-            if (e.key.code==sf::Keyboard::Down)  onButton(211);
+            if (e.key==sf::Keyboard::Key::F){ boardFlipped=!boardFlipped; forceRedraw=true; }
+            if (e.key==sf::Keyboard::Key::Left)  onButton(209);
+            if (e.key==sf::Keyboard::Key::Right) onButton(210);
+            if (e.key==sf::Keyboard::Key::Up)    onButton(208);
+            if (e.key==sf::Keyboard::Key::Down)  onButton(211);
         }
-        if (screen==Screen::MATCH_VIEW && e.key.code==sf::Keyboard::F)
+        if (screen==Screen::MATCH_VIEW && e.key==sf::Keyboard::Key::F)
             { matchFlipped=!matchFlipped; layout(); }
     }
-    if (e.type == sf::Event::TextEntered && textFocus != TextTarget::NONE){
+    if (e.kind == UiEvent::TextEntered && textFocus != TextTarget::NONE){
         std::string* buf = nullptr;
         if (textFocus==TextTarget::ENGINE_PATH) buf=&enginePathInput;
         else if (textFocus==TextTarget::MATCH_FEN) buf=&matchFenInput;
         else if (textFocus==TextTarget::FILE_PATH) buf=&filePathInput;
         else if (textFocus==TextTarget::OPTION_VALUE) buf=&optionEditBuffer;
         if (buf){
-            if (e.text.unicode==8){ if(!buf->empty()) buf->pop_back(); }
-            else if (e.text.unicode==13 || e.text.unicode==10){ commitTextInput(); return; }
-            else if (e.text.unicode>=32 && e.text.unicode<127) *buf += (char)e.text.unicode;
+            if (e.unicode==8){ if(!buf->empty()) buf->pop_back(); }
+            else if (e.unicode==13 || e.unicode==10){ commitTextInput(); return; }
+            else if (e.unicode>=32 && e.unicode<127) *buf += (char)e.unicode;
             layout();
         }
         return;
     }
     sf::Vector2f m = window.mapPixelToCoords(sf::Mouse::getPosition(window));
-    if (e.type == sf::Event::MouseButtonPressed && e.mouseButton.button==sf::Mouse::Left){
+    if (e.kind == UiEvent::MousePressed && e.button==sf::Mouse::Button::Left){
         for (auto& b : buttons)
             if (b.enabled && hit(b.rect, m)){ onButton(b.id); return; }
         if (textFocus != TextTarget::NONE){ textFocus=TextTarget::NONE; editingOption=-1; layout(); }
@@ -1255,7 +1303,7 @@ void App::handleEvent(const sf::Event& e){
             }
         }
     }
-    if (e.type == sf::Event::MouseButtonPressed && e.mouseButton.button==sf::Mouse::Right){
+    if (e.kind == UiEvent::MousePressed && e.button==sf::Mouse::Button::Right){
         if (screen==Screen::EDITOR){
             float side = WH-110;
             int sq = boardSquareAt(m, 20, 56, side, false);
@@ -1265,7 +1313,7 @@ void App::handleEvent(const sf::Event& e){
             premoveFrom=premoveTo=-1; forceRedraw=true;    // right-click cancels premove
         }
     }
-    if (e.type == sf::Event::MouseMoved){
+    if (e.kind == UiEvent::MouseMoved){
         if (dragging) dragPos = m;
         if (handFrom>=0) forceRedraw=true;                  // ghost piece follows cursor
         if (editorPainting && screen==Screen::EDITOR){
@@ -1274,7 +1322,7 @@ void App::handleEvent(const sf::Event& e){
             if (sq>=0){ editPos.board[sq]=editorBrush; forceRedraw=true; }
         }
     }
-    if (e.type == sf::Event::MouseButtonReleased && e.mouseButton.button==sf::Mouse::Left){
+    if (e.kind == UiEvent::MouseReleased && e.button==sf::Mouse::Button::Left){
         editorPainting = false;
         if (screen==Screen::EDITOR && handFrom>=0){
             float side = WH-110;
@@ -1773,7 +1821,7 @@ void App::render(){
         text(clockStr(botClk), rx+pw-86, infoTop+66, 20,
              botClk<30000? COL_ERR : sf::Color::White);
         if (pendingPromotion){
-            sf::RectangleShape dim(sf::Vector2f(side,side)); dim.setPosition(20,20);
+            sf::RectangleShape dim(sf::Vector2f(side,side)); dim.setPosition({20,20});
             dim.setFillColor(sf::Color(0,0,0,120)); window.draw(dim);
             text("Promote to:", 20+side/2, 20+side/2 - side/8, 22, sf::Color::White, true);
         }
@@ -1984,14 +2032,14 @@ void App::render(){
     if (screen==Screen::EDITOR && !paletteRects.empty()){
         for (int i=0;i<12 && i<(int)paletteRects.size();i++){
             auto& r = paletteRects[i];
-            drawPiece(PALETTE[i], r.left+2, r.top+2, r.width-4);
+            drawPiece(PALETTE[i], rectL(r)+2, rectT(r)+2, rectW(r)-4);
         }
     }
     if (!toast.empty()){
         if (toastClock.getElapsedTime().asSeconds()>3) toast.clear();
         else {
             sf::RectangleShape r(sf::Vector2f(std::min(WW-40, 640.f), 34));
-            r.setPosition(WW/2 - r.getSize().x/2, WH-44);
+            r.setPosition({WW/2 - r.getSize().x/2, WH-44});
             r.setFillColor(sf::Color(20,20,25,230));
             r.setOutlineThickness(1); r.setOutlineColor(COL_ACCENT);
             window.draw(r);
