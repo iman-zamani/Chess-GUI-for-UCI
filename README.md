@@ -1,5 +1,5 @@
 # Chess-GUI-for-UCI 
-![app screenshot](images/chessBoard.png)
+![app screenshot](images/appScreenshot.png)
 
 A complete SFML chess GUI for playing, running engine matches and tournaments, analysing positions, and — most importantly — **testing your own UCI chess engine** while you develop it.
 
