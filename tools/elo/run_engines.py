@@ -30,6 +30,16 @@ FIELDS = ["engine", "position", "move", "depth", "seldepth", "nodes", "time_ms",
           "movetime_ms", "error"]
 
 
+def sleep_clock():
+    """Seconds the system has spent suspended (a clock that counts sleep minus one
+    that doesn't); 0 when the OS has no such pair."""
+    if hasattr(time, "CLOCK_UPTIME_RAW"):                          # macOS
+        return time.clock_gettime(time.CLOCK_MONOTONIC) - time.clock_gettime(time.CLOCK_UPTIME_RAW)
+    if hasattr(time, "CLOCK_BOOTTIME"):                            # Linux
+        return time.clock_gettime(time.CLOCK_BOOTTIME) - time.clock_gettime(time.CLOCK_MONOTONIC)
+    return 0.0
+
+
 def open_engine(binary, hash_mb):
     eng = chess.engine.SimpleEngine.popen_uci(binary, cwd=os.path.dirname(binary), timeout=30)
     opts = {}
@@ -52,8 +62,9 @@ def run_batch(job):
     rows, eng = [], None
     for pid, fen in positions:
         row = {"engine": eid, "position": pid, "movetime_ms": movetime, "error": ""}
-        for attempt in range(2):                      # one restart after a crash or a hang
+        for attempt in range(4):                      # restarts after a crash, a hang or a system sleep
             try:
+                slept0 = sleep_clock()
                 if eng is None:
                     eng = open_engine(binary, hash_mb)
                 board = chess.Board(fen)
@@ -70,6 +81,8 @@ def run_batch(job):
                     finally:
                         timer.cancel()
                     info = dict(an.info)
+                if sleep_clock() - slept0 > 0.5:
+                    raise RuntimeError("the computer slept during the search")   # the answer is not valid
                 move = best.move
                 sc = info.get("score")
                 pov = sc.pov(board.turn) if sc is not None else None
