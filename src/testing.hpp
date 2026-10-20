@@ -54,7 +54,12 @@ PerftBenchmark runPerftBenchmark(int runs = 3);
 // the win-percentage drop caused by the move.
 double cpToWinPct(int cp);
 double moveAccuracyFromWinDrop(double drop);
-double acplToAccuracy(double acpl);   // legacy rough mapping (avoid; win-drop is correct)
+double acplToAccuracy(double acpl);
+// Game review mark for a move, as a NAG (0 none, 1 !, 2 ?, 3 !!, 4 ??, 6 ?!), from the mover's
+// winning chances (Lichess win-% model) before and after it: ?! / ? / ?? for a drop of 10 / 20 / 30
+// points; ! when it is the engine's best and the next best is 15+ points worse, !! with a 40+ gap
+// in a position not already won (< 80%).
+int reviewMark(double winBefore, double winAfter, bool playedBest, bool hasSecond, double winSecond);   // legacy rough mapping (avoid; win-drop is correct)
 
 // ---------- Accuracy testing vs a reference engine ----------
 struct AccuracyMoveReport {

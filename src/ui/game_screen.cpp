@@ -449,12 +449,7 @@ void GameScreen::startReview(){
             if (!ok[i] || !ok[i + 1]){ if (!wtm) num++; wtm = !wtm; continue; }
             double before = win(best[i]), after = win(-best[i + 1]);   // the mover's winning chances
             double drop = std::max(0.0, before - after);
-            int nag = drop >= 30 ? 4 : drop >= 20 ? 2 : drop >= 10 ? 6 : 0;
-            if (!nag && moves[i] == bestMove[i] && hasSecond[i]){
-                double gap = win(best[i]) - win(second[i]);           // how much worse the next best move is
-                if (gap >= 40 && before < 80) nag = 3;
-                else if (gap >= 15) nag = 1;
-            }
+            int nag = reviewMark(before, after, moves[i] == bestMove[i], hasSecond[i], hasSecond[i] ? win(second[i]) : 0);
             out.nag[i] = nag;
             cnt[nag]++;
             double acc = moveAccuracyFromWinDrop(drop);

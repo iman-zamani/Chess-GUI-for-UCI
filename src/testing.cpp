@@ -1,6 +1,7 @@
 /* Chess-GUI-for-UCI — engine developer tools. GPL-2.0 */
 #include "testing.hpp"
 #include "openings.hpp"
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 #include <chrono>
@@ -154,6 +155,19 @@ PerftBenchmark runPerftBenchmark(int runs){
     }
     b.nps = b.bestSeconds > 0 ? b.nodes / b.bestSeconds : 0;
     return b;
+}
+
+int reviewMark(double before, double after, bool playedBest, bool hasSecond, double second){
+    double drop = std::max(0.0, before - after);
+    if (drop >= 30) return 4;
+    if (drop >= 20) return 2;
+    if (drop >= 10) return 6;
+    if (playedBest && hasSecond){
+        double gap = before - second;
+        if (gap >= 40 && before < 80) return 3;
+        if (gap >= 15) return 1;
+    }
+    return 0;
 }
 
 // cp (mover POV) -> expected win percentage (lichess model)
