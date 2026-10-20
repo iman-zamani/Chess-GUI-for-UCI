@@ -84,8 +84,10 @@ jobs:
           cmake --build build --config Release --parallel --target chess-cli mock_engine
           cli=build/chess-cli; mock=build/tests/mock_engine
           if [ "$RUNNER_OS" = "Windows" ]; then cli=build/Release/chess-cli.exe; mock=build/tests/Release/mock_engine.exe; fi
-          echo "CLI=$PWD/$cli" >> "$GITHUB_ENV"
-          echo "MOCK=$PWD/$mock" >> "$GITHUB_ENV"
+          root=$PWD
+          if [ "$RUNNER_OS" = "Windows" ]; then root=$(cygpath -m "$PWD"); fi   # C:/... for native programs
+          echo "CLI=$root/$cli" >> "$GITHUB_ENV"
+          echo "MOCK=$root/$mock" >> "$GITHUB_ENV"
 
       - name: Run the action against the mock engine
         uses: ./
