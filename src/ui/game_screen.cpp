@@ -642,7 +642,7 @@ void GameScreen::drawAnalysis(){
     ImGui::InputInt("ms / position", &reviewMs_, 100, 500);
     reviewMs_ = std::max(50, std::min(reviewMs_, 60000));
     ImGui::SameLine(); ui::helpMarker("Review: the engine evaluates every position of the game and marks "
-                                      "inaccuracies (?!), mistakes (?) and blunders (??).");
+                                      "inaccuracies (?!), mistakes (?) and blunders (?\?).");
     if (!ana_) return;
     if (!ana_->alive()){ ImGui::TextColored(ui::kBad, "The analysis engine terminated."); return; }
     Position shown = shownPosition();
