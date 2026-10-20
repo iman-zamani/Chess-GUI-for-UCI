@@ -414,6 +414,7 @@ std::string resultReasonText(ResultReason r){
     case ResultReason::ILLEGAL_MOVE: return "illegal move";
     case ResultReason::AGREEMENT: return "agreement";
     case ResultReason::ADJUDICATION: return "adjudication";
+    case ResultReason::DISCONNECT: return "engine stopped responding";
     default: return "";
     }
 }

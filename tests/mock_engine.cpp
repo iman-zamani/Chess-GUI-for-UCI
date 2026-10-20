@@ -27,6 +27,7 @@
  *                                 king-into-check (king may step onto attacked squares)
  *   --no-quit                     ignore "quit" (must be killed)
  *   --exit-at-start CODE          exit immediately with CODE (not a UCI engine)
+ *   --think-ms N                  under clock control, always think N ms (fast match tests)
  */
 #include "chess.hpp"
 #include <algorithm>
@@ -49,7 +50,7 @@ struct Flags {
     bool reportEnv = false, noUciok = false, noReadyok = false, busyReadyok = false;
     bool illegalBestmove = false, noneBestmove = false, ignoreStop = false;
     bool outputAfterBestmove = false, mateBlind = false, timeHog = false, noPerft = false, noQuit = false;
-    int slowUciok = 0, slowReadyok = 0, crashOnGo = 0;
+    int slowUciok = 0, slowReadyok = 0, crashOnGo = 0, thinkMs = -1;
 } F;
 
 std::mutex outMx;
@@ -157,7 +158,8 @@ int thinkTimeMs(const GoParams& g, const Position& p){
     if (g.depth >= 0 || g.nodes >= 0) return 0;
     int t = p.whiteToMove ? g.wtime : g.btime, inc = p.whiteToMove ? g.winc : g.binc;
     if (t < 0) return 0;
-    if (F.timeHog) return t + 50;
+    if (F.timeHog) return t + 300;                    // clearly over, beyond any grace margin
+    if (F.thinkMs >= 0) return F.thinkMs;
     return std::max(1, std::min(t / 30 + inc / 2, std::max(1, t - 50)));
 }
 
@@ -284,6 +286,7 @@ int main(int argc, char** argv){
         else if (a == "--no-perft") F.noPerft = true;
         else if (a == "--perft-bug") F.perftBug = next();
         else if (a == "--no-quit") F.noQuit = true;
+        else if (a == "--think-ms") F.thinkMs = std::atoi(next().c_str());
         else if (a == "--exit-at-start"){ std::cerr << "mock_engine: exiting at start" << std::endl;
                                           return std::atoi(next().c_str()); }
         else { std::cerr << "mock_engine: unknown flag " << a << "\n"; }

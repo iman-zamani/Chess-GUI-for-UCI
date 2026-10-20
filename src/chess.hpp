@@ -24,7 +24,7 @@ struct Move {
 enum class GameResult { ONGOING, WHITE_WINS, BLACK_WINS, DRAW };
 enum class ResultReason { NONE, CHECKMATE, STALEMATE, FIFTY_MOVE, REPETITION,
                           INSUFFICIENT, RESIGNATION, TIMEOUT, ILLEGAL_MOVE, AGREEMENT,
-                          ADJUDICATION };
+                          ADJUDICATION, DISCONNECT };   // DISCONNECT: engine crashed / stopped responding
 // Human-readable reason ("checkmate", "50-move rule", ...); "" for NONE.
 std::string resultReasonText(ResultReason r);
 

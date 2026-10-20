@@ -9,6 +9,7 @@ add_executable(core_tests
     test_uci_check.cpp
     test_stats.cpp
     test_openings.cpp
+    test_match.cpp
     test_main.cpp
 )
 target_link_libraries(core_tests PRIVATE chesscore)
@@ -18,7 +19,7 @@ target_compile_definitions(core_tests PRIVATE
 add_dependencies(core_tests mock_engine)
 
 # One CTest entry per test group (name prefix understood by the runner).
-foreach(group perft fen san pgn game uci engine bisect ucicheck stats openings)
+foreach(group perft fen san pgn game uci engine bisect ucicheck stats openings match)
     add_test(NAME ${group} COMMAND core_tests ${group}/)
 endforeach()
 set_tests_properties(perft PROPERTIES TIMEOUT 600)
