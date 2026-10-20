@@ -31,18 +31,31 @@ jobs:
         run: |
           GUI_TESTS=OFF
           if [ "$RUNNER_OS" = "Linux" ]; then GUI_TESTS=ON; fi
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCHESSGUI_GUI_TESTS=$GUI_TESTS
+          mkdir -p ci-logs
+          set -o pipefail
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCHESSGUI_GUI_TESTS=$GUI_TESTS 2>&1 | tee ci-logs/configure.log
 
       - name: Build
-        run: cmake --build build --config Release --parallel
+        shell: bash
+        run: |
+          set -o pipefail
+          cmake --build build --config Release --parallel 2>&1 | tee ci-logs/build.log
 
       - name: Test
-        if: runner.os != 'Linux'
-        run: ctest --test-dir build -C Release --output-on-failure
+        shell: bash
+        run: |
+          set -o pipefail
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            # includes the scripted GUI smoke test, on a virtual display
+            xvfb-run -a -s "-screen 0 1600x1000x24" ctest --test-dir build -C Release --output-on-failure 2>&1 | tee ci-logs/test.log
+          else
+            ctest --test-dir build -C Release --output-on-failure 2>&1 | tee ci-logs/test.log
+          fi
 
-      - name: Test (with GUI smoke test under Xvfb)
-        if: runner.os == 'Linux'
-        run: xvfb-run -a -s "-screen 0 1600x1000x24" ctest --test-dir build -C Release --output-on-failure
+      - name: Annotate failure logs
+        if: failure()
+        shell: bash
+        run: .github/scripts/annotate-logs.sh
 
       - name: Upload GUI smoke screenshot
         if: runner.os == 'Linux' && always()
