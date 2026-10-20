@@ -63,18 +63,24 @@ endif()
 
 find_package(Threads REQUIRED)
 
-set(CHESS_SOURCES
-    src/main.cpp
+# Core logic: rules, UCI process wrapper, matches, test tools. No SFML here;
+# it is shared by the GUI, the tests and the headless CLI.
+add_library(chesscore STATIC
     src/chess.cpp
     src/uci_engine.cpp
     src/testing.cpp
     src/tournament.cpp
+)
+target_include_directories(chesscore PUBLIC src)
+target_link_libraries(chesscore PUBLIC Threads::Threads)
+
+set(CHESS_SOURCES
+    src/main.cpp
     src/gui.cpp
 )
 
 add_executable(chess-gui ${CHESS_SOURCES})
-target_include_directories(chess-gui PRIVATE src)
-target_link_libraries(chess-gui PRIVATE ${SFML_LIBS} Threads::Threads)
+target_link_libraries(chess-gui PRIVATE chesscore ${SFML_LIBS})
 
 if(WIN32)
     target_link_libraries(chess-gui PRIVATE ws2_32)
@@ -101,8 +107,7 @@ if(APPLE)
 
     # Path B (guaranteed): a real bundle -> "Chess GUI for UCI.app".
     add_executable(chess-gui-app MACOSX_BUNDLE ${CHESS_SOURCES})
-    target_include_directories(chess-gui-app PRIVATE src)
-    target_link_libraries(chess-gui-app PRIVATE ${SFML_LIBS} Threads::Threads)
+    target_link_libraries(chess-gui-app PRIVATE chesscore ${SFML_LIBS})
     set_target_properties(chess-gui-app PROPERTIES
         OUTPUT_NAME "Chess GUI for UCI"
         MACOSX_BUNDLE_BUNDLE_NAME "Chess GUI for UCI"
@@ -116,4 +121,13 @@ if(APPLE)
             ${CMAKE_SOURCE_DIR}/Resources
             "$<TARGET_FILE_DIR:chess-gui-app>/Resources"
         COMMENT "Copying Resources into the app bundle...")
+endif()
+
+# =============================================================================
+# Tests (ctest --test-dir build). No network and no real engine needed: UCI
+# behaviour is exercised against tests/mock_engine.cpp.
+# =============================================================================
+include(CTest)
+if(BUILD_TESTING)
+    add_subdirectory(tests)
 endif()
