@@ -7,6 +7,18 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#elif defined(__APPLE__)
+#include <mach-o/dyld.h>
+#include <climits>
+#else
+#include <climits>
+#include <unistd.h>
+#endif
 
 namespace fs = std::filesystem;
 using json = nlohmann::json;
@@ -189,4 +201,42 @@ std::string userConfigDir(){
     std::error_code ec;
     fs::create_directories(base, ec);
     return base.u8string();
+}
+
+std::string executableDir(){
+    fs::path p;
+#ifdef _WIN32
+    wchar_t buf[MAX_PATH];
+    DWORD n = GetModuleFileNameW(nullptr, buf, MAX_PATH);
+    if (n > 0 && n < MAX_PATH) p = fs::path(std::wstring(buf, n));
+#elif defined(__APPLE__)
+    char buf[PATH_MAX]; uint32_t sz = sizeof(buf);
+    if (_NSGetExecutablePath(buf, &sz) == 0) p = buf;
+#else
+    char buf[PATH_MAX];
+    ssize_t n = readlink("/proc/self/exe", buf, sizeof(buf) - 1);
+    if (n > 0) p = std::string(buf, (size_t)n);
+#endif
+    if (p.empty()) return "";
+    std::error_code ec;
+    fs::path c = fs::canonical(p, ec);
+    return (ec ? p : c).parent_path().u8string();
+}
+
+std::string findResource(const std::string& rel){
+    std::vector<fs::path> roots;
+    if (const char* e = std::getenv("CHESSGUI_RESOURCES")) roots.push_back(fs::u8path(e));
+    std::string exe = executableDir();
+    if (!exe.empty()){
+        roots.push_back(fs::u8path(exe) / "Resources");
+        roots.push_back(fs::u8path(exe) / ".." / "Resources");          // macOS bundle: Contents/Resources
+        roots.push_back(fs::u8path(exe) / ".." / "share" / "chess-gui-for-uci");
+    }
+    roots.push_back(fs::current_path() / "Resources");
+    for (auto& r : roots){
+        std::error_code ec;
+        fs::path f = r / fs::u8path(rel);
+        if (fs::is_regular_file(f, ec)) return f.u8string();
+    }
+    return "";
 }

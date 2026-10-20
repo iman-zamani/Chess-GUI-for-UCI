@@ -1,4 +1,5 @@
 /* Chess-GUI-for-UCI — headless command-line tool (chess-cli). GPL-2.0 */
+#include "elo_estimator.hpp"
 #include "engine_config.hpp"
 #include "perft_bisect.hpp"
 #include "uci_check.hpp"
@@ -15,6 +16,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
+#include <fstream>
 #include <functional>
 #include <iostream>
 #include <map>
@@ -45,6 +47,8 @@ Usage:
                                 check an engine against the UCI protocol
   chess-cli analyse --engine E [--fen FEN] [--moves M...] [--depth N | --movetime MS | --nodes N]
                     [--multipv K]
+  chess-cli elo-estimate --engine E [--quick | --full] [--model FILE] [--factor F] [--markdown FILE]
+                                estimate the engine's Elo from test positions (not from games)
   chess-cli bench [--runs N]    single-threaded speed (internal perft, best of N runs)
   chess-cli help
 
@@ -352,7 +356,9 @@ struct ToolArgs {
     int depth = -1, movetime = -1, multipv = 1, runs = 3;
     long long nodes = -1;
     std::string suite;
-    bool divide = false, json = false, quick = false;
+    bool divide = false, json = false, quick = false, full = false;
+    std::string model, markdown;
+    double factor = 0;
     std::vector<std::string> only;
 };
 
@@ -381,6 +387,10 @@ static int parseToolArgs(const std::vector<std::string>& a, ToolArgs& t, const s
         else if (k == "--runs"){ if (!value(v) || !parseInt(v, t.runs) || t.runs < 1) return fail("bad --runs"); }
         else if (k == "--suite"){ if (!value(t.suite)) return fail("--suite needs a file"); }
         else if (k == "--only"){ if (!value(v)) return fail("--only needs check ids"); t.only = splitOn(v, ','); }
+        else if (k == "--model"){ if (!value(t.model)) return fail("--model needs a file"); }
+        else if (k == "--markdown"){ if (!value(t.markdown)) return fail("--markdown needs a file"); }
+        else if (k == "--factor"){ if (!value(v) || !parseDouble(v, t.factor) || t.factor <= 0) return fail("bad --factor"); }
+        else if (k == "--full") t.full = true;
         else if (k == "--divide") t.divide = true;
         else if (k == "--quick") t.quick = true;
         else if (k == "--json") t.json = true;
@@ -592,6 +602,51 @@ static int cmdAnalyse(const std::vector<std::string>& args){
     return EXIT_OK;
 }
 
+static int cmdEloEstimate(const std::vector<std::string>& args){
+    ToolArgs t;
+    int rc = parseToolArgs(args, t, {"--engine", "--quick", "--full", "--model", "--factor", "--markdown", "--json"});
+    if (rc >= 0) return rc;
+    if (!t.hasEngine) return fail("elo-estimate needs --engine");
+    if (t.quick && t.full) return fail("give --quick or --full, not both");
+    std::string path = t.model.empty() ? findResource("elo/model.json") : t.model;
+    if (path.empty()) return fail("no Elo model found (Resources/elo/model.json next to chess-cli, or --model)");
+    EloModel m;
+    std::string err;
+    if (!m.load(path, &err)) return fail(err);
+    FILE* out = t.json ? stderr : stdout;
+    EloOptions opt;
+    opt.adaptive = !t.full;
+    opt.factor = t.factor;
+    std::signal(SIGINT, onSignal);
+    std::atomic<bool> abortFlag{false};
+    opt.abort = &abortFlag;
+    int lastShown = 0;
+    opt.progress = [&](const EloProgress& p){
+        if (g_interrupted) abortFlag = true;
+        if (p.answered - lastShown >= 10 || p.answered == p.planned){
+            std::fprintf(out, "%d positions: %.0f +/- %.0f (measurement only)\n", p.answered, p.elo, 1.96 * p.se);
+            std::fflush(out);
+            lastShown = p.answered;
+        }
+    };
+    std::fprintf(out, "%s mode, %d positions in the model%s\n", opt.adaptive ? "Quick (adaptive)" : "Full",
+                 (int)m.items.size(), t.factor > 0 ? "" : "; measuring this computer's speed first");
+    EloResult r = runEloEstimate(t.engine, m, opt);
+    if (!r.ok){ std::fprintf(stderr, "chess-cli: %s\n", r.error.c_str()); return EXIT_USAGE; }
+    if (!t.markdown.empty()){
+        std::ofstream f(fs::u8path(t.markdown));
+        f << eloResultMarkdown(r, m);
+    }
+    if (t.json){ std::printf("%s\n", eloResultJson(r, m).c_str()); return g_interrupted ? EXIT_INTERRUPTED : EXIT_OK; }
+    std::printf("\nEstimated Elo: %ld +/- %ld (95%%), CCRL-Blitz-equivalent\n", std::lround(r.elo), std::lround(r.ci95));
+    for (auto& [g, v] : r.groups) std::printf("  %-11s %5ld  (%d positions)\n", g.c_str(), std::lround(v.first), v.second);
+    std::printf("%d of %d positions solved, %d ms per position (hardware factor %.2f)\n", r.solved, r.answered,
+                r.movetimeMs, r.factor);
+    if (!m.validationText.empty()) std::printf("Model accuracy: %s\n", m.validationText.c_str());
+    std::printf("This is an estimate from test positions, not a rating from games: time management is not measured.\n");
+    return g_interrupted ? EXIT_INTERRUPTED : EXIT_OK;
+}
+
 int main(int argc, char** argv){
     std::vector<std::string> args(argv + 1, argv + argc);
     if (args.empty() || args[0] == "help" || args[0] == "--help" || args[0] == "-h"){
@@ -614,6 +669,7 @@ int main(int argc, char** argv){
                          (unsigned long long)b.nodes, b.bestSeconds, runs, b.nps);
         return EXIT_OK;
     }
+    if (cmd == "elo-estimate") return cmdEloEstimate(args);
     if (cmd == "perft") return cmdPerft(args);
     if (cmd == "perft-bisect") return cmdPerftBisect(args);
     if (cmd == "uci-check") return cmdUciCheck(args);

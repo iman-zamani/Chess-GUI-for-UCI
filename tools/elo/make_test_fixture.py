@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Writes tests/data/elo_fixture.json: a small synthetic model and response sets,
 with the ability estimates computed by irt.estimate_theta. The C++ estimator
-must reproduce them (tests/test_elo.cpp)."""
+must reproduce them (tests/test_elo.cpp). The model alone also goes to
+tests/data/elo_test_model.json for the chess-cli test."""
 import json, os, sys
 
 import numpy as np
@@ -35,4 +36,5 @@ model = {"format": "chessgui-elo-model", "version": 0, "threshold": 5.0,
          "groupShare": {"tactics": 0.4, "positional": 0.35, "endgame": 0.25}, "items": items}
 out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "tests", "data", "elo_fixture.json")
 json.dump({"generator": "tools/elo/make_test_fixture.py", "model": model, "cases": cases}, open(out, "w"), indent=1)
+json.dump(model, open(os.path.join(os.path.dirname(out), "elo_test_model.json"), "w"), indent=1)
 print("wrote", out, file=sys.stderr)

@@ -65,6 +65,8 @@ if(TARGET chess-cli)
              "${cli}|perft-bisect|--engine|${mock}|args=--perft-bug ep|--fen|${kiwi}|--depth|4")
     cli_test(cli_uci_check 0 "0 failed" "${cli}|uci-check|--engine|${mock}|--quick|--only|handshake,isready-during-search")
     cli_test(cli_uci_check_fail 1 "FAIL" "${cli}|uci-check|--engine|${mock}|args=--no-readyok|--quick|--only|handshake")
+    cli_test(cli_elo_estimate 0 "Estimated Elo: -?[0-9]+ \\+/- [0-9]+ \\(95%\\)"
+             "${cli}|elo-estimate|--engine|${mock}|--model|${CMAKE_CURRENT_SOURCE_DIR}/data/elo_test_model.json|--factor|1")
     cli_test(cli_analyse 0 "\"bestmove\"" "${cli}|analyse|--engine|${mock}|--depth|2|--json")
     add_dependencies(core_tests chess-cli)
 endif()

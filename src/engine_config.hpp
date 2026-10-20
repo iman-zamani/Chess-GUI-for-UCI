@@ -54,3 +54,9 @@ std::string joinArgs(const std::vector<std::string>& args);   // inverse of spli
 //   Linux $XDG_CONFIG_HOME/chess-gui-for-uci (default ~/.config/chess-gui-for-uci).
 // CHESSGUI_CONFIG_DIR overrides it (used by the tests).
 std::string userConfigDir();
+
+// Directory of the running executable ("" if unknown).
+std::string executableDir();
+// A bundled resource, e.g. "elo/model.json": looked up in $CHESSGUI_RESOURCES,
+// then Resources/ next to the executable, then ./Resources. "" if not found.
+std::string findResource(const std::string& relPath);
