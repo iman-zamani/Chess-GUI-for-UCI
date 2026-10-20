@@ -13,7 +13,9 @@ class EditorScreen {
 public:
     explicit EditorScreen(App& app) : app_(app) {}
     void open(bool forMatch);              // forMatch: "Done" adds the position to the match
+    void setPosition(const Position& p){ pos_ = p; fenDirty_ = false; }
     void draw();
+    BoardView& board(){ return board_; }
     Position position() const;             // castling rights cleaned to match the pieces
     std::string problem() const;           // "" if engines can use the position
 private:

@@ -127,9 +127,11 @@ set(CHESS_SOURCES
     src/ui/editor_screen.cpp
     src/ui/engine_manager.cpp
     src/ui/file_dialog.cpp
+    src/ui/game_screen.cpp
     src/ui/tools_screen.cpp
     src/ui/widgets.cpp
     src/ui/item_hooks.cpp
+    src/ui/match_screen.cpp
     ${imgui_SOURCE_DIR}/misc/cpp/imgui_stdlib.cpp
 )
 

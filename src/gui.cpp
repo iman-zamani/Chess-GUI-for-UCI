@@ -1,1777 +1,392 @@
-/* Chess-GUI-for-UCI — SFML GUI. GPL-2.0 */
+/* Chess-GUI-for-UCI — application shell (window, ImGui, screens). GPL-2.0 */
 #include "gui.hpp"
-#include <imgui.h>
-#include <imgui-SFML.h>
+#include "ui/file_dialog.hpp"
 #include "ui/item_hooks.hpp"
 #include "ui/widgets.hpp"
-#include "ui/file_dialog.hpp"
-#include <filesystem>
-#include <fstream>
-#include <sstream>
-#include <cmath>
-#include <ctime>
+#include <imgui.h>
+#include <imgui-SFML.h>
 #include <algorithm>
 #include <chrono>
+#include <cmath>
+#include <cstdio>
 #include <cstdlib>
+#include <filesystem>
+#include <sstream>
 #ifdef _WIN32
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
 #include <windows.h>
 #endif
+
 namespace fs = std::filesystem;
 
-static const sf::Color COL_BG(24,24,28);
-static const sf::Color COL_PANEL(38,38,46);
-static const sf::Color COL_BTN(58,58,72);
-static const sf::Color COL_BTN_HOT(80,80,100);
-static const sf::Color COL_BTN_TOG(70,110,70);
-static const sf::Color COL_LIGHT(240,217,181);
-static const sf::Color COL_DARK(181,136,99);
-static const sf::Color COL_SEL(110,160,90,180);
-static const sf::Color COL_LAST_FROM(70,130,220,70);    // last move: origin (lighter)
-static const sf::Color COL_LAST_TO(70,130,220,150);     // last move: destination (stronger)
-static const sf::Color COL_PRE_FROM(220,60,60,70);      // premove origin
-static const sf::Color COL_PRE_TO(220,60,60,150);       // premove destination
-static const sf::Color COL_CHECK(220,80,80,170);
-static const sf::Color COL_ACCENT(120,170,255);
-static const sf::Color COL_DIM(170,170,180);
-static const sf::Color COL_WARN(230,180,120);
-static const sf::Color COL_ERR(255,130,130);
-static const sf::Color COL_GOOD(140,230,140);
-
-static float WW = 1280, WH = 800;   // LOGICAL size; window pixels = logical * UIS
-static float UIS = 1.f;             // UI scale factor (1..3, auto-detected)
-static float snapPx(float v){ return std::round(v*UIS)/UIS; }  // land on physical pixels
-static long long nowMsSteady(){
+static long long nowMs(){
     return std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::steady_clock::now().time_since_epoch()).count();
 }
 
-// Normalize SFML events into the small UiEvent the app (and --script) uses.
-static void toUiEvent(const std::optional<sf::Event>& ev, UiEvent& out){
-    out = UiEvent{};
-    if (ev->is<sf::Event::Closed>()) out.kind = UiEvent::Closed;
-    else if (const auto* r = ev->getIf<sf::Event::Resized>()){
-        out.kind = UiEvent::Resized; out.width = r->size.x; out.height = r->size.y;
-    } else if (const auto* k = ev->getIf<sf::Event::KeyPressed>()){
-        out.kind = UiEvent::KeyPressed; out.key = k->code;
-        out.ctrl = k->control; out.sys = k->system;
-    } else if (const auto* t = ev->getIf<sf::Event::TextEntered>()){
-        out.kind = UiEvent::TextEntered; out.unicode = t->unicode;
-    } else if (const auto* m = ev->getIf<sf::Event::MouseButtonPressed>()){
-        out.kind = UiEvent::MousePressed; out.button = m->button;
-    } else if (const auto* m = ev->getIf<sf::Event::MouseButtonReleased>()){
-        out.kind = UiEvent::MouseReleased; out.button = m->button;
-    } else if (ev->is<sf::Event::MouseMoved>()) out.kind = UiEvent::MouseMoved;
-}
-
-// =============================================================== init / run
+// =============================================================== init
 bool App::init(){
 #ifdef _WIN32
     // Opt out of Windows DPI virtualization (which blurs by upscaling 96-dpi
-    // renders); we do our own scaling below.
+    // renders); we scale the UI ourselves.
     SetProcessDPIAware();
 #endif
+    std::string err;
+    if (!settings_.load((fs::u8path(userConfigDir()) / "settings.json").u8string(), &err))
+        toast("Could not read settings.json: " + err);
+
+    // UI scale from the screen size: 1080p -> 1x, 4K -> 2x. CHESSGUI_SCALE overrides it.
     sf::Vector2u desk = sf::VideoMode::getDesktopMode().size;
-    // UI scale: fit a 1280x800 logical canvas to the screen. 1080p -> 1x,
-    // 4K -> 2x, 5K+ -> 3x. Override with the CHESSGUI_SCALE env var (e.g. 1.5).
-    float fit = std::min(desk.x/1280.f, desk.y/800.f);
-    UIS = std::max(1.f, std::min(3.f, std::floor(fit)));
+    float uiScale = std::max(1.f, std::min(3.f, std::floor(std::min(desk.x / 1280.f, desk.y / 800.f))));
     if (const char* env = std::getenv("CHESSGUI_SCALE")){
-        float v = (float)atof(env);
-        if (v >= 0.75f && v <= 4.f) UIS = v;
+        float v = (float)std::atof(env);
+        if (v >= 0.75f && v <= 4.f) uiScale = v;
     }
-    WW = std::min(1280.f, desk.x / UIS);
-    WH = std::min(800.f,  desk.y / UIS);
-    window.create(sf::VideoMode({(unsigned)(WW*UIS),(unsigned)(WH*UIS)}),
-                  "Chess GUI for UCI", sf::Style::Default);
-    // --- Retina self-check ---------------------------------------------------
-    // On macOS, VideoMode sizes are in points. If Retina backing was granted,
-    // the real framebuffer is scale-x bigger than what we asked for.
-    {
-        float bs = window.getSize().x / (WW*UIS);   // backing scale (1.0 or 2.0)
-        fprintf(stderr, "[hidpi] requested %.0fx%.0f, framebuffer %ux%u, backing scale %.2f\n",
-                WW*UIS, WH*UIS, window.getSize().x, window.getSize().y, bs);
-    #ifdef __APPLE__
-        if (bs < 1.5f)
-            fprintf(stderr, "[hidpi] NO Retina backing! Check SFML version and Info.plist.\n");
-    #endif
-    }
-    window.setView(sf::View(sf::FloatRect({0,0},{WW,WH})));   // draw in logical units
-    window.setFramerateLimit(60);
-    imguiOk = ImGui::SFML::Init(window, false);
-    if (imguiOk){
-        ImGui::GetIO().IniFilename = nullptr;        // no imgui.ini next to the binary
-        ImGui::StyleColorsDark();
-        setupImGuiFonts();
-    }
-    const char* fontPaths[] = {
-        "Resources/Cantarell-Regular.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "/System/Library/Fonts/Supplemental/Arial.ttf",
-        "C:\\Windows\\Fonts\\arial.ttf"
-    };
-    bool fontOk=false;
-    for (auto p : fontPaths) if (font.openFromFile(p)){ fontOk=true; break; }
-    if (!fontOk){ fprintf(stderr,"No font found (put Cantarell-Regular.ttf in Resources/)\n"); return false; }
-    // Prefer the high-resolution sheet: bitmaps only stay sharp when they are
-    // DOWNscaled. 150px pieces upscaled to ~190px on HiDPI screens is exactly
-    // the "blurry pieces" effect.
-    piecesOk = pieceTexture.loadFromFile("Resources/pieceTexture@2x.png");
-    if (!piecesOk) piecesOk = pieceTexture.loadFromFile("Resources/pieceTexture.png");
-    if (piecesOk){
-        pieceTexture.setSmooth(true);
-        pieceCell = (int)(pieceTexture.getSize().x / 6);
-        if (pieceCell <= 0) pieceCell = 150;
-    }
-    if (!pieceSet.load("Resources/pieceTexture@2x.png")) pieceSet.load("Resources/pieceTexture.png");
-    {
-        std::string err;
-        if (!settings_.load((fs::u8path(userConfigDir()) / "settings.json").u8string(), &err))
-            showToast("Could not read settings.json: " + err);
-    }
+    unsigned w = (unsigned)(settings_.windowW > 0 ? settings_.windowW : 1280);
+    unsigned h = (unsigned)(settings_.windowH > 0 ? settings_.windowH : 800);
+    w = std::min(w, (unsigned)(desk.x / uiScale)); h = std::min(h, (unsigned)(desk.y / uiScale));
+    window_.create(sf::VideoMode({(unsigned)(w * uiScale), (unsigned)(h * uiScale)}), "Chess GUI for UCI",
+                   sf::Style::Default);
+    // On macOS the requested size is in points; with Retina backing the real
+    // framebuffer is 2x that. Everything below works in framebuffer pixels.
+    float backing = window_.getSize().x / (w * uiScale);
+    dpiScale_ = uiScale * std::max(1.f, backing);
+    std::fprintf(stderr, "[hidpi] requested %ux%u, framebuffer %ux%u, backing scale %.2f\n",
+                 (unsigned)(w * uiScale), (unsigned)(h * uiScale), window_.getSize().x, window_.getSize().y, backing);
+    window_.setFramerateLimit(60);
+    if (sf::Image icon; icon.loadFromFile("Resources/icon.png")) window_.setIcon(icon);
+
+    imguiOk_ = ImGui::SFML::Init(window_, false);
+    if (!imguiOk_){ std::fprintf(stderr, "ImGui initialisation failed\n"); return false; }
+    ImGui::GetIO().IniFilename = nullptr;                 // no imgui.ini next to the binary
+    setupFonts();
+    if (!pieces_.load("Resources/pieceTexture@2x.png") && !pieces_.load("Resources/pieceTexture.png"))
+        std::fprintf(stderr, "Piece images not found; using letters\n");
     scanEngines();
-    game.reset(Position::startpos());
-    tc = TimeControl{settings_.tcBaseMs, settings_.tcIncMs};
-    arrowsN = std::max(1, std::min(5, settings_.analysisMultiPV));
-    layout();
+    game_.newHumanGame(Position::startpos());
     return true;
 }
 
-int App::activityLevel(){
-    if (dragging) return 2;
-    bool bg = false;
-    if (!toastText.empty() && toastClock.getElapsedTime().asSeconds() < 3.2f) bg = true;
-    if (screen==Screen::GAME &&
-        (clocksRunning || oppState!=0 || (analysing && anaCtl))) bg = true;
-    if (screen==Screen::MATCH_VIEW && (runner.running() || judgeCtl)) bg = true;
-    if (screen==Screen::TEST_RUN && testRunning) bg = true;
-    return bg ? 1 : 0;
+// ImGui draws in physical pixels; fonts are rasterized at the real pixel
+// size so text stays sharp on HiDPI screens.
+void App::setupFonts(){
+    ImGuiIO& io = ImGui::GetIO();
+    io.Fonts->Clear();
+    ImFontConfig fc; fc.OversampleH = 2;
+    ui::Fonts& f = ui::fonts();
+    f.body = io.Fonts->AddFontFromFileTTF("Resources/Cantarell-Regular.ttf", 15.f * dpiScale_, &fc);
+    if (!f.body) f.body = io.Fonts->AddFontDefault();
+    f.mono = io.Fonts->AddFontFromFileTTF("Resources/JetBrainsMono-Regular.ttf", 13.5f * dpiScale_, &fc);
+    if (!f.mono) f.mono = f.body;
+    f.large = io.Fonts->AddFontFromFileTTF("Resources/Cantarell-Regular.ttf", 24.f * dpiScale_, &fc);
+    if (!f.large) f.large = f.body;
+    if (!ImGui::SFML::UpdateFontTexture()) std::fprintf(stderr, "[imgui] font texture failed\n");
+    ImGuiStyle st;
+    if (settings_.theme == "light") ImGui::StyleColorsLight(&st); else ImGui::StyleColorsDark(&st);
+    st.FrameRounding = 3; st.WindowRounding = 4; st.ChildRounding = 3; st.GrabRounding = 3; st.PopupRounding = 4;
+    st.ScaleAllSizes(dpiScale_);
+    ImGui::GetStyle() = st;
 }
 
-void App::run(){
-    sf::Clock bgClock;
-    while (window.isOpen()){
-        bool hadEvent = false;
-        UiEvent e;
-        while (const std::optional ev = window.pollEvent()){
-            if (imguiOk) ImGui::SFML::ProcessEvent(window, *ev);
-            toUiEvent(ev, e);
-            hadEvent = true;
-            // ImGui screens take the input; the legacy UI only sees window events
-            if (imguiScreen() && e.kind != UiEvent::Closed && e.kind != UiEvent::Resized) continue;
-            handleEvent(e);
-        }
-        if (scriptPos < script.size()){ stepScript(); hadEvent = true; }
-        if (!window.isOpen()) break;
-        update();
-        if (imguiOk && imguiScreen()){         // immediate-mode: draw every frame
-            sf::Vector2u ws = window.getSize();
-            uiitems::beginFrame();
-            imguiFrameActive = true;
-            if (!script.empty()){
-                // scripted run: drive ImGui's IO directly, so a scripted button
-                // hold isn't overwritten by the real (idle) mouse every frame
-                ImGuiIO& io = ImGui::GetIO();
-                io.DisplaySize = ImVec2((float)ws.x, (float)ws.y);
-                io.DeltaTime = std::max(1e-4f, imguiClock.restart().asSeconds());
-                if (scriptMouse) io.MousePos = ImVec2(scriptMouse->x * ws.x / WW, scriptMouse->y * ws.y / WH);
-                io.MouseDown[0] = scriptButtonDown;
-                ImGui::NewFrame();
-            }
-            else ImGui::SFML::Update(window, imguiClock.restart());
-            drawImGui();
-            render();
-            forceRedraw = false;
-            continue;
-        }
-        int act = activityLevel();
-        if (act==2 || hadEvent || forceRedraw){
-            render(); forceRedraw = false; bgClock.restart();
-        } else if (act==1){
-            if (bgClock.getElapsedTime().asMilliseconds() >= 80){ render(); bgClock.restart(); }
-            else sf::sleep(sf::milliseconds(15));
-        } else {
-            sf::sleep(sf::milliseconds(40));
-        }
-    }
-    stopOpponent(); stopAnalysis();
-    if (imguiOk) ImGui::SFML::Shutdown();
-    if (judgeCtl){ judgeCtl->shutdown(); judgeCtl.reset(); }
-    runner.abort();
-    testAbort = true;
-    if (testThread.joinable()) testThread.join();
-}
-
-// =============================================================== drawing helpers
-void App::text(const std::string& s, float x, float y, unsigned size, sf::Color c, bool center){
-    // Rasterize glyphs at (at least) the physical pixel size and scale down:
-    // k >= UIS means the texture never gets upscaled on screen -> crisp text
-    // at every UI scale; on 1x displays it supersamples.
-    int k = std::max(2, (int)std::lround(UIS));
-    sf::Text t(font, sf::String::fromUtf8(s.begin(), s.end()), size*(unsigned)k);
-    t.setScale({1.f/k, 1.f/k});
-    t.setFillColor(c);
-    if (center){
-        auto b = t.getLocalBounds();
-        t.setOrigin({std::round(b.position.x + b.size.x/2.f),
-                     std::round(b.position.y + b.size.y/2.f)});
-    }
-    t.setPosition({snapPx(x), snapPx(y)});
-    window.draw(t);
-}
-static bool hit(const sf::FloatRect& r, sf::Vector2f p){ return r.contains(p); }
-
-void App::drawButtons(){
-    sf::Vector2f m = mouseLogical();
-    for (auto& b : buttons){
-        sf::RectangleShape r(sf::Vector2f(b.rect.size.x, b.rect.size.y));
-        r.setPosition({std::round(b.rect.position.x), std::round(b.rect.position.y)});
-        sf::Color c = b.toggled? COL_BTN_TOG : (hit(b.rect,m)&&b.enabled ? COL_BTN_HOT : COL_BTN);
-        if (!b.enabled) c = sf::Color(45,45,50);
-        r.setFillColor(c);
-        r.setOutlineThickness(1); r.setOutlineColor(sf::Color(90,90,110));
-        window.draw(r);
-        text(b.label, b.rect.position.x+b.rect.size.x/2, b.rect.position.y+b.rect.size.y/2,
-             (unsigned)std::min(17.f, b.rect.size.y*0.45f),
-             b.enabled? sf::Color::White : sf::Color(140,140,140), true);
-    }
-}
-
-void App::drawPiece(int piece, float x, float y, float size, std::uint8_t alpha){
-    if (!piece) return;
-    if (piecesOk){
-        int col=5;
-        switch (std::abs(piece)){case 20:col=0;break;case 9:col=1;break;case 4:col=2;break;
-                                  case 3:col=3;break;case 5:col=4;break;case 1:col=5;break;}
-        int row = piece>0 ? 0 : 1;
-        sf::Sprite sp(pieceTexture, sf::IntRect({col*pieceCell,row*pieceCell},{pieceCell,pieceCell}));
-        sp.setScale({size/(float)pieceCell, size/(float)pieceCell});
-        sp.setColor(sf::Color(255,255,255,alpha));
-        sp.setPosition({snapPx(x), snapPx(y)});
-        window.draw(sp);
-    } else {
-        char c='P';
-        switch (std::abs(piece)){case 20:c='K';break;case 9:c='Q';break;case 4:c='B';break;
-                                  case 3:c='N';break;case 5:c='R';break;case 1:c='P';break;}
-        text(std::string(1,c), x+size/2, y+size/2, (unsigned)(size*0.6f),
-             piece>0? sf::Color::White : sf::Color(40,40,40), true);
-    }
-}
-
-int App::boardSquareAt(sf::Vector2f m, float bx, float by, float side, bool flipped) const{
-    float sq = side/8;
-    int x = (int)std::floor((m.x-bx)/sq);
-    int y = (int)std::floor((m.y-by)/sq);
-    if (x<0||x>7||y<0||y>7) return -1;
-    if (flipped){ x=7-x; y=7-y; }
-    return y*8+x;
-}
-
-void App::drawSquareTint(int sq, float bx, float by, float side, bool flipped, sf::Color c){
-    if (sq<0||sq>63) return;
-    float s8 = side/8;
-    int x=sq%8, y=sq/8;
-    if (flipped){ x=7-x; y=7-y; }
-    sf::RectangleShape o(sf::Vector2f(s8,s8));
-    o.setPosition({bx+x*s8, by+y*s8});
-    o.setFillColor(c);
-    window.draw(o);
-}
-
-void App::drawBoard(float bx, float by, float side, const Position& p,
-                    int selSq, const std::vector<Move>* legal,
-                    int lastFrom, int lastTo, bool flipped, int dragSq, sf::Vector2f dPos){
-    float sq = side/8;
-    int checkSq = -1;
-    if (p.kingSquare(p.whiteToMove)>=0 && p.inCheck(p.whiteToMove))
-        checkSq = p.kingSquare(p.whiteToMove);
-    for (int i=0;i<64;i++){
-        int x=i%8, y=i/8;
-        int dx = flipped? 7-x : x, dy = flipped? 7-y : y;
-        sf::RectangleShape r(sf::Vector2f(sq,sq));
-        r.setPosition({bx+dx*sq, by+dy*sq});
-        r.setFillColor(((x+y)%2)? COL_DARK : COL_LIGHT);
-        window.draw(r);
-    }
-    // origin lighter, destination stronger — direction reads at a glance
-    if (lastFrom>=0) drawSquareTint(lastFrom, bx,by,side,flipped, COL_LAST_FROM);
-    if (lastTo>=0)   drawSquareTint(lastTo,   bx,by,side,flipped, COL_LAST_TO);
-    if (selSq>=0)    drawSquareTint(selSq,    bx,by,side,flipped, COL_SEL);
-    if (checkSq>=0)  drawSquareTint(checkSq,  bx,by,side,flipped, COL_CHECK);
-    if (legal){
-        for (const Move& m : *legal){
-            int x=m.to%8, y=m.to/8;
-            int dx = flipped?7-x:x, dy = flipped?7-y:y;
-            sf::CircleShape c(p.board[m.to]||m.isEnPassant ? sq*0.42f : sq*0.15f);
-            c.setOrigin({c.getRadius(), c.getRadius()});
-            c.setPosition({bx+dx*sq+sq/2, by+dy*sq+sq/2});
-            if (p.board[m.to]||m.isEnPassant){
-                c.setFillColor(sf::Color::Transparent);
-                c.setOutlineThickness(sq*0.07f);
-                c.setOutlineColor(sf::Color(40,90,40,150));
-            } else c.setFillColor(sf::Color(40,90,40,120));
-            window.draw(c);
-        }
-    }
-    for (int i=0;i<64;i++){
-        if (!p.board[i] || i==dragSq) continue;
-        int x=i%8, y=i/8;
-        int dx = flipped?7-x:x, dy = flipped?7-y:y;
-        drawPiece(p.board[i], bx+dx*sq, by+dy*sq, sq);
-    }
-    for (int i=0;i<8;i++){
-        char f = flipped? 'h'-i : 'a'+i;
-        char rk = flipped? '1'+i : '8'-i;
-        text(std::string(1,f), bx+i*sq+sq-10, by+side-14, 12, (i%2)? COL_LIGHT : COL_DARK);
-        text(std::string(1,rk), bx+3, by+i*sq+2, 12, (i%2)? COL_LIGHT : COL_DARK);
-    }
-    if (dragSq>=0 && p.board[dragSq])
-        drawPiece(p.board[dragSq], dPos.x-sq/2, dPos.y-sq/2, sq, 230);
-    sf::RectangleShape br(sf::Vector2f(side,side));
-    br.setPosition({bx,by}); br.setFillColor(sf::Color::Transparent);
-    br.setOutlineThickness(2); br.setOutlineColor(sf::Color(90,90,110));
-    window.draw(br);
-}
-
-void App::drawArrow(float bx, float by, float side, int from, int to,
-                    bool flipped, sf::Color c){
-    if (from<0||from>63||to<0||to>63||from==to) return;
-    float sq = side/8;
-    auto center=[&](int s)->sf::Vector2f{
-        int x=s%8, y=s/8;
-        if (flipped){ x=7-x; y=7-y; }
-        return { bx + x*sq + sq/2, by + y*sq + sq/2 };
-    };
-    sf::Vector2f a = center(from), b = center(to);
-    sf::Vector2f d = b-a;
-    float len = std::sqrt(d.x*d.x + d.y*d.y);
-    if (len < 1) return;
-    sf::Vector2f u = d / len;
-    float headLen = sq*0.38f, headW = sq*0.42f, shaftW = sq*0.20f;
-    float ang = std::atan2(d.y, d.x) * 180.f / 3.14159265f;
-    sf::RectangleShape shaft(sf::Vector2f(len-headLen, shaftW));
-    shaft.setOrigin({0, shaftW/2});
-    shaft.setPosition(a); shaft.setRotation(sf::degrees(ang));
-    shaft.setFillColor(c);
-    window.draw(shaft);
-    sf::Vector2f tipBase = b - u*headLen;
-    sf::Vector2f nrm(-u.y, u.x);
-    sf::ConvexShape head(3);
-    head.setPoint(0, b);
-    head.setPoint(1, tipBase + nrm*(headW/2));
-    head.setPoint(2, tipBase - nrm*(headW/2));
-    head.setFillColor(c);
-    window.draw(head);
-}
-
-void App::drawPvArrows(const std::vector<PvLine>& pvs, const Position& shown,
-                       float bx, float by, float side, bool flipped, int count){
-    // weakest first so the best line's arrow sits on top; opacity encodes rank
-    static const std::uint8_t A[5] = {210, 120, 85, 62, 45};
-    int n = std::min((int)pvs.size(), std::min(count, 5));
-    for (int r=n-1; r>=0; r--){
-        if (!pvs[r].valid) continue;
-        Move m;
-        if (!shown.uciToMove(pvs[r].firstMove(), m)) continue;
-        drawArrow(bx,by,side, m.from, m.to, flipped, sf::Color(70,140,220, A[r]));
-    }
-}
-
-void App::drawEvalBar(float x, float y, float h, int cp, bool isMate, int mateIn){
-    float frac;
-    if (isMate) frac = mateIn>0 ? 1.f : 0.f;
-    else frac = 0.5f + 0.5f * std::tanh(cp/600.0f);
-    sf::RectangleShape black(sf::Vector2f(22, h)); black.setPosition({x,y});
-    black.setFillColor(sf::Color(30,30,30)); window.draw(black);
-    sf::RectangleShape white(sf::Vector2f(22, h*frac));
-    white.setPosition({x, y+h*(1-frac)});
-    white.setFillColor(sf::Color(230,230,230)); window.draw(white);
-    sf::RectangleShape mid(sf::Vector2f(22,2)); mid.setPosition({x, y+h/2});
-    mid.setFillColor(sf::Color(120,120,120)); window.draw(mid);
-    std::string s;
-    if (isMate) s = "M" + std::to_string(std::abs(mateIn));
-    else { char b[16]; snprintf(b,16,"%+.1f", cp/100.0); s=b; }
-    text(s, x+11, y+h+12, 13, sf::Color::White, true);
-}
-
-void App::drawMoveList(float x, float y, float w, float h,
-                       const std::vector<std::string>& sans, int startNo, bool startWhite){
-    sf::RectangleShape r(sf::Vector2f(w,h)); r.setPosition({x,y});
-    r.setFillColor(COL_PANEL); window.draw(r);
-    float lh = 20;
-    int rows = (int)(h/lh) - 1;
-    if (rows < 1) return;
-    std::vector<std::string> lines;
-    int num = startNo; size_t i=0;
-    if (!startWhite && !sans.empty()){
-        lines.push_back(std::to_string(num)+"... "+sans[0]); num++; i=1;
-    }
-    for (; i<sans.size(); i+=2){
-        std::string ln = std::to_string(num)+". "+sans[i];
-        if (i+1<sans.size()) ln += "  "+sans[i+1];
-        lines.push_back(ln); num++;
-    }
-    int first = std::max(0, (int)lines.size()-rows);
-    float yy = y+6;
-    for (int k=first; k<(int)lines.size(); k++){
-        text(lines[k], x+8, yy, 14, sf::Color(210,210,215));
-        yy += lh;
-    }
-}
-
-// =============================================================== engines & overrides
-// Engines: engines.json in the user config dir, plus anything dropped into
-// Resources/engines/ and common Stockfish install locations.
+// =============================================================== services
 void App::scanEngines(){
     std::string file = (fs::u8path(userConfigDir()) / "engines.json").u8string();
     std::string err;
-    if (!registry_.load(file, &err)) showToast("Could not read engines.json: " + err);
-    importLegacyOverrides();
+    if (!registry_.load(file, &err)) toast("Could not read engines.json: " + err);
     registry_.discover("Resources/engines");
     std::error_code ec;
-    for (const char* p : {"/usr/games/stockfish","/usr/bin/stockfish",
-                          "/usr/local/bin/stockfish","/opt/homebrew/bin/stockfish",
-                          "C:\\stockfish\\stockfish.exe"})
+    for (const char* p : {"/usr/games/stockfish", "/usr/bin/stockfish", "/usr/local/bin/stockfish",
+                          "/opt/homebrew/bin/stockfish", "C:\\stockfish\\stockfish.exe"})
         if (fs::exists(p, ec) && !registry_.findByPath(p)){
             EngineConfig c; c.path = p; c.name = fs::path(p).filename().string(); c.discovered = true;
             registry_.add(c);
         }
 }
+
 void App::saveEngines(){
-    std::string file = (fs::u8path(userConfigDir()) / "engines.json").u8string();
     std::string err;
-    if (!registry_.save(file, &err)) showToast("Could not save engines.json: " + err);
-}
-// Before engines.json existed, option overrides lived in engine_options.cfg
-// (path TAB option TAB value) next to the executable. Fold them in once.
-void App::importLegacyOverrides(){
-    std::ifstream f("engine_options.cfg");
-    if (!f) return;
-    std::string line; bool any = false;
-    while (std::getline(f, line)){
-        size_t t1 = line.find('\t'); if (t1==std::string::npos) continue;
-        size_t t2 = line.find('\t', t1+1); if (t2==std::string::npos) continue;
-        configFor(line.substr(0,t1)).setOption(line.substr(t1+1, t2-t1-1), line.substr(t2+1));
-        any = true;
-    }
-    f.close();
-    if (any){
-        saveEngines();
-        std::error_code ec;
-        fs::rename("engine_options.cfg", "engine_options.cfg.imported", ec);
-    }
-}
-EngineConfig& App::configFor(const std::string& path){
-    if (EngineConfig* c = registry_.findByPath(path)) return *c;
-    EngineConfig c; c.path = path; c.name = fs::u8path(path).filename().u8string();
-    registry_.add(c);
-    return registry_.engines().back();
-}
-EngineConfig App::makeEntry(int idx){
-    return registry_.engines()[idx];
-}
-void App::setOverride(const std::string& path, const std::string& name, const std::string& val){
-    EngineConfig& c = configFor(path);
-    c.setOption(name, val);
-    c.discovered = false;                 // has settings now: keep it in engines.json
-    saveEngines();
-}
-std::string App::overrideOrDefault(const std::string& path, const UciOption& o){
-    if (EngineConfig* c = registry_.findByPath(path))
-        if (const std::string* v = c->option(o.name)) return *v;
-    return o.defVal;
+    if (!registry_.save((fs::u8path(userConfigDir()) / "engines.json").u8string(), &err))
+        toast("Could not save engines.json: " + err);
 }
 
-// =============================================================== layout
-static Button mk(float x,float y,float w,float h,const std::string& s,int id,bool tog=false){
-    Button b; b.rect=sf::FloatRect({x,y},{w,h}); b.label=s; b.id=id; b.toggled=tog; return b;
-}
-static const char* TC_LABELS[7] = {"1+0","3+0","3+2","5+0","10+0","15+10","30+0"};
-static const int   TC_BASE[7]   = {60000,180000,180000,300000,600000,900000,1800000};
-static const int   TC_INC[7]    = {0,0,2000,0,0,10000,0};
-
-void App::layout(){
-    buttons.clear();
-    float cx = WW/2;
-    forceRedraw = true;
-    switch (screen){
-    case Screen::MENU: {
-        float w=380,h=44,y=132;
-        buttons.push_back(mk(cx-w/2,y,w,h,"Play: Human vs Human",100)); y+=52;
-        buttons.push_back(mk(cx-w/2,y,w-118,h,"Play vs Engine",101));
-        buttons.push_back(mk(cx-w/2+w-110,y,110,h, menuPlayWhite? "You: White":"You: Black",107,!menuPlayWhite)); y+=52;
-        buttons.push_back(mk(cx-w/2,y,w,h,"Engine vs Engine / Tournament",103)); y+=52;
-        buttons.push_back(mk(cx-w/2,y,w,h,"Analysis Board",104)); y+=52;
-        buttons.push_back(mk(cx-w/2,y,w,h,"Load PGN  (analyse a game)",108)); y+=52;
-        buttons.push_back(mk(cx-w/2,y,w,h,"Board Editor / Set Position",106)); y+=52;
-        buttons.push_back(mk(cx-w/2,y,w-128,h,"Engine Testing Tools",105));
-        buttons.push_back(mk(cx-w/2+w-120,y,120,h,"Engines...",109));
-        y+=44+64;                                   // clear gap before the TC block
-        float bw=66;
-        for (int i=0;i<7;i++)
-            buttons.push_back(mk(cx-3.5f*bw-15+i*(bw+5), y, bw, 34, TC_LABELS[i], 110+i,
-                                 tc.baseMs==TC_BASE[i] && tc.incMs==TC_INC[i]));
-        y+=58;
-        buttons.push_back(mk(cx-w/2,y,w,38,"Quit",120));
-        break; }
-    case Screen::GAME: {
-        float side = WH-40;
-        float rx = side + 40;
-        float pw = WW - rx - 20;
-        float ny = 16, nw = 40;
-        buttons.push_back(mk(rx, ny, nw, 28, "|<", 208));
-        buttons.push_back(mk(rx+nw+4, ny, nw, 28, "<", 209));
-        buttons.push_back(mk(rx+2*(nw+4), ny, nw, 28, ">", 210));
-        buttons.push_back(mk(rx+3*(nw+4), ny, nw, 28, ">|", 211));
-        buttons.push_back(mk(rx+4*(nw+4)+6, ny, 58, 28, "PV:"+std::to_string(arrowsN), 213));
-        buttons.push_back(mk(rx+pw-70, ny, 70, 28, "Menu", 200));
-        float bw = (pw-8)/2;
-        float bh = 34, gap = 8;
-        int rows = (mode==GameMode::ANALYSIS) ? 5 : 4;
-        gameButtonsTop = WH - 20 - (rows*bh + (rows-1)*gap);
-        float y = gameButtonsTop;
-        buttons.push_back(mk(rx, y, bw, bh, "New Game", 201));
-        buttons.push_back(mk(rx+bw+8, y, bw, bh, "Flip (F)", 202)); y+=bh+gap;
-        buttons.push_back(mk(rx, y, bw, bh, "Takeback", 203));
-        buttons.push_back(mk(rx+bw+8, y, bw, bh, "Resign", 204)); y+=bh+gap;
-        buttons.push_back(mk(rx, y, bw, bh, "Copy FEN", 205));
-        buttons.push_back(mk(rx+bw+8, y, bw, bh, "Paste FEN", 206)); y+=bh+gap;
-        buttons.push_back(mk(rx, y, bw, bh, "Save PGN", 207));
-        buttons.push_back(mk(rx+bw+8, y, bw, bh, analysing? "Analysis: ON":"Analysis: OFF", 212, analysing)); y+=bh+gap;
-        if (mode==GameMode::ANALYSIS)
-            buttons.push_back(mk(rx, y, pw, bh, "Run game review (engine annotates every move)", 215));
-        if (pendingPromotion){
-            float sq=side/8;
-            float pxp = 20+side/2-2*sq, pyp = 20+side/2-sq/2;
-            const char* n[4]={"Q","R","B","N"};
-            for (int i=0;i<4;i++)
-                buttons.push_back(mk(pxp+i*sq, pyp, sq, sq, n[i], 250+i));
-        }
-        break; }
-    case Screen::PICK_ENGINE: {
-        float w = WW-240, y=110;
-        for (size_t i=0;i<registry_.engines().size() && i<12;i++){
-            buttons.push_back(mk(120, y, w-110, 38,
-                registry_.engines()[i].name + "   (" + registry_.engines()[i].path + ")", 300+(int)i));
-            buttons.push_back(mk(120+w-104, y, 104, 38, "Options...", 340+(int)i));
-            y+=46;
-        }
-        buttons.push_back(mk(120, WH-130, w-160, 38, enginePathInput.empty()?
-                             "[click here, then type an engine path]" : enginePathInput,
-                             380, textFocus==TextTarget::ENGINE_PATH));
-        buttons.push_back(mk(WW-260, WH-130, 140, 38, "Add path", 381));
-        buttons.push_back(mk(120, WH-80, 140, 38, "Back", 399));
-        break; }
-    case Screen::MATCH_SETUP: {
-        float w=WW-240, y=96;
-        for (size_t i=0;i<registry_.engines().size() && i<6;i++){
-            bool sel = std::find(matchSelection.begin(),matchSelection.end(),(int)i)!=matchSelection.end();
-            buttons.push_back(mk(120, y, w, 34,
-                registry_.engines()[i].name + "   (" + registry_.engines()[i].path + ")", 400+(int)i, sel));
-            y+=40;
-        }
-        y+=24;                                     // label line: games / TC
-        buttons.push_back(mk(120, y, 36, 32, "-", 450));
-        buttons.push_back(mk(212, y, 36, 32, "+", 451));
-        for (int i=0;i<7;i++)
-            buttons.push_back(mk(330+i*62, y, 56, 32, TC_LABELS[i], 110+i,
-                                 tc.baseMs==TC_BASE[i]&&tc.incMs==TC_INC[i]));
-        y+=58;                                     // label line: start positions
-        std::string fenLabel = matchFenInput.empty()
-            ? "[click, then type a FEN and press Enter to add]" : matchFenInput;
-        buttons.push_back(mk(120, y, w-460, 32, fenLabel, 452, textFocus==TextTarget::MATCH_FEN));
-        buttons.push_back(mk(120+w-452, y, 100, 32, "Paste-add", 454));
-        buttons.push_back(mk(120+w-344, y, 112, 32, "Add in editor", 455));
-        buttons.push_back(mk(120+w-224, y, 104, 32, "Clear ("+std::to_string(matchFens.size())+")", 453));
-        y+=38;
-        std::string fpLabel = filePathInput.empty()
-            ? "[openings file path (one FEN per line) - click to type]" : filePathInput;
-        buttons.push_back(mk(120, y, w-460, 32, fpLabel, 458,
-                             textFocus==TextTarget::FILE_PATH && filePurpose==1));
-        buttons.push_back(mk(120+w-452, y, 100, 32, "Load file", 461));
-        y+=54;                                     // label line: judge
-        std::string jl = judgePath.empty()? "Pick judge engine..."
-                        : ("Judge: "+fs::path(judgePath).filename().string());
-        buttons.push_back(mk(120, y, 230, 32, jl, 456, !judgePath.empty()));
-        buttons.push_back(mk(358, y, 90, 32, "No judge", 457));
-        buttons.push_back(mk(456, y, 96, 32, "Arrows: "+std::to_string(arrowsN), 459));
-        y+=50;
-        buttons.push_back(mk(120, y, 220, 40, "Start", 460));
-        buttons.push_back(mk(360, y, 140, 40, "Back", 499));
-        break; }
-    case Screen::MATCH_VIEW: {
-        buttons.push_back(mk(WW-170, 16, 150, 32, runner.running()? "Abort" : "Back", 500));
-        buttons.push_back(mk(WW-170, 56, 150, 32, "Save PGNs", 501));
-        buttons.push_back(mk(WW-170, 96, 150, 32, "Copy log", 502));
-        buttons.push_back(mk(WW-170, 136, 150, 32, "Flip board", 503, matchFlipped));
-        break; }
-    case Screen::TEST_RUN: {
-        buttons.push_back(mk(WW-170, 16, 150, 32, testRunning? "Abort" : "Back", 700));
-        buttons.push_back(mk(WW-170, 56, 150, 32, "Copy log", 701));
-        buttons.push_back(mk(WW-170, 96, 150, 32, "Save log", 702));
-        break; }
-    case Screen::ENGINE_OPTIONS: {
-        float y = 96;
-        int rows = std::min((int)((WH-190)/44), 10);
-        for (int r=0; r<rows; r++){
-            int oi = optScroll + r;
-            if (oi >= (int)optsList.size()) break;
-            const UciOption& o = optsList[oi];
-            std::string cur = overrideOrDefault(optsPath, o);
-            float xc = 430;
-            if (o.type=="check"){
-                buttons.push_back(mk(xc, y, 120, 34, cur=="true"?"true":"false", 900+r, cur=="true"));
-            } else if (o.type=="spin"){
-                buttons.push_back(mk(xc, y, 36, 34, "-", 900+r));
-                bool editing = (textFocus==TextTarget::OPTION_VALUE && editingOption==oi);
-                buttons.push_back(mk(xc+42, y, 120, 34, editing? optionEditBuffer : cur, 940+r, editing));
-                buttons.push_back(mk(xc+168, y, 36, 34, "+", 920+r));
-            } else if (o.type=="combo"){
-                buttons.push_back(mk(xc, y, 220, 34, cur, 900+r));
-            } else if (o.type=="string"){
-                bool editing = (textFocus==TextTarget::OPTION_VALUE && editingOption==oi);
-                buttons.push_back(mk(xc, y, 300, 34, editing? optionEditBuffer :
-                                     (cur.empty()? "[empty - click to type]" : cur), 940+r, editing));
-            }
-            y += 44;
-        }
-        buttons.push_back(mk(WW-170, 96, 150, 34, "Scroll up", 950));
-        buttons.push_back(mk(WW-170, 138, 150, 34, "Scroll down", 951));
-        buttons.push_back(mk(WW-170, 196, 150, 34, "Reset defaults", 955));
-        buttons.push_back(mk(WW-170, WH-70, 150, 38, "Done", 999));
-        break; }
-    case Screen::PGN_LOAD: {
-        float w = WW-240, y=170;
-        std::string fp = filePathInput.empty()
-            ? "[PGN file path - click to type]" : filePathInput;
-        buttons.push_back(mk(120, y, w-160, 38, fp, 1101,
-                             textFocus==TextTarget::FILE_PATH && filePurpose==2));
-        buttons.push_back(mk(WW-260, y, 140, 38, "Load file", 1102)); y+=58;
-        buttons.push_back(mk(120, y, 320, 38, "Paste PGN text from clipboard", 1103)); y+=76;
-        buttons.push_back(mk(120, y, 140, 38, "Back", 1199));
-        break; }
-    case Screen::PGN_LIST: {
-        float w = WW-240, y=110;
-        int rows = std::min((int)((WH-200)/44), 12);
-        for (int r=0; r<rows; r++){
-            int gi = pgnScroll + r;
-            if (gi >= (int)pgnGames.size()) break;
-            const PgnGame& g = pgnGames[gi];
-            buttons.push_back(mk(120, y, w, 38,
-                std::to_string(gi+1)+".  "+g.white+"  vs  "+g.black+"    "+g.result, 1000+r));
-            y+=44;
-        }
-        buttons.push_back(mk(WW-170, WH-170, 150, 34, "Scroll up", 1050));
-        buttons.push_back(mk(WW-170, WH-130, 150, 34, "Scroll down", 1051));
-        buttons.push_back(mk(120, WH-80, 140, 38, "Back", 1099));
-        break; }
-    default: break;
-    }
-}
-
-// =============================================================== game logic
-Position App::shownPosition() const{
-    if (viewPly < 0) return game.pos;
-    Position p = game.start;
-    for (int i=0;i<viewPly && i<(int)game.moves.size();i++) p.makeMove(game.moves[i]);
-    return p;
-}
-void App::newGame(const Position& p){
-    stopOpponent();
-    game.reset(p);
-    selectedSq=-1; dragFromSq=-1; dragging=false;
-    pendingPromotion.reset(); viewPly=-1;
-    premoveFrom=premoveTo=-1;
-    wClockMs = tc.baseMs; bClockMs = tc.baseMs;
-    clocksRunning = (mode != GameMode::ANALYSIS);
-    tickClock.restart();
-    forceRedraw = true;
-}
-void App::commitMove(Move m){
-    if (game.tryMove(m)){
-        if (clocksRunning){
-            if (!game.pos.whiteToMove) wClockMs += tc.incMs; else bClockMs += tc.incMs;
-        }
-        selectedSq=-1; legalForSelected.clear(); viewPly=-1;
-        if (game.result != GameResult::ONGOING) clocksRunning=false;
-        forceRedraw = true;
-    }
-}
-void App::humanCommitMove(Move m){
-    // pondering: tell the engine whether the human played its predicted move
-    if (mode==GameMode::HUMAN_VS_ENGINE && oppState==2 && oppEngine && oppEngine->alive()){
-        std::string u = game.pos.moveToUCI(m);
-        if (u == oppPonderMove){
-            oppEngine->sendRaw("ponderhit");          // ponder becomes the real search
-            oppState = 3;
-        } else {
-            oppDiscard = true;                        // wrong guess: discard that search
-            oppEngine->sendRaw("stop");
-        }
-    }
-    commitMove(m);
-}
-void App::trySquareAction(int sq){
-    if (sq<0 || game.result!=GameResult::ONGOING || viewPly>=0) return;
-    bool humanTurn = (mode!=GameMode::HUMAN_VS_ENGINE) || (game.pos.whiteToMove==humanIsWhite);
-    if (!humanTurn || pendingPromotion) return;
-    for (const Move& m : legalForSelected){
-        if (m.to == sq){
-            if (m.promo){ Move base=m; base.promo=0; pendingPromotion=base; layout(); return; }
-            humanCommitMove(m); return;
-        }
-    }
-    int v = game.pos.board[sq];
-    if (v && (v>0)==game.pos.whiteToMove){
-        selectedSq = sq;
-        std::vector<Move> all; game.pos.generateLegal(all);
-        legalForSelected.clear();
-        for (auto& m : all) if (m.from==sq) legalForSelected.push_back(m);
-    } else { selectedSq=-1; legalForSelected.clear(); }
-    forceRedraw = true;
-}
-void App::tryExecutePremove(){
-    if (premoveFrom<0 || premoveTo<0){ premoveFrom=premoveTo=-1; return; }
-    int from=premoveFrom, to=premoveTo;
-    premoveFrom=premoveTo=-1;
-    if (game.result!=GameResult::ONGOING || viewPly>=0) return;
-    if (mode==GameMode::HUMAN_VS_ENGINE && game.pos.whiteToMove!=humanIsWhite) return;
-    std::string u = squareName(from)+squareName(to);
-    Move m;
-    bool ok = game.pos.uciToMove(u, m);
-    if (!ok && std::abs(game.pos.board[from])==1 && (to/8==0 || to/8==7))
-        ok = game.pos.uciToMove(u+"q", m);            // premoved promotion: auto-queen
-    if (ok) humanCommitMove(m);
-}
-
-void App::stopOpponent(){
-    oppDiscard = true;
-    if (oppThread.joinable()){
-        if (oppEngine) oppEngine->sendRaw("stop");
-        for (int i=0;i<60 && oppState!=0;i++) sf::sleep(sf::milliseconds(25));
-        if (oppState!=0 && oppEngine) oppEngine->quit();   // hung engine: kill it
-        oppThread.join();
-    }
-    oppState = 0;
-    oppDiscard = false;
-    oppPonderMove.clear();
-    { std::lock_guard<std::mutex> lk(oppMx); oppMoveReady.clear(); }
-}
-void App::startEngineThinkIfNeeded(){
-    if (mode!=GameMode::HUMAN_VS_ENGINE || !oppEngine || !oppEngine->alive()) return;
-    if (game.result!=GameResult::ONGOING || pendingPromotion) return;
-    if (game.pos.whiteToMove == humanIsWhite) return;
-    if (oppState != 0) return;                        // idle only (not think/ponder)
-    oppState = 1;
-    if (oppThread.joinable()) oppThread.join();
-    std::string startFen = game.start.toFEN();
-    std::vector<std::string> uciMoves;
-    { Position p=game.start; for (auto& m : game.moves){ uciMoves.push_back(p.moveToUCI(m)); p.makeMove(m);} }
-    long long wc=wClockMs, bc=bClockMs; int inc=tc.incMs;
-    oppThread = std::thread([this,startFen,uciMoves,wc,bc,inc](){
-        oppEngine->setPosition(startFen, uciMoves);
-        std::string bm = oppEngine->goClock((int)wc,(int)bc,inc,inc);
-        { std::lock_guard<std::mutex> lk(oppMx);
-          oppMoveReady = bm.empty()? "(none)" : bm; }
-        oppState = 0;
-    });
-}
-void App::startPonderIfPossible(){
-    if (!oppPonderEnabled || mode!=GameMode::HUMAN_VS_ENGINE) return;
-    if (!oppEngine || !oppEngine->alive() || oppState!=0) return;
-    if (game.result!=GameResult::ONGOING) return;
-    if (game.pos.whiteToMove != humanIsWhite) return;   // ponder happens on the human's turn
-    std::string hint = oppEngine->lastPonder();
-    Move pm;
-    if (hint.empty() || !game.pos.uciToMove(hint, pm)) return;
-    oppPonderMove = hint;
-    oppDiscard = false;
-    oppState = 2;
-    if (oppThread.joinable()) oppThread.join();
-    std::string startFen = game.start.toFEN();
-    std::vector<std::string> uciMoves;
-    { Position p=game.start; for (auto& m : game.moves){ uciMoves.push_back(p.moveToUCI(m)); p.makeMove(m);} }
-    uciMoves.push_back(hint);                           // engine thinks about the reply to its guess
-    long long wc=wClockMs, bc=bClockMs; int inc=tc.incMs;
-    oppThread = std::thread([this,startFen,uciMoves,wc,bc,inc](){
-        oppEngine->setPosition(startFen, uciMoves);
-        std::string bm = oppEngine->goPonderWait((int)wc,(int)bc,inc,inc);
-        if (oppDiscard){ oppState = 0; return; }        // ponder miss: result is garbage
-        { std::lock_guard<std::mutex> lk(oppMx);
-          oppMoveReady = bm.empty()? "(none)" : bm; }   // ponderhit: this is the real move
-        oppState = 0;
-    });
-}
-void App::applyEngineMoveIfReady(){
-    std::string bm;
-    { std::lock_guard<std::mutex> lk(oppMx); bm=oppMoveReady; oppMoveReady.clear(); }
-    if (bm.empty()) return;
-    Move m;
-    if (bm!="(none)" && game.pos.uciToMove(bm, m)){
-        commitMove(m);
-        startPonderIfPossible();                        // think on the human's time
-        tryExecutePremove();                            // may immediately answer (ponderhit-aware)
-    }
-    else if (game.result==GameResult::ONGOING){
-        game.result = humanIsWhite? GameResult::WHITE_WINS : GameResult::BLACK_WINS;
-        game.reason = ResultReason::ILLEGAL_MOVE;
-        showToast("Engine returned invalid move '"+bm+"'");
-        clocksRunning=false;
-    }
-    forceRedraw = true;
-}
-
-void App::startAnalysis(const std::string& path){
-    stopAnalysis();
-    anaCtl = std::make_unique<AnalysisController>();
-    EngineConfig cfg = configFor(path);
-    cfg.setOption("MultiPV", std::to_string(arrowsN));
-    if (!anaCtl->start(cfg)){
-        showToast("Analysis engine failed: " + anaCtl->lastError());
-        anaCtl.reset();
-        return;
-    }
-    anaEnginePath = path;
-    analysing = true;
-    anaCtl->setFen(shownPosition().toFEN());
-}
-void App::stopAnalysis(){
-    if (anaCtl){ anaCtl->shutdown(); anaCtl.reset(); }
-    analysing = false;
-}
-
-void App::savePGN(){
-    std::error_code ec; fs::create_directories("games", ec);
-    char name[64]; std::time_t t=std::time(nullptr);
-    std::strftime(name,64,"games/game_%Y%m%d_%H%M%S.pgn",std::localtime(&t));
-    std::ofstream f(name);
-    f << game.toPGN();
-    showToast(std::string("Saved ")+name);
-}
-void App::copyFEN(){
-    sf::Clipboard::setString(shownPosition().toFEN());
-    showToast("FEN copied to clipboard");
-}
-void App::pasteFEN(){
-    std::string fen = sf::Clipboard::getString();
-    bool ok=false; Position p = Position::fromFEN(fen,&ok);
-    if (!ok){ showToast("Clipboard does not contain a valid FEN"); return; }
-    std::string prob = enginePositionProblem(p);
-    bool engineInvolved = (mode!=GameMode::HUMAN_VS_HUMAN) || analysing;
-    if (!prob.empty() && engineInvolved){
-        showToast("Engines cannot play this position: "+prob);
-        return;
-    }
-    newGame(p);
-    showToast(prob.empty()? "Position set from FEN"
-                          : "Position set (note: "+prob+" - engines would reject it)");
-}
-void App::saveTournamentPGNs(){
-    auto pgns = runner.collectedPGNs();
-    if (pgns.empty()){ showToast("No finished games yet"); return; }
-    std::error_code ec; fs::create_directories("games", ec);
-    char name[64]; std::time_t t=std::time(nullptr);
-    std::strftime(name,64,"games/tournament_%Y%m%d_%H%M%S.pgn",std::localtime(&t));
-    std::ofstream f(name);
-    for (auto& p : pgns) f << p << "\n";
-    showToast(std::string("Saved ")+name+" ("+std::to_string(pgns.size())+" games)");
-}
-
-// =============================================================== PGN analysis
-bool App::loadPGNText(const std::string& text, const std::string& sourceLabel){
-    auto games = parsePGN(text);
-    if (games.empty()){ showToast("No games found in "+sourceLabel); return false; }
-    pgnGames = games;
-    pgnScroll = 0;
-    if (pgnGames.size()==1){ openPgnGame(0); }
-    else { screen = Screen::PGN_LIST; layout();
-           showToast(std::to_string(pgnGames.size())+" games loaded - pick one"); }
-    return true;
-}
-void App::openPgnGame(int idx){
-    if (idx<0 || idx>=(int)pgnGames.size()) return;
-    Game g;
+void App::saveSettings(){
     std::string err;
-    bool ok = gameFromPGN(pgnGames[idx], g, &err);
-    if (!ok && g.moves.empty()){ showToast("Cannot load game: "+err); return; }
-    stopOpponent();
-    mode = GameMode::ANALYSIS;
-    game = g;
-    clocksRunning = false;
-    selectedSq=-1; legalForSelected.clear(); pendingPromotion.reset();
-    premoveFrom=premoveTo=-1;
-    viewPly = game.moves.empty()? -1 : 0;      // open at the start, step through with >
-    boardFlipped = false;
-    screen = Screen::GAME;
-    if (!ok) showToast("Loaded partially: "+err);
-    else showToast("Loaded: "+game.whiteName+" vs "+game.blackName
-                   +" ("+std::to_string(game.moves.size())+" plies)");
-    layout();
+    if (!settings_.save((fs::u8path(userConfigDir()) / "settings.json").u8string(), &err))
+        toast("Could not save settings.json: " + err);
 }
 
-// =============================================================== tests
-void App::pushTestLine(const std::string& s){
-    std::lock_guard<std::mutex> lk(testMx);
-    testLines.push_back(s);
-}
-std::string App::copyAllTestLines(){
-    std::lock_guard<std::mutex> lk(testMx);
-    std::string all = testTitle + "\n";
-    for (auto& l : testLines) all += l + "\n";
-    return all;
-}
-void App::startGameReview(const std::string& enginePath){
-    if (game.moves.empty()){ showToast("No moves to review"); return; }
-    testAbort=false; testRunning=true; testReturn=Screen::GAME;
-    { std::lock_guard<std::mutex> lk(testMx); testLines.clear(); }
-    testTitle = "Game review: " + game.whiteName + " vs " + game.blackName;
-    if (testThread.joinable()) testThread.join();
-    std::string startFen = game.start.toFEN();
-    std::vector<std::string> uciMoves;
-    std::vector<std::string> sans = game.sans;
-    int startNo = game.start.fullmoveNumber;
-    bool startWhite = game.start.whiteToMove;
-    { Position p=game.start; for (auto& m : game.moves){ uciMoves.push_back(p.moveToUCI(m)); p.makeMove(m);} }
-    EngineConfig cfg = configFor(enginePath);
-    testThread = std::thread([this,cfg,startFen,uciMoves,sans,startNo,startWhite](){
-        UciEngine e;
-        if (!e.start(cfg)){ pushTestLine("Cannot start engine: "+e.lastError()); testRunning=false; return; }
-        e.setOption("MultiPV","1");
-        e.newGame();
-        pushTestLine("Engine: "+e.name()+"  (400ms per position, "
-                     +std::to_string(uciMoves.size()+1)+" positions)");
-        int N = (int)uciMoves.size();
-        std::vector<int> score(N+1, 0);              // mover POV at each ply
-        auto sc=[&](const EngineInfo& i)->int{
-            if (i.isMate) return i.mateIn>0? 32000-i.mateIn : -32000-i.mateIn;
-            return i.scoreCp;
-        };
-        for (int i=0;i<=N && !testAbort && e.alive(); i++){
-            std::vector<std::string> mv(uciMoves.begin(), uciMoves.begin()+i);
-            e.setPosition(startFen, mv);
-            e.goMovetime(400);
-            score[i] = sc(e.lastInfo());
-        }
-        long long lossW=0, lossB=0; int cw=0, cb=0;
-        double accW=0, accB=0;
-        int num=startNo; bool wtm=startWhite;
-        for (int i=0;i<N && !testAbort; i++){
-            int loss = score[i] + score[i+1];         // POV flips each ply
-            if (loss<0) loss=0; if (loss>1000) loss=1000;
-            const char* mark = loss>=300? " ??" : loss>=100? " ?" : loss>=50? " ?!" : "";
-            int whiteCp = wtm? score[i] : -score[i];
-            char b[200];
-            snprintf(b,200,"%d.%s %-8s eval %+.2f  loss %d%s",
-                     num, wtm?"":"..", sans[i].c_str(), whiteCp/100.0, loss, mark);
-            pushTestLine(b);
-            double acc = moveAccuracyFromWinDrop(
-                cpToWinPct(score[i]) - cpToWinPct(-score[i+1]));
-            if (wtm){ lossW+=loss; accW+=acc; cw++; } else { lossB+=loss; accB+=acc; cb++; }
-            if (!wtm) num++;
-            wtm=!wtm;
-        }
-        if (cw){ char b[160];
-            snprintf(b,160,">>> White: avg cp loss %.1f, accuracy %.1f%%",
-                     (double)lossW/cw, accW/cw);
-            pushTestLine(b); }
-        if (cb){ char b[160];
-            snprintf(b,160,">>> Black: avg cp loss %.1f, accuracy %.1f%%",
-                     (double)lossB/cb, accB/cb);
-            pushTestLine(b); }
-        if (!e.alive()) pushTestLine(">>> Engine terminated during review.");
-        e.quit();
-        testRunning=false;
-    });
-    screen=Screen::TEST_RUN; layout();
+void App::toast(const std::string& s){ toastText_ = s; toastClock_.restart(); }
+
+void App::go(Screen s){
+    if (screen_ == Screen::GAME && s != Screen::GAME) game_.leave();
+    if (s == Screen::ENGINES) scanEngines();
+    screen_ = s;
 }
 
-// =============================================================== text input
-void App::commitTextInput(){
-    TextTarget t = textFocus;
-    textFocus = TextTarget::NONE;
-    if (t == TextTarget::ENGINE_PATH){
-        std::error_code ec;
-        if (!enginePathInput.empty() && fs::exists(enginePathInput, ec)){
-            configFor(enginePathInput).discovered = false;
-            saveEngines();
-            enginePathInput.clear();
-            showToast("Engine added");
-        } else if (!enginePathInput.empty())
-            showToast("File not found: "+enginePathInput);
-    } else if (t == TextTarget::MATCH_FEN){
-        if (!matchFenInput.empty()){
-            bool ok=false; Position p = Position::fromFEN(matchFenInput,&ok);
-            std::string prob = ok ? enginePositionProblem(p) : "";
-            if (!ok) showToast("That FEN is invalid - not added");
-            else if (!prob.empty()) showToast("Not added: "+prob);
-            else { matchFens.push_back(matchFenInput); matchFenInput.clear();
-                   showToast("Position added ("+std::to_string(matchFens.size())+" total)"); }
-        }
-    } else if (t == TextTarget::FILE_PATH){
-        if (!filePathInput.empty()){
-            std::ifstream f(filePathInput);
-            if (!f){ showToast("Cannot open file: "+filePathInput); }
-            else if (filePurpose==1){
-                int added=0, bad=0;
-                std::string line;
-                while (std::getline(f,line)){
-                    while (!line.empty() && (line.back()=='\r'||line.back()==' ')) line.pop_back();
-                    if (line.empty()||line[0]=='#') continue;
-                    bool ok=false; Position p = Position::fromFEN(line,&ok);
-                    if (ok && enginePositionProblem(p).empty()){ matchFens.push_back(line); added++; }
-                    else bad++;
-                }
-                showToast("Added "+std::to_string(added)+" positions"
-                          +(bad? " ("+std::to_string(bad)+" invalid skipped)":""));
-                filePathInput.clear();
-            } else if (filePurpose==2){
-                std::stringstream ss; ss << f.rdbuf();
-                if (loadPGNText(ss.str(), fs::path(filePathInput).filename().string()))
-                    filePathInput.clear();
-            }
-        }
-    } else if (t == TextTarget::OPTION_VALUE && editingOption>=0 && editingOption<(int)optsList.size()){
-        const UciOption& o = optsList[editingOption];
-        std::string v = optionEditBuffer;
-        if (o.type=="spin"){
-            long long n = atoll(v.c_str());
-            if (n < o.minV) n = o.minV;
-            if (n > o.maxV && o.maxV>o.minV) n = o.maxV;
-            v = std::to_string(n);
-        }
-        setOverride(optsPath, o.name, v);
-        editingOption = -1;
-    }
-    layout();
+void App::openEditor(const Position& p){
+    editor_.setPosition(p);
+    editor_.open(false);
+    go(Screen::EDITOR);
 }
 
-// =============================================================== events
-void App::handleEvent(const UiEvent& e){
-    if (e.kind == UiEvent::Closed){ window.close(); return; }
-    if (e.kind == UiEvent::Resized){
-        // Scale the whole UI with the window: refit the 1280x800 design canvas.
-        // Works in whatever units the event reports (points or pixels), since
-        // UIS is derived from the same numbers WW/WH are.
-        UIS = std::max(0.75f, std::min(e.width / 1280.f, e.height / 800.f));
-        WW  = e.width  / UIS;
-        WH  = e.height / UIS;
-        window.setView(sf::View(sf::FloatRect({0,0},{WW,WH})));
-        if (imguiOk) setupImGuiFonts();
-        layout();
-        forceRedraw = true;
-        return;
-    }
-    if (e.kind == UiEvent::KeyPressed){
-        if (textFocus != TextTarget::NONE){
-            if (e.key==sf::Keyboard::Key::Enter){ commitTextInput(); return; }
-            if (e.key==sf::Keyboard::Key::Escape){ textFocus=TextTarget::NONE; editingOption=-1; layout(); return; }
-            if (e.key==sf::Keyboard::Key::V && (e.ctrl || e.sys)){
-                std::string clip = sf::Clipboard::getString();
-                if (textFocus==TextTarget::ENGINE_PATH) enginePathInput += clip;
-                else if (textFocus==TextTarget::MATCH_FEN) matchFenInput += clip;
-                else if (textFocus==TextTarget::FILE_PATH) filePathInput += clip;
-                else if (textFocus==TextTarget::OPTION_VALUE) optionEditBuffer += clip;
-                layout(); return;
-            }
-            return;
-        }
-        if (e.key==sf::Keyboard::Key::Escape){
-            if (screen==Screen::GAME || screen==Screen::EDITOR
-                || screen==Screen::PGN_LOAD || screen==Screen::PGN_LIST)
-                { screen=Screen::MENU; layout(); }
-            return;
-        }
-        if (screen==Screen::GAME){
-            if (e.key==sf::Keyboard::Key::F){ boardFlipped=!boardFlipped; forceRedraw=true; }
-            if (e.key==sf::Keyboard::Key::Left)  onButton(209);
-            if (e.key==sf::Keyboard::Key::Right) onButton(210);
-            if (e.key==sf::Keyboard::Key::Up)    onButton(208);
-            if (e.key==sf::Keyboard::Key::Down)  onButton(211);
-        }
-        if (screen==Screen::MATCH_VIEW && e.key==sf::Keyboard::Key::F)
-            { matchFlipped=!matchFlipped; layout(); }
-    }
-    if (e.kind == UiEvent::TextEntered && textFocus != TextTarget::NONE){
-        std::string* buf = nullptr;
-        if (textFocus==TextTarget::ENGINE_PATH) buf=&enginePathInput;
-        else if (textFocus==TextTarget::MATCH_FEN) buf=&matchFenInput;
-        else if (textFocus==TextTarget::FILE_PATH) buf=&filePathInput;
-        else if (textFocus==TextTarget::OPTION_VALUE) buf=&optionEditBuffer;
-        if (buf){
-            if (e.unicode==8){ if(!buf->empty()) buf->pop_back(); }
-            else if (e.unicode==13 || e.unicode==10){ commitTextInput(); return; }
-            else if (e.unicode>=32 && e.unicode<127) *buf += (char)e.unicode;
-            layout();
-        }
-        return;
-    }
-    sf::Vector2f m = mouseLogical();
-    if (e.kind == UiEvent::MousePressed && e.button==sf::Mouse::Button::Left){
-        for (auto& b : buttons)
-            if (b.enabled && hit(b.rect, m)){ onButton(b.id); return; }
-        if (textFocus != TextTarget::NONE){ textFocus=TextTarget::NONE; editingOption=-1; layout(); }
-        if (screen==Screen::GAME && !pendingPromotion){
-            float side = WH-40;
-            int sq = boardSquareAt(m, 20, 20, side, boardFlipped);
-            if (sq>=0){
-                bool humanTurn = (mode!=GameMode::HUMAN_VS_ENGINE) || (game.pos.whiteToMove==humanIsWhite);
-                if (humanTurn){
-                    int v = game.pos.board[sq];
-                    trySquareAction(sq);
-                    if (viewPly<0 && v && (v>0)==game.pos.whiteToMove && selectedSq==sq){
-                        dragging=true; dragFromSq=sq; dragPos=m;
-                    }
-                } else if (mode==GameMode::HUMAN_VS_ENGINE && viewPly<0
-                           && game.result==GameResult::ONGOING){
-                    // premove. Second click is a DESTINATION whenever the gesture is
-                    // geometrically plausible for the picked-up piece - including onto
-                    // one's own pieces (recaptures). Otherwise it re-selects/cancels.
-                    int v = game.pos.board[sq];
-                    bool own = v && (v>0)==humanIsWhite;
-                    if (premoveFrom>=0 && premoveTo<0){
-                        if (sq==premoveFrom){ premoveFrom=-1; }               // click again = cancel
-                        else if (premovePlausible(game.pos, premoveFrom, sq)){
-                            premoveTo=sq;                                     // set (own square OK)
-                        } else if (own){                                      // implausible: re-select
-                            premoveFrom=sq;
-                            dragging=true; dragFromSq=-2; dragPos=m;          // -2 = premove drag
-                        } else premoveFrom=-1;
-                    } else {
-                        premoveFrom=-1; premoveTo=-1;
-                        if (own){ premoveFrom=sq; dragging=true; dragFromSq=-2; dragPos=m; }
-                    }
-                    forceRedraw=true;
-                }
-            }
-        }
-    }
-    if (e.kind == UiEvent::MousePressed && e.button==sf::Mouse::Button::Right){
-        if (screen==Screen::GAME && (premoveFrom>=0 || premoveTo>=0)){
-            premoveFrom=premoveTo=-1; forceRedraw=true;    // right-click cancels premove
-        }
-    }
-    if (e.kind == UiEvent::MouseMoved){
-        if (dragging) dragPos = m;
-    }
-    if (e.kind == UiEvent::MouseReleased && e.button==sf::Mouse::Button::Left){
-        if (dragging){
-            bool premoveDrag = (dragFromSq==-2);
-            dragging=false;
-            float side = WH-40;
-            int sq = boardSquareAt(m, 20, 20, side, boardFlipped);
-            int from = dragFromSq; dragFromSq=-1;
-            if (premoveDrag){
-                if (sq>=0 && sq!=premoveFrom && premovePlausible(game.pos, premoveFrom, sq))
-                    premoveTo=sq;
-            } else if (sq>=0 && sq!=from) trySquareAction(sq);
-            forceRedraw = true;
-        }
+void App::openEditorForMatch(){
+    editor_.open(true);
+    go(Screen::EDITOR);
+}
+
+void App::editorDone(EditorAction a, const Position& p){
+    switch (a){
+    case EditorAction::PlayHuman: game_.newHumanGame(p); go(Screen::GAME); break;
+    case EditorAction::PlayEngine: go(Screen::GAME); game_.showNewGameDialog(GameMode::HUMAN_VS_ENGINE, p); break;
+    case EditorAction::Analyse: game_.openAnalysis(p); go(Screen::GAME); break;
+    case EditorAction::AddToMatch:
+        match_.addOpening(p.toFEN());
+        toast("Position added to the match (" + std::to_string(match_.openingCount()) + " total)");
+        go(Screen::MATCH); break;
+    case EditorAction::Cancel: go(Screen::MATCH); break;
     }
 }
 
-// =============================================================== buttons
-void App::onButton(int id){
-    forceRedraw = true;
-    if (id>=110 && id<=116){
-        tc.baseMs=TC_BASE[id-110]; tc.incMs=TC_INC[id-110];
-        settings_.tcBaseMs = tc.baseMs; settings_.tcIncMs = tc.incMs; saveSettings();
-        layout(); return;
-    }
-    switch (id){
-    // ---- menu ----
-    case 100: mode=GameMode::HUMAN_VS_HUMAN; stopOpponent();
-              newGame(Position::startpos());
-              screen=Screen::GAME; layout(); break;
-    case 101:
-        humanIsWhite = menuPlayWhite; boardFlipped = !humanIsWhite;
-        mode=GameMode::HUMAN_VS_ENGINE; pickPurpose=1; oneShotStart.reset();
-        screen=Screen::PICK_ENGINE; scanEngines(); layout(); break;
-    case 107: menuPlayWhite=!menuPlayWhite; layout(); break;
-    case 109: go(Screen::ENGINE_MANAGER); break;
-    case 103: matchSelection.clear(); screen=Screen::MATCH_SETUP; scanEngines(); layout(); break;
-    case 104: mode=GameMode::ANALYSIS; pickPurpose=2; oneShotStart.reset();
-              screen=Screen::PICK_ENGINE; scanEngines(); layout(); break;
-    case 105: go(Screen::TESTS); break;
-    case 106: editor.open(false); go(Screen::EDITOR); break;
-    case 108: filePurpose=2; filePathInput.clear(); screen=Screen::PGN_LOAD; layout(); break;
-    case 120: window.close(); break;
-    // ---- game ----
-    case 200: stopOpponent(); stopAnalysis(); screen=Screen::MENU; layout(); break;
-    case 201: newGame(game.start); layout(); break;   // restart THIS game's start position
-    case 202: boardFlipped=!boardFlipped; break;
-    case 203: stopOpponent();
-              game.undo();
-              if (mode==GameMode::HUMAN_VS_ENGINE && game.pos.whiteToMove!=humanIsWhite) game.undo();
-              viewPly=-1; selectedSq=-1; legalForSelected.clear(); pendingPromotion.reset();
-              premoveFrom=premoveTo=-1;
-              clocksRunning = game.result==GameResult::ONGOING && mode!=GameMode::ANALYSIS;
-              layout(); break;
-    case 204: if (game.result==GameResult::ONGOING){
-                  bool resignerWhite = (mode==GameMode::HUMAN_VS_ENGINE)? humanIsWhite : game.pos.whiteToMove;
-                  game.result = resignerWhite? GameResult::BLACK_WINS : GameResult::WHITE_WINS;
-                  game.reason = ResultReason::RESIGNATION; clocksRunning=false; stopOpponent();
-              } break;
-    case 205: copyFEN(); break;
-    case 206: if (game.result!=GameResult::ONGOING || game.moves.empty() ||
-                  mode!=GameMode::HUMAN_VS_ENGINE) pasteFEN();
-              else showToast("Finish or reset the game first"); break;
-    case 207: savePGN(); break;
-    case 208: viewPly = 0; break;
-    case 209: { int cur = viewPly<0 ? (int)game.moves.size() : viewPly;
-                viewPly = std::max(0, cur-1); } break;
-    case 210: if (viewPly>=0){ viewPly++; if (viewPly>=(int)game.moves.size()) viewPly=-1; } break;
-    case 211: viewPly = -1; break;
-    case 212:
-        if (analysing){ stopAnalysis(); layout(); }
-        else if (!anaEnginePath.empty()){ startAnalysis(anaEnginePath); layout(); }
-        else { pickPurpose=2; screen=Screen::PICK_ENGINE; scanEngines(); layout(); }
-        break;
-    case 213: arrowsN = arrowsN%5 + 1;
-              if (analysing && !anaEnginePath.empty()) startAnalysis(anaEnginePath);
-              layout(); break;
-    case 215: if (!anaEnginePath.empty()) startGameReview(anaEnginePath);
-              else { pickPurpose=8; screen=Screen::PICK_ENGINE; scanEngines(); layout(); }
-              break;
-    case 250: case 251: case 252: case 253:
-        if (pendingPromotion){
-            Move m = *pendingPromotion; pendingPromotion.reset();
-            int pr[4] = {9,5,4,3};
-            m.promo = (int8_t)pr[id-250];
-            Move real;
-            if (game.pos.uciToMove(game.pos.moveToUCI(m), real)) humanCommitMove(real);
-            layout();
+bool App::animating() const{
+    return (screen_ == Screen::GAME && game_.animating()) || match_.animating() || tools_.busy()
+        || !toastText_.empty();
+}
+
+// =============================================================== main loop
+void App::processEvent(const sf::Event& ev){
+    if (ev.is<sf::Event::Closed>()){ window_.close(); return; }
+    if (const auto* r = ev.getIf<sf::Event::Resized>())
+        window_.setView(sf::View(sf::FloatRect({0, 0}, {(float)r->size.x, (float)r->size.y})));
+    ImGui::SFML::ProcessEvent(window_, ev);
+}
+
+void App::beginImGuiFrame(){
+    uiitems::beginFrame();
+    sf::Vector2u ws = window_.getSize();
+    if (!script_.empty()){
+        // scripted run: drive ImGui's IO directly, so a scripted button hold
+        // isn't overwritten by the real (idle) mouse every frame
+        ImGuiIO& io = ImGui::GetIO();
+        io.DisplaySize = ImVec2((float)ws.x, (float)ws.y);
+        io.DeltaTime = std::max(1e-4f, frameClock_.restart().asSeconds());
+        if (scriptMouse_) io.MousePos = *scriptMouse_;
+        io.MouseDown[0] = scriptButtonDown_;
+        ImGui::NewFrame();
+    } else ImGui::SFML::Update(window_, frameClock_.restart());
+}
+
+void App::run(){
+    while (window_.isOpen()){
+        bool active = animating() || scriptPos_ < script_.size();
+        // idle: sleep until input arrives (or redraw a few times a second)
+        if (!active){
+            if (const std::optional ev = window_.waitEvent(sf::milliseconds(250))) processEvent(*ev);
         }
-        break;
-    // ---- engine picking ----
-    case 380: textFocus=TextTarget::ENGINE_PATH; layout(); break;
-    case 381: commitTextInput(); break;
-    case 399: screen = (pickPurpose==7)? Screen::MATCH_SETUP
-                     : (pickPurpose==8)? Screen::GAME
-                     : (pickPurpose>=4)? Screen::TESTS : Screen::MENU;
-              layout(); break;
-    // ---- match setup ----
-    case 450: matchGamesPerPair=std::max(1,matchGamesPerPair-1); break;
-    case 451: matchGamesPerPair=std::min(50,matchGamesPerPair+1); break;
-    case 452: textFocus=TextTarget::MATCH_FEN; layout(); break;
-    case 453: matchFens.clear(); showToast("Position list cleared - standard start"); layout(); break;
-    case 454: { std::string c = sf::Clipboard::getString();
-                bool ok=false; Position p = Position::fromFEN(c,&ok);
-                std::string prob = ok ? enginePositionProblem(p) : "";
-                if (!ok) showToast("Clipboard does not contain a valid FEN");
-                else if (!prob.empty()) showToast("Not added: "+prob);
-                else { matchFens.push_back(c);
-                       showToast("Position added ("+std::to_string(matchFens.size())+" total)"); }
-                layout(); break; }
-    case 455: editor.open(true); go(Screen::EDITOR); break;
-    case 456: pickPurpose=7; screen=Screen::PICK_ENGINE; scanEngines(); layout(); break;
-    case 457: judgePath.clear(); showToast("No judge engine"); layout(); break;
-    case 458: textFocus=TextTarget::FILE_PATH; filePurpose=1; layout(); break;
-    case 459: arrowsN = arrowsN%5 + 1; layout(); break;
-    case 461: filePurpose=1;
-              if (textFocus!=TextTarget::FILE_PATH) textFocus=TextTarget::FILE_PATH;
-              commitTextInput(); break;
-    case 460: {
-        if (matchSelection.size()<2){ showToast("Select at least 2 engines"); break; }
-        std::vector<EngineConfig> es;
-        for (int i : matchSelection) es.push_back(makeEntry(i));
-        runner.startTournament(es, tc, matchGamesPerPair, matchFens);
-        if (judgeCtl){ judgeCtl->shutdown(); judgeCtl.reset(); }
-        if (!judgePath.empty()){
-            judgeCtl = std::make_unique<AnalysisController>();
-            EngineConfig cfg = configFor(judgePath);
-            cfg.setOption("MultiPV", std::to_string(arrowsN));
-            if (!judgeCtl->start(cfg)){
-                showToast("Judge engine failed: "+judgeCtl->lastError());
-                judgeCtl.reset();
+        while (const std::optional ev = window_.pollEvent()) processEvent(*ev);
+        if (!window_.isOpen()) break;
+        if (scriptPos_ < script_.size()) stepScript();
+        if (!window_.isOpen()) break;
+        if (screen_ == Screen::GAME) game_.update();
+        match_.update();
+        beginImGuiFrame();
+        drawFrame();
+        window_.clear(sf::Color(24, 24, 28));
+        ImGui::SFML::Render(window_);
+        if (!pendingShot_.empty()){
+            sf::Texture shot;
+            if (shot.resize(window_.getSize())){
+                shot.update(window_);
+                if (!shot.copyToImage().saveToFile(pendingShot_))
+                    std::fprintf(stderr, "[script] could not save %s\n", pendingShot_.c_str());
             }
+            pendingShot_.clear();
         }
-        matchFlipped=false;
-        screen=Screen::MATCH_VIEW; layout(); break; }
-    case 499: screen=Screen::MENU; layout(); break;
-    case 500: if (runner.running()) runner.abort();
-              else { if (judgeCtl){ judgeCtl->shutdown(); judgeCtl.reset(); }
-                     screen=Screen::MENU; }
-              layout(); break;
-    case 501: saveTournamentPGNs(); break;
-    case 502: { auto s = runner.snapshot();
-                std::string all;
-                for (auto& st : s.standings){
-                    char b[160];
-                    snprintf(b,160,"%s  +%d =%d -%d  %.1f pts\n", st.name.c_str(),
-                             st.wins, st.draws, st.losses, st.points());
-                    all += b;
-                }
-                for (auto& l : s.log) all += l + "\n";
-                sf::Clipboard::setString(all);
-                showToast("Standings + log copied to clipboard"); break; }
-    case 503: matchFlipped=!matchFlipped; layout(); break;
-    // ---- test output (game review) ----
-    case 700: if (testRunning) testAbort=true;
-              else { screen=testReturn; }
-              layout(); break;
-    case 701: sf::Clipboard::setString(copyAllTestLines());
-              showToast("Log copied to clipboard"); break;
-    case 702: { std::error_code ec; fs::create_directories("logs", ec);
-                char name[64]; std::time_t t=std::time(nullptr);
-                std::strftime(name,64,"logs/test_%Y%m%d_%H%M%S.txt",std::localtime(&t));
-                std::ofstream f(name); f << copyAllTestLines();
-                showToast(std::string("Saved ")+name); break; }
-    // ---- options editor ----
-    case 950: optScroll=std::max(0,optScroll-5); layout(); break;
-    case 951: optScroll=std::min(std::max(0,(int)optsList.size()-5), optScroll+5); layout(); break;
-    case 955: configFor(optsPath).options.clear(); saveEngines();
-              showToast("Options reset to engine defaults"); layout(); break;
-    case 999: screen=Screen::PICK_ENGINE; layout(); break;
-    // ---- pgn ----
-    case 1101: textFocus=TextTarget::FILE_PATH; filePurpose=2; layout(); break;
-    case 1102: filePurpose=2;
-               if (textFocus!=TextTarget::FILE_PATH) textFocus=TextTarget::FILE_PATH;
-               commitTextInput(); break;
-    case 1103: loadPGNText(sf::Clipboard::getString(), "clipboard"); break;
-    case 1199: screen=Screen::MENU; layout(); break;
-    case 1050: pgnScroll=std::max(0,pgnScroll-8); layout(); break;
-    case 1051: pgnScroll=std::min(std::max(0,(int)pgnGames.size()-8), pgnScroll+8); layout(); break;
-    case 1099: screen=Screen::MENU; layout(); break;
-    default: break;
+        window_.display();
     }
-    if (id>=1000 && id<1050 && screen==Screen::PGN_LIST){
-        openPgnGame(pgnScroll + (id-1000));
+    // remember the window size in requested-size units
+    sf::Vector2u ws = window_.getSize();
+    if (ws.x > 0 && dpiScale_ > 0){
+        settings_.windowW = (int)(ws.x / dpiScale_); settings_.windowH = (int)(ws.y / dpiScale_);
+        saveSettings();
     }
-    // engine list clicks / configure
-    if (id>=300 && id<340 && id-300 < (int)registry_.engines().size() && screen==Screen::PICK_ENGINE){
-        EngineConfig ee = makeEntry(id-300);
-        if (pickPurpose==1){
-            stopOpponent();
-            oppEngine = std::make_unique<UciEngine>();
-            if (!oppEngine->start(ee)){ showToast("Failed: "+oppEngine->lastError()); return; }
-            for (auto& o : ee.options) oppEngine->setOption(o.first, o.second);
-            oppPonderEnabled = false;
-            for (auto& o : ee.options)
-                if (o.first=="Ponder" && o.second=="true") oppPonderEnabled = true;
-            oppEngine->newGame();
-            newGame(oneShotStart? *oneShotStart : Position::startpos());
-            oneShotStart.reset();
-            game.whiteName = humanIsWhite? "Human" : oppEngine->name();
-            game.blackName = humanIsWhite? oppEngine->name() : "Human";
-            screen=Screen::GAME; layout();
-        } else if (pickPurpose==2){
-            startAnalysis(ee.path);
-            if (mode==GameMode::ANALYSIS){
-                newGame(oneShotStart? *oneShotStart : Position::startpos());
-                oneShotStart.reset();
-                clocksRunning=false;
-                game.whiteName="White"; game.blackName="Black";
-            }
-            screen=Screen::GAME; layout();
-        } else if (pickPurpose==7){
-            judgePath = ee.path;
-            showToast("Judge engine: "+ee.name);
-            screen=Screen::MATCH_SETUP; layout();
-        } else if (pickPurpose==8){
-            anaEnginePath = ee.path;
-            startGameReview(ee.path);
+    game_.shutdown();
+    match_.shutdown();
+    tools_.job().abort();
+    ImGui::SFML::Shutdown();
+}
+
+void App::handleGlobalKeys(){
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.WantTextInput || ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId)) return;
+    if (ImGui::IsKeyPressed(ImGuiKey_Escape, false) && screen_ != Screen::HOME) go(Screen::HOME);
+}
+
+void App::drawFrame(){
+    handleGlobalKeys();
+    drawMenuBar();
+    const ImGuiViewport* vp = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(vp->WorkPos);
+    ImGui::SetNextWindowSize(vp->WorkSize);
+    ImGui::Begin("##screen", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
+                 ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
+    if (screen_ != Screen::HOME && screen_ != Screen::GAME){
+        static const char* titles[] = {"", "", "Engine match / tournament", "Engine testing tools",
+                                       "Board editor", "Engines"};
+        if (ImGui::Button("< Home")) go(Screen::HOME);
+        ImGui::SameLine();
+        ImGui::PushFont(ui::fonts().large);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted(titles[(int)screen_]);
+        ImGui::PopFont();
+        ImGui::Separator();
+    }
+    switch (screen_){
+    case Screen::HOME: drawHome(); break;
+    case Screen::GAME: game_.draw(); break;
+    case Screen::MATCH: match_.draw(); break;
+    case Screen::TOOLS: tools_.draw(); break;
+    case Screen::EDITOR: editor_.draw(); break;
+    case Screen::ENGINES: {
+        EngineManagerWindow::Callbacks cb;
+        cb.save = [this](){ saveEngines(); };
+        if (filedialog::available())
+            cb.browseFile = [this](const std::string& t){
+                std::string p = filedialog::openFile(t, settings_.lastEngineDir);
+                if (!p.empty()){ settings_.lastEngineDir = fs::u8path(p).parent_path().u8string(); saveSettings(); }
+                return p;
+            };
+        engineManager_.draw(registry_, cb);
+        break; }
+    }
+    ImGui::End();
+    drawAbout();
+    drawToast();
+}
+
+void App::drawMenuBar(){
+    if (!ImGui::BeginMainMenuBar()) return;
+    if (ImGui::BeginMenu("Game")){
+        if (ImGui::MenuItem("New game...")){ go(Screen::GAME); game_.showNewGameDialog(GameMode::HUMAN_VS_ENGINE); }
+        if (ImGui::MenuItem("Human vs human")){ game_.newHumanGame(Position::startpos()); go(Screen::GAME); }
+        if (ImGui::MenuItem("Analysis board")){ game_.openAnalysis(Position::startpos()); go(Screen::GAME); }
+        if (ImGui::MenuItem("Open PGN...")){ go(Screen::GAME); game_.openPgnDialog(); }
+        if (ImGui::MenuItem("Board editor")) openEditor(Position::startpos());
+        ImGui::Separator();
+        if (ImGui::MenuItem("Quit")) window_.close();
+        ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("Engines")){
+        if (ImGui::MenuItem("Manage engines...")) go(Screen::ENGINES);
+        if (ImGui::MenuItem("Engine match / tournament...")) go(Screen::MATCH);
+        ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("Tools")){
+        if (ImGui::MenuItem("Engine testing tools")) go(Screen::TOOLS);
+        ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("View")){
+        if (ImGui::MenuItem("Flip board", "F", false, screen_ == Screen::GAME)) game_.flip();
+        if (ImGui::MenuItem("Show coordinates", nullptr, &settings_.showCoordinates)) saveSettings();
+        if (ImGui::BeginMenu("Board colours")){
+            for (auto& t : boardThemes())
+                if (ImGui::MenuItem(t.name, nullptr, settings_.boardTheme == t.name)){ settings_.boardTheme = t.name; saveSettings(); }
+            ImGui::EndMenu();
         }
-    }
-    if (id>=340 && id<380 && id-340 < (int)registry_.engines().size() && screen==Screen::PICK_ENGINE){
-        const EngineConfig& ee = registry_.engines()[id-340];
-        UciEngine probe;
-        showToast("Querying "+ee.name+" for its options...");
-        if (!probe.start(ee)){ showToast("Failed to query engine: "+probe.lastError()); return; }
-        optsPath = ee.path;
-        optsList = probe.options();
-        probe.quit();
-        optsList.erase(std::remove_if(optsList.begin(), optsList.end(),
-            [](const UciOption& o){ return o.type=="button"; }), optsList.end());
-        optScroll = 0; editingOption = -1;
-        screen=Screen::ENGINE_OPTIONS; layout();
-    }
-    if (id>=400 && id<450 && id-400 < (int)registry_.engines().size() && screen==Screen::MATCH_SETUP){
-        int i=id-400;
-        auto it = std::find(matchSelection.begin(),matchSelection.end(),i);
-        if (it==matchSelection.end()) matchSelection.push_back(i); else matchSelection.erase(it);
-        layout();
-    }
-    if (screen==Screen::ENGINE_OPTIONS){
-        auto optAt=[&](int row)->int{ int oi=optScroll+row; return oi<(int)optsList.size()? oi : -1; };
-        if (id>=900 && id<920){
-            int oi = optAt(id-900);
-            if (oi>=0){
-                const UciOption& o = optsList[oi];
-                std::string cur = overrideOrDefault(optsPath, o);
-                if (o.type=="check") setOverride(optsPath, o.name, cur=="true"?"false":"true");
-                else if (o.type=="spin"){
-                    long long n = atoll(cur.c_str()) - 1;
-                    if (n < o.minV) n = o.minV;
-                    setOverride(optsPath, o.name, std::to_string(n));
-                }
-                else if (o.type=="combo" && !o.vars.empty()){
-                    int k=0;
-                    for (size_t v=0; v<o.vars.size(); v++) if (o.vars[v]==cur){ k=(int)v; break; }
-                    setOverride(optsPath, o.name, o.vars[(k+1)%o.vars.size()]);
-                }
-                layout();
-            }
+        if (ImGui::BeginMenu("Theme")){
+            for (const char* t : {"dark", "light"})
+                if (ImGui::MenuItem(t, nullptr, settings_.theme == t)){ settings_.theme = t; saveSettings(); setupFonts(); }
+            ImGui::EndMenu();
         }
-        if (id>=920 && id<940){
-            int oi = optAt(id-920);
-            if (oi>=0 && optsList[oi].type=="spin"){
-                const UciOption& o = optsList[oi];
-                long long n = atoll(overrideOrDefault(optsPath,o).c_str()) + 1;
-                if (o.maxV>o.minV && n>o.maxV) n=o.maxV;
-                setOverride(optsPath, o.name, std::to_string(n));
-                layout();
-            }
-        }
-        if (id>=940 && id<950){
-            int oi = optAt(id-940);
-            if (oi>=0){
-                editingOption = oi;
-                optionEditBuffer = overrideOrDefault(optsPath, optsList[oi]);
-                textFocus = TextTarget::OPTION_VALUE;
-                layout();
-            }
-        }
+        ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("Help")){
+        if (ImGui::MenuItem("About")) showAbout_ = true;
+        ImGui::EndMenu();
+    }
+    ImGui::EndMainMenuBar();
+}
+
+void App::drawHome(){
+    float em = ImGui::GetFontSize();
+    float w = em * 24;
+    ImVec2 avail = ImGui::GetContentRegionAvail();
+    ImGui::SetCursorPosX(std::max(0.f, (avail.x - w) / 2));
+    ImGui::BeginGroup();
+    ImGui::Dummy(ImVec2(0, em));
+    ImGui::PushFont(ui::fonts().large);
+    ImGui::TextColored(ui::kAccent, "Chess GUI for UCI");
+    ImGui::PopFont();
+    ImGui::TextDisabled("Play, analyse, run engine matches, and test your own UCI engine.");
+    ImGui::Dummy(ImVec2(0, em * 0.5f));
+    ImVec2 bs(w, em * 2.4f);
+    if (ImGui::Button("Play vs engine...", bs)){ go(Screen::GAME); game_.showNewGameDialog(GameMode::HUMAN_VS_ENGINE); }
+    if (ImGui::Button("Human vs human", bs)){ game_.newHumanGame(Position::startpos()); go(Screen::GAME); }
+    if (ImGui::Button("Analysis board", bs)){ game_.openAnalysis(Position::startpos()); go(Screen::GAME); }
+    if (ImGui::Button("Open PGN...", bs)){ go(Screen::GAME); game_.openPgnDialog(); }
+    if (ImGui::Button("Board editor", bs)) openEditor(Position::startpos());
+    ImGui::Dummy(ImVec2(0, em * 0.5f));
+    ImGui::TextDisabled("For engine developers");
+    if (ImGui::Button("Engine match / tournament", bs)) go(Screen::MATCH);
+    if (ImGui::Button("Engine testing tools", bs)) go(Screen::TOOLS);
+    if (ImGui::Button("Engines...", bs)) go(Screen::ENGINES);
+    ImGui::Dummy(ImVec2(0, em * 0.5f));
+    size_t n = registry_.engines().size();
+    if (n == 0) ImGui::TextColored(ui::kWarn, "No engines yet: add one in Engines..., or drop executables\n"
+                                              "into Resources/engines/ next to the program.");
+    else ImGui::TextDisabled("%d engine%s configured.", (int)n, n == 1 ? "" : "s");
+    if (ImGui::Button("Quit", ImVec2(w, em * 1.8f))) window_.close();
+    ImGui::EndGroup();
+}
+
+void App::drawAbout(){
+    if (showAbout_){ ImGui::OpenPopup("About"); showAbout_ = false; }
+    if (ImGui::BeginPopupModal("About", nullptr, ImGuiWindowFlags_AlwaysAutoResize)){
+        ImGui::TextUnformatted("Chess GUI for UCI");
+        ImGui::TextDisabled("GPL-2.0. A GUI for playing, analysing and testing UCI chess engines.");
+        ImGui::Separator();
+        ImGui::TextUnformatted("Third-party components:");
+        ImGui::BulletText("SFML 3 (zlib), Dear ImGui and ImGui-SFML (MIT)");
+        ImGui::BulletText("nlohmann/json (MIT), portable-file-dialogs (WTFPL)");
+        ImGui::BulletText("Cantarell and JetBrains Mono fonts (SIL OFL 1.1)");
+        ImGui::Text("Settings and engines are stored in:");
+        ImGui::TextDisabled("%s", userConfigDir().c_str());
+        if (ImGui::Button("Close")) ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
     }
 }
 
-// =============================================================== update
-void App::update(){
-    if (screen==Screen::GAME){
-        long long dt = tickClock.restart().asMilliseconds();
-        if (clocksRunning && game.result==GameResult::ONGOING && !game.moves.empty()){
-            if (game.pos.whiteToMove) wClockMs -= dt; else bClockMs -= dt;
-            if (wClockMs<=0){ wClockMs=0; game.result=GameResult::BLACK_WINS; game.reason=ResultReason::TIMEOUT; clocksRunning=false; stopOpponent(); forceRedraw=true; }
-            if (bClockMs<=0){ bClockMs=0; game.result=GameResult::WHITE_WINS; game.reason=ResultReason::TIMEOUT; clocksRunning=false; stopOpponent(); forceRedraw=true; }
-        }
-        applyEngineMoveIfReady();
-        startEngineThinkIfNeeded();
-        if (analysing && anaCtl) anaCtl->setFen(shownPosition().toFEN());
-    } else tickClock.restart();
-    if (screen==Screen::MATCH_VIEW && judgeCtl)
-        judgeCtl->setFen(runner.snapshot().pos.toFEN());
-    if (screen==Screen::MATCH_VIEW || screen==Screen::TEST_RUN){
-        static sf::Clock relayout;
-        if (relayout.getElapsedTime().asMilliseconds()>400){ layout(); relayout.restart(); }
-    }
-}
-
-// =============================================================== render
-static std::string clockStr(long long ms){
-    if (ms<0) ms=0;
-    long long s = ms/1000;
-    char b[32];
-    if (s>=3600) snprintf(b,32,"%lld:%02lld:%02lld",s/3600,(s/60)%60,s%60);
-    else snprintf(b,32,"%02lld:%02lld",s/60,s%60);
-    return b;
-}
-void App::render(){
-    window.clear(COL_BG);
-    switch (screen){
-    case Screen::MENU: {
-        text("Chess GUI for UCI", WW/2, 60, 42, COL_ACCENT, true);
-        text("Play, run engine matches & tournaments, analyse games, and test your own UCI engine",
-             WW/2, 104, 15, COL_DIM, true);
-        float tcY = 132 + 6*52 + 44 + 64;
-        text("Time control for games & matches:", WW/2, tcY - 26, 14, COL_DIM, true);
-        break; }
-    case Screen::GAME: {
-        float side = WH-40;
-        float rx = side + 40;
-        float pw = WW - rx - 20;
-        Position shown = shownPosition();
-        int lastFrom=-1, lastTo=-1;
-        if (viewPly>0){ lastFrom=game.moves[viewPly-1].from; lastTo=game.moves[viewPly-1].to; }
-        else if (viewPly<0 && !game.moves.empty()){
-            lastFrom=game.moves.back().from; lastTo=game.moves.back().to;
-        }
-        drawBoard(20,20,side, shown,
-                  viewPly<0? selectedSq : -1,
-                  viewPly<0? &legalForSelected : nullptr,
-                  lastFrom,lastTo, boardFlipped,
-                  dragging && dragFromSq>=0? dragFromSq : -1, dragPos);
-        // premove tint (red, origin lighter than destination)
-        if (premoveFrom>=0) drawSquareTint(premoveFrom, 20,20,side, boardFlipped, COL_PRE_FROM);
-        if (premoveTo>=0)   drawSquareTint(premoveTo,   20,20,side, boardFlipped, COL_PRE_TO);
-        // engine suggestion arrows
-        EngineInfo ai;
-        std::vector<PvLine> apvs;
-        bool haveAna = analysing && anaCtl;
-        if (haveAna){ ai = anaCtl->info(); apvs = anaCtl->pvs(); }
-        std::string bestSan;
-        if (haveAna && !apvs.empty() && apvs[0].valid){
-            drawPvArrows(apvs, shown, 20,20,side, boardFlipped, arrowsN);
-            Move bm;
-            if (shown.uciToMove(apvs[0].firstMove(), bm)) bestSan = shown.moveToSAN(bm);
-        } else if (haveAna && ai.valid && !ai.pv.empty()){
-            std::string tok = ai.pv.substr(0, ai.pv.find(' '));
-            Move bm;
-            if (shown.uciToMove(tok, bm)){
-                drawArrow(20,20,side, bm.from, bm.to, boardFlipped, sf::Color(70,140,220,210));
-                bestSan = shown.moveToSAN(bm);
-            }
-        }
-        // ---- right panel bands ----
-        float buttonsTop = gameButtonsTop>0? gameButtonsTop : WH-20-4*34-3*8;
-        float listTop = 84;
-        float infoTop = buttonsTop - 96;
-        float listBot = infoTop - 8;
-        bool whiteAtBottom = !boardFlipped;
-        std::string topName = whiteAtBottom? game.blackName : game.whiteName;
-        std::string botName = whiteAtBottom? game.whiteName : game.blackName;
-        long long topClk = whiteAtBottom? bClockMs : wClockMs;
-        long long botClk = whiteAtBottom? wClockMs : bClockMs;
-        text(topName, rx, 56, 16);
-        text(clockStr(topClk), rx+pw-86, 54, 20,
-             topClk<30000? COL_ERR : sf::Color::White);
-        drawMoveList(rx, listTop, pw-32, listBot-listTop, game.sans,
-                     game.start.fullmoveNumber, game.start.whiteToMove);
-        if (haveAna){
-            int cpW = 0, mateW = 0;
-            bool valid = ai.valid;
-            if (valid){
-                cpW = shown.whiteToMove? ai.scoreCp : -ai.scoreCp;
-                mateW = shown.whiteToMove? ai.mateIn : -ai.mateIn;
-            }
-            drawEvalBar(rx+pw-24, listTop, listBot-listTop-18, cpW, valid&&ai.isMate, mateW);
-            if (!anaCtl->alive())
-                text("Analysis engine terminated - toggle Analysis to restart", rx, infoTop, 13, COL_ERR);
-            else if (!valid)
-                text("waiting for analysis from "+anaCtl->engineName()+"...", rx, infoTop, 13, COL_WARN);
-            else {
-                char sb[16];
-                std::string sc = ai.isMate ? ("M"+std::to_string(std::abs(ai.mateIn)))
-                                           : (snprintf(sb,16,"%+.2f",cpW/100.0), std::string(sb));
-                text("Best: "+(bestSan.empty()? std::string("?") : bestSan)
-                     +"   depth "+std::to_string(ai.depth)+"   "+sc, rx, infoTop, 14, COL_GOOD);
-                text(ai.pv.substr(0,70), rx, infoTop+20, 13, sf::Color(150,200,150));
-            }
-        }
-        std::string st;
-        if (game.result!=GameResult::ONGOING){
-            st = game.resultString();
-            if (game.reason != ResultReason::NONE) st += "  ("+resultReasonText(game.reason)+")";
-        }
-        else if (viewPly>=0)
-            st = "Viewing move "+std::to_string(viewPly)+"/"+std::to_string(game.moves.size())+"  (>| returns to live)";
-        else if (mode==GameMode::HUMAN_VS_ENGINE && game.pos.whiteToMove!=humanIsWhite)
-            st = (premoveFrom>=0&&premoveTo>=0)? "Engine is thinking... (premove set)"
-                                               : "Engine is thinking...";
-        else st = game.pos.whiteToMove? "White to move" : "Black to move";
-        text(st, rx, infoTop+42, 14, COL_ACCENT);
-        text(botName, rx, infoTop+68, 16);
-        text(clockStr(botClk), rx+pw-86, infoTop+66, 20,
-             botClk<30000? COL_ERR : sf::Color::White);
-        if (pendingPromotion){
-            sf::RectangleShape dim(sf::Vector2f(side,side)); dim.setPosition({20,20});
-            dim.setFillColor(sf::Color(0,0,0,120)); window.draw(dim);
-            text("Promote to:", 20+side/2, 20+side/2 - side/8, 22, sf::Color::White, true);
-        }
-        break; }
-    case Screen::PICK_ENGINE: {
-        const char* titles[] = {"","Choose your OPPONENT engine","Choose the ANALYSIS engine","",
-                                "Choose the engine to PERFT-TEST",
-                                "Choose YOUR engine to accuracy-test",
-                                "Choose the REFERENCE engine (e.g. Stockfish)",
-                                "Choose the JUDGE engine (eval bar & arrows)",
-                                "Choose the engine for the game review"};
-        text(titles[std::min(pickPurpose,8)], WW/2, 46, 25, COL_ACCENT, true);
-        text("Engines are auto-discovered from Resources/engines/. 'Options...' edits an engine's UCI settings.",
-             WW/2, 80, 14, COL_DIM, true);
-        if (registry_.engines().empty())
-            text("No engines found. Put UCI engine executables in Resources/engines/ or type a path below.",
-                 WW/2, 200, 16, COL_WARN, true);
-        break; }
-    case Screen::MATCH_SETUP: {
-        text("Engine vs Engine / Tournament", WW/2, 40, 24, COL_ACCENT, true);
-        text("Click engines to select (2 = match, 3+ = round-robin). Colors alternate; with multiple",
-             WW/2, 68, 13, COL_DIM, true);
-        float listN = (float)std::min(registry_.engines().size(),(size_t)6);
-        float rowY = 96 + listN*40 + 24;
-        text("openings, each one is played with both colors before moving to the next.", WW/2, 82, 13, COL_DIM, true);
-        text("Games per pairing:", 120, rowY-20, 13, COL_DIM);
-        text(std::to_string(matchGamesPerPair), 182, rowY+6, 17, sf::Color::White, true);
-        text("Time control:", 330, rowY-20, 13, COL_DIM);
-        std::string posLabel = "Start positions: " + (matchFens.empty()
-            ? std::string("standard opening")
-            : std::to_string(matchFens.size())+" loaded");
-        text(posLabel, 120, rowY+38, 13, matchFens.empty()? COL_DIM : COL_GOOD);
-        text("Judge engine (independent eval bar + move arrows; plays no games):",
-             120, rowY+130, 13, COL_DIM);
-        break; }
-    case Screen::MATCH_VIEW: {
-        auto s = runner.snapshot();
-        float side = std::min(WH-120.f, WW*0.48f);
-        // live clocks: tick the mover's clock between snapshot posts
-        long long wc = s.wClockMs, bc = s.bClockMs;
-        if (!s.finished && s.result==GameResult::ONGOING && s.postedAtMs>0){
-            long long el = nowMsSteady() - s.postedAtMs;
-            if (el>0){ if (s.pos.whiteToMove) wc-=el; else bc-=el; }
-            if (wc<0)wc=0; if (bc<0)bc=0;
-        }
-        drawBoard(20, 56, side, s.pos, -1, nullptr, s.lastFrom, s.lastTo, matchFlipped, -1, {});
-        std::string tn = matchFlipped? s.whiteName : s.blackName;
-        std::string bn = matchFlipped? s.blackName : s.whiteName;
-        long long tclk = matchFlipped? wc : bc;
-        long long bclk = matchFlipped? bc : wc;
-        text(tn + "   " + clockStr(tclk), 20, 24, 17);
-        text(bn + "   " + clockStr(bclk), 20, 62+side, 17);
-        // judge arrows on the live board
-        if (judgeCtl){
-            auto jp = judgeCtl->pvs();
-            if (!jp.empty() && jp[0].valid)
-                drawPvArrows(jp, s.pos, 20, 56, side, matchFlipped, arrowsN);
-        }
-        float rx = side + 56;
-        text("Game "+std::to_string(s.gameIndex)+"/"+std::to_string(s.totalGames), rx, 24, 19, COL_ACCENT);
-        // eval bar: judge if present (independent), else the players' own reports
-        int cpW = s.scoreCpWhitePOV; bool isM = s.scoreIsMate; int mIn = s.mateIn;
-        std::string judgeLine;
-        if (judgeCtl){
-            auto jp = judgeCtl->pvs();
-            if (!judgeCtl->alive()) judgeLine = "Judge engine terminated";
-            else if (!jp.empty() && jp[0].valid){
-                cpW = s.pos.whiteToMove? jp[0].scoreCp : -jp[0].scoreCp;
-                isM = jp[0].isMate;
-                mIn = s.pos.whiteToMove? jp[0].mateIn : -jp[0].mateIn;
-                Move bm;
-                std::string san = s.pos.uciToMove(jp[0].firstMove(), bm)
-                                  ? s.pos.moveToSAN(bm) : jp[0].firstMove();
-                judgeLine = "Judge "+judgeCtl->engineName()+":  best "+san
-                           +"  (depth "+std::to_string(jp[0].depth)+")";
-            } else judgeLine = "Judge: waiting for analysis...";
-        }
-        drawEvalBar(rx, 56, side-90, cpW, isM, mIn);
-        float tx = rx+52;
-        float maxTx = WW-190;
-        float ty = 56;
-        text("Standings", tx, ty, 17, COL_ACCENT); ty+=28;
-        for (auto& st : s.standings){
-            char b[160];
-            snprintf(b,160,"%-22s +%d =%d -%d  %.1f", st.name.substr(0,22).c_str(),
-                     st.wins, st.draws, st.losses, st.points());
-            text(b, tx, ty, 14); ty+=22;
-        }
-        ty+=10;
-        if (!judgeLine.empty()){
-            text(judgeLine.substr(0,(size_t)((maxTx-tx)/7)), tx, ty, 14,
-                 judgeLine.find("terminated")!=std::string::npos? COL_ERR : COL_GOOD);
-            ty+=24;
-        }
-        for (auto& l : s.log){
-            std::string ln = l;
-            if (ln.size() > (size_t)((maxTx-tx)/7)) ln = ln.substr(0,(size_t)((maxTx-tx)/7))+"...";
-            text(ln, tx, ty, 14, COL_DIM); ty+=20;
-        }
-        if (s.result!=GameResult::ONGOING && !s.finished)
-            text("Last result: "+resultReasonText(s.reason), tx, ty+6, 14, COL_ACCENT);
-        if (s.finished) text("Tournament finished.", tx, ty+6, 16, COL_GOOD);
-        break; }
-    case Screen::TEST_RUN: {
-        text(testTitle, 30, 20, 19, COL_ACCENT);
-        std::vector<std::string> lines;
-        { std::lock_guard<std::mutex> lk(testMx); lines = testLines; }
-        int maxRows = (int)((WH-80)/20);
-        int first = std::max(0, (int)lines.size()-maxRows);
-        float y=60;
-        float maxW = WW-200;
-        for (int i=first;i<(int)lines.size();i++){
-            sf::Color c = sf::Color(210,210,215);
-            if (lines[i].find("FAIL")!=std::string::npos || lines[i].find(" ??")!=std::string::npos) c = COL_ERR;
-            else if (lines[i].find(">>>")!=std::string::npos) c = COL_GOOD;
-            std::string ln = lines[i];
-            if (ln.size() > (size_t)(maxW/7)) ln = ln.substr(0,(size_t)(maxW/7))+"...";
-            text(ln, 30, y, 14, c); y+=20;
-        }
-        if (testRunning) text("running...", WW-160, 140, 14, COL_WARN);
-        break; }
-    case Screen::ENGINE_OPTIONS: {
-        text("UCI options - "+fs::path(optsPath).filename().string(), WW/2, 34, 23, COL_ACCENT, true);
-        text("Saved automatically and applied every time this engine starts (play, analysis, matches, tests).",
-             WW/2, 66, 13, COL_DIM, true);
-        float y = 96;
-        int rows = std::min((int)((WH-190)/44), 10);
-        for (int r=0; r<rows; r++){
-            int oi = optScroll + r;
-            if (oi >= (int)optsList.size()) break;
-            const UciOption& o = optsList[oi];
-            text(o.name, 60, y+8, 15);
-            std::string meta = o.type;
-            if (o.type=="spin") meta += "  ["+std::to_string(o.minV)+".."+std::to_string(o.maxV)+"]";
-            bool overridden = false;
-            if (EngineConfig* c = registry_.findByPath(optsPath))
-                overridden = c->option(o.name) != nullptr;
-            if (overridden) meta += "   (modified)";
-            text(meta, 60, y+8+16, 12, overridden? COL_GOOD : sf::Color(130,130,140));
-            y += 44;
-        }
-        if ((int)optsList.size() > rows)
-            text(std::to_string(optScroll+1)+"-"+std::to_string(std::min(optScroll+rows,(int)optsList.size()))
-                 +" of "+std::to_string(optsList.size()), WW-95, 76, 13, COL_DIM, true);
-        if (optsList.empty())
-            text("This engine advertises no UCI options.", WW/2, 160, 16, COL_WARN, true);
-        text("Ponder is fully supported in Human-vs-Engine: enable it here and the engine thinks on your time.",
-             60, WH-56, 13, COL_DIM);
-        break; }
-    case Screen::PGN_LOAD: {
-        text("Load PGN for analysis", WW/2, 56, 26, COL_ACCENT, true);
-        text("Load a .pgn file (multi-game files supported) or paste PGN text. The game opens on the\n"
-             "analysis board: step through with arrow keys, toggle Analysis for engine evaluation and\n"
-             "arrows, or press 'Run game review' for a full engine annotation of every move.",
-             WW/2, 110, 14, COL_DIM, true);
-        break; }
-    case Screen::PGN_LIST: {
-        text("Choose a game ("+std::to_string(pgnGames.size())+" in file)", WW/2, 56, 24, COL_ACCENT, true);
-        if ((int)pgnGames.size() > 12)
-            text(std::to_string(pgnScroll+1)+"-"+std::to_string(std::min(pgnScroll+12,(int)pgnGames.size()))
-                 +" of "+std::to_string(pgnGames.size()), WW-95, 80, 13, COL_DIM, true);
-        break; }
-    default: break;
-    }
-    drawButtons();
-    if (!toastText.empty() && !imguiScreen()){
-        if (toastClock.getElapsedTime().asSeconds()>3) toastText.clear();
-        else {
-            sf::RectangleShape r(sf::Vector2f(std::min(WW-40, 640.f), 34));
-            r.setPosition({WW/2 - r.getSize().x/2, WH-44});
-            r.setFillColor(sf::Color(20,20,25,230));
-            r.setOutlineThickness(1); r.setOutlineColor(COL_ACCENT);
-            window.draw(r);
-            text(toastText, WW/2, WH-27, 14, sf::Color::White, true);
-        }
-    }
-    if (imguiFrameActive){
-        imguiFrameActive = false;
-        if (imguiScreen()){
-            window.setView(window.getDefaultView());
-            ImGui::SFML::Render(window);
-            window.setView(sf::View(sf::FloatRect({0,0},{WW,WH})));
-        } else ImGui::EndFrame();              // left for a legacy screen mid-frame
-    }
-    if (!pendingShot.empty()){
-        sf::Texture shot;
-        if (shot.resize(window.getSize())){
-            shot.update(window);
-            if (!shot.copyToImage().saveToFile(pendingShot))
-                fprintf(stderr, "[script] could not save %s\n", pendingShot.c_str());
-        }
-        pendingShot.clear();
-    }
-    window.display();
+void App::drawToast(){
+    if (toastText_.empty()) return;
+    if (toastClock_.getElapsedTime().asSeconds() > 3.5f){ toastText_.clear(); return; }
+    const ImGuiViewport* vp = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + vp->WorkSize.x / 2, vp->WorkPos.y + vp->WorkSize.y - 20),
+                            ImGuiCond_Always, ImVec2(0.5f, 1.f));
+    ImGui::SetNextWindowBgAlpha(0.92f);
+    ImGui::Begin("##toast", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
+                 ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav |
+                 ImGuiWindowFlags_NoInputs);
+    ImGui::TextUnformatted(toastText_.c_str());
+    ImGui::End();
 }
 
 // =============================================================== scripted input
-sf::Vector2f App::mouseLogical(){
-    if (scriptMouse) return *scriptMouse;
-    return window.mapPixelToCoords(sf::Mouse::getPosition(window));
-}
-
 bool App::loadScript(const std::string& path){
     std::string err;
-    script.clear(); scriptPos = 0;
-    if (!loadUiScript(path, script, &err)){ fprintf(stderr, "[script] %s\n", err.c_str()); return false; }
+    script_.clear(); scriptPos_ = 0;
+    if (!loadUiScript(path, script_, &err)){ std::fprintf(stderr, "[script] %s\n", err.c_str()); return false; }
     return true;
+}
+
+ImVec2 App::logicalToPixels(float x, float y) const{
+    return ImVec2(x * dpiScale_, y * dpiScale_);
+}
+
+BoardView* App::activeBoard(){
+    if (screen_ == Screen::GAME) return &game_.board();
+    if (screen_ == Screen::EDITOR) return &editor_.board();
+    return nullptr;
 }
 
 static bool keyFromName(const std::string& n, sf::Keyboard::Key& k){
@@ -1780,248 +395,120 @@ static bool keyFromName(const std::string& n, sf::Keyboard::Key& k){
         {"Left",K::Left},{"Right",K::Right},{"Up",K::Up},{"Down",K::Down},
         {"Escape",K::Escape},{"Enter",K::Enter},{"Space",K::Space},{"Tab",K::Tab},
         {"Backspace",K::Backspace},{"Delete",K::Delete},{"Home",K::Home},{"End",K::End},
-        {"PageUp",K::PageUp},{"PageDown",K::PageDown},
     };
     for (auto& p : named) if (n == p.first){ k = p.second; return true; }
     if (n.size()==1 && n[0]>='A' && n[0]<='Z'){ k = (K)((int)K::A + (n[0]-'A')); return true; }
-    if (n.size()==1 && n[0]>='0' && n[0]<='9'){ k = (K)((int)K::Num0 + (n[0]-'0')); return true; }
-    if (n.size()>=2 && n[0]=='F' && n.size()<=3){
-        int f = std::atoi(n.c_str()+1);
-        if (f>=1 && f<=12){ k = (K)((int)K::F1 + f-1); return true; }
-    }
     return false;
 }
 
-// Executes the next due step; at most one step per frame so the UI gets a
-// render/update pass between inputs, like a real user.
-void App::stepScript(){
-    if (nowMsSteady() < scriptWaitUntil) return;
-    const UiScriptStep s = script[scriptPos++];          // copy: steps may insert more steps
-    UiEvent e;
-    // ImGui screens get the input through ImGui's IO queue instead
-    auto handleEvent = [this](const UiEvent& ev){
-        if (imguiOk && imguiScreen()) injectImGui(ev); else App::handleEvent(ev);
-    };
-    auto at = [&](float x, float y){ scriptMouse = sf::Vector2f(x, y); };
-    if (s.op=="wait") scriptWaitUntil = nowMsSteady() + (long long)s.nums[0];
-    else if (s.op=="move"){ at(s.nums[0], s.nums[1]); e.kind = UiEvent::MouseMoved; handleEvent(e); }
-    else if (s.op=="click"){
-        // like a user: hover for a frame, then press, then release on the next frame
-        at(s.nums[0], s.nums[1]);
-        e.kind = UiEvent::MouseMoved; handleEvent(e);
-        UiScriptStep press; press.op = "_press";
-        UiScriptStep release; release.op = "_release";
-        script.insert(script.begin() + (long)scriptPos, {press, release});
+static ImGuiKey imguiKey(sf::Keyboard::Key k){
+    using K = sf::Keyboard::Key;
+    switch (k){
+    case K::Enter: return ImGuiKey_Enter;   case K::Escape: return ImGuiKey_Escape;
+    case K::Tab: return ImGuiKey_Tab;       case K::Backspace: return ImGuiKey_Backspace;
+    case K::Delete: return ImGuiKey_Delete; case K::Left: return ImGuiKey_LeftArrow;
+    case K::Right: return ImGuiKey_RightArrow; case K::Up: return ImGuiKey_UpArrow;
+    case K::Down: return ImGuiKey_DownArrow; case K::Home: return ImGuiKey_Home;
+    case K::End: return ImGuiKey_End;       case K::Space: return ImGuiKey_Space;
+    default:
+        if (k >= K::A && k <= K::Z) return (ImGuiKey)(ImGuiKey_A + ((int)k - (int)K::A));
+        return ImGuiKey_None;
     }
-    else if (s.op=="_press"){ e.kind = UiEvent::MousePressed; handleEvent(e); }
-    else if (s.op=="_release"){ e.kind = UiEvent::MouseReleased; handleEvent(e); }
-    else if (s.op=="drag"){
-        // hover, press, move halfway, move to the target, release: one frame each
-        at(s.nums[0], s.nums[1]); e.kind = UiEvent::MouseMoved; handleEvent(e);
-        UiScriptStep press; press.op = "_press";
-        UiScriptStep mid; mid.op = "move";
-        mid.nums = {(s.nums[0] + s.nums[2]) / 2, (s.nums[1] + s.nums[3]) / 2};
-        UiScriptStep end; end.op = "move"; end.nums = {s.nums[2], s.nums[3]};
-        UiScriptStep release; release.op = "_release";
-        script.insert(script.begin() + (long)scriptPos, {press, mid, end, release});
-    } else if (s.op=="key"){
-        if (keyFromName(s.arg, e.key)){
-            e.kind = UiEvent::KeyPressed; e.ctrl = s.ctrl; e.sys = s.ctrl; handleEvent(e);
-        } else fprintf(stderr, "[script] unknown key %s\n", s.arg.c_str());
-    } else if (s.op=="text"){
-        for (unsigned char c : s.arg){ e.kind = UiEvent::TextEntered; e.unicode = c; handleEvent(e); }
-    } else if (s.op=="click-item" || s.op=="wait-item"){
-        auto items = uiitems::find(s.arg);
-        if (s.op=="wait-item"){
-            if (items.empty()){
-                if (!scriptItemDeadline) scriptItemDeadline = nowMsSteady() + (long long)s.nums[0];
-                if (nowMsSteady() < scriptItemDeadline){ scriptPos--; return; }   // try again next frame
-                fprintf(stderr, "[script] no widget '%s' after %.0f ms\n", s.arg.c_str(), s.nums[0]);
-                scriptFailed_ = true;
-            }
-            scriptItemDeadline = 0;
-        } else if (items.empty()){
-            fprintf(stderr, "[script] no widget labelled '%s'\n", s.arg.c_str());
-            scriptFailed_ = true;
-        } else {
-            sf::Vector2u ws = window.getSize();
-            float cx = (items[0].x0 + items[0].x1) / 2, cy = (items[0].y0 + items[0].y1) / 2;
-            UiScriptStep click; click.op = "click";
-            click.nums = {cx * WW / ws.x, cy * WH / ws.y};
-            script.insert(script.begin() + (long)scriptPos, click);
-        }
-    } else if (s.op=="shot") pendingShot = s.arg;
-    else if (s.op=="expect"){
-        std::string fen = game.pos.toFEN();
-        if (fen.compare(0, s.arg.size(), s.arg) != 0){
-            fprintf(stderr, "[script] expected position '%s' but have '%s'\n", s.arg.c_str(), fen.c_str());
-            scriptFailed_ = true;
-        }
-    }
-    else if (s.op=="quit") window.close();
-    forceRedraw = true;
 }
 
-// =============================================================== Dear ImGui
-// ImGui draws in physical pixels; the font is rasterized at the real pixel
-// size so text stays sharp on HiDPI screens.
-void App::setupImGuiFonts(){
-    float px = window.getSize().x / WW;              // physical pixels per logical unit
-    if (px <= 0) px = 1;
-    if (std::abs(px - imguiScale) < 0.01f) return;
-    imguiScale = px;
+void App::scriptEvent(const ScriptEvent& e){
     ImGuiIO& io = ImGui::GetIO();
-    io.Fonts->Clear();
-    ImFontConfig fc; fc.OversampleH = 2;
-    ui::Fonts& f = ui::fonts();
-    f.body = io.Fonts->AddFontFromFileTTF("Resources/Cantarell-Regular.ttf", 15.f * px, &fc);
-    if (!f.body) f.body = io.Fonts->AddFontDefault();
-    f.mono = io.Fonts->AddFontFromFileTTF("Resources/JetBrainsMono-Regular.ttf", 13.5f * px, &fc);
-    if (!f.mono) f.mono = f.body;
-    f.large = io.Fonts->AddFontFromFileTTF("Resources/Cantarell-Regular.ttf", 26.f * px, &fc);
-    if (!f.large) f.large = f.body;
-    if (!ImGui::SFML::UpdateFontTexture()) fprintf(stderr, "[imgui] font texture failed\n");
-    ImGuiStyle st;
-    ImGui::StyleColorsDark(&st);
-    st.FrameRounding = 3; st.WindowRounding = 0; st.ChildRounding = 3; st.GrabRounding = 3;
-    st.ScaleAllSizes(px);
-    ImGui::GetStyle() = st;
-}
-
-void App::drawImGui(){
-    drawMenuBar();
-    const ImGuiViewport* vp = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(vp->WorkPos);
-    ImGui::SetNextWindowSize(vp->WorkSize);
-    ImGui::Begin("##screen", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
-                 ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
-    const char* title = screen == Screen::ENGINE_MANAGER ? "Engines"
-                      : screen == Screen::TESTS ? "Engine testing tools"
-                      : screen == Screen::EDITOR ? "Board editor" : "";
-    if (ImGui::Button("< Home")) go(Screen::MENU);
-    ImGui::SameLine();
-    ImGui::PushFont(ui::fonts().large);
-    ImGui::AlignTextToFramePadding();
-    ImGui::TextUnformatted(title);
-    ImGui::PopFont();
-    ImGui::Separator();
-    if (screen == Screen::ENGINE_MANAGER){
-        EngineManagerWindow::Callbacks cb;
-        cb.save = [this](){ saveEngines(); };
-        cb.browseFile = [this](const std::string& t){
-            std::string p = filedialog::openFile(t, settings_.lastEngineDir);
-            if (!p.empty()){ settings_.lastEngineDir = fs::u8path(p).parent_path().u8string(); saveSettings(); }
-            return p;
-        };
-        if (!filedialog::available()) cb.browseFile = nullptr;
-        engineManager.draw(registry_, cb);
-    } else if (screen == Screen::TESTS){
-        tools.draw();
-    } else if (screen == Screen::EDITOR){
-        editor.draw();
-    }
-    ImGui::End();
-    drawToast();
-}
-
-// Top menu bar (on the ImGui screens while the migration from the old UI runs).
-void App::drawMenuBar(){
-    if (!ImGui::BeginMainMenuBar()) return;
-    if (ImGui::BeginMenu("Game")){
-        if (ImGui::MenuItem("Human vs human")) onButton(100);
-        if (ImGui::MenuItem("Play vs engine...")) onButton(101);
-        if (ImGui::MenuItem("Analysis board...")) onButton(104);
-        if (ImGui::MenuItem("Open PGN...")) onButton(108);
-        if (ImGui::MenuItem("Board editor")) onButton(106);
-        ImGui::Separator();
-        if (ImGui::MenuItem("Quit")) window.close();
-        ImGui::EndMenu();
-    }
-    if (ImGui::BeginMenu("Engines")){
-        if (ImGui::MenuItem("Manage engines...")) go(Screen::ENGINE_MANAGER);
-        if (ImGui::MenuItem("Engine match / tournament...")) onButton(103);
-        ImGui::EndMenu();
-    }
-    if (ImGui::BeginMenu("Tools")){
-        if (ImGui::MenuItem("Engine testing tools")) go(Screen::TESTS);
-        ImGui::EndMenu();
-    }
-    ImGui::EndMainMenuBar();
-}
-
-void App::drawToast(){
-    if (toastText.empty()) return;
-    if (toastClock.getElapsedTime().asSeconds() > 3.5f){ toastText.clear(); return; }
-    const ImGuiViewport* vp = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + vp->WorkSize.x / 2, vp->WorkPos.y + vp->WorkSize.y - 20),
-                            ImGuiCond_Always, ImVec2(0.5f, 1.f));
-    ImGui::SetNextWindowBgAlpha(0.92f);
-    ImGui::Begin("##toast", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
-                 ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav |
-                 ImGuiWindowFlags_NoInputs);
-    ImGui::TextUnformatted(toastText.c_str());
-    ImGui::End();
-}
-
-void App::go(Screen s){
-    if (s == Screen::ENGINE_MANAGER) scanEngines();
-    screen = s;
-    layout();
-    forceRedraw = true;
-}
-
-void App::editorDone(EditorAction a, const Position& p){
-    switch (a){
-    case EditorAction::PlayHuman:
-        mode = GameMode::HUMAN_VS_HUMAN; stopOpponent();
-        newGame(p); go(Screen::GAME); break;
-    case EditorAction::PlayEngine:                    // the human plays the side to move
-        humanIsWhite = p.whiteToMove; boardFlipped = !humanIsWhite;
-        mode = GameMode::HUMAN_VS_ENGINE; pickPurpose = 1; oneShotStart = p;
-        scanEngines(); go(Screen::PICK_ENGINE); break;
-    case EditorAction::Analyse:
-        mode = GameMode::ANALYSIS; pickPurpose = 2; oneShotStart = p;
-        scanEngines(); go(Screen::PICK_ENGINE); break;
-    case EditorAction::AddToMatch:
-        matchFens.push_back(p.toFEN());
-        showToast("Position added to the match (" + std::to_string(matchFens.size()) + " total)");
-        scanEngines(); go(Screen::MATCH_SETUP); break;
-    case EditorAction::Cancel:
-        go(Screen::MATCH_SETUP); break;
-    }
-}
-
-void App::saveSettings(){
-    std::string err;
-    if (!settings_.save((fs::u8path(userConfigDir()) / "settings.json").u8string(), &err))
-        showToast("Could not save settings.json: " + err);
-}
-
-void App::injectImGui(const UiEvent& e){
-    ImGuiIO& io = ImGui::GetIO();
-    auto key = [](sf::Keyboard::Key k) -> ImGuiKey {
-        using K = sf::Keyboard::Key;
-        switch (k){
-        case K::Enter: return ImGuiKey_Enter;   case K::Escape: return ImGuiKey_Escape;
-        case K::Tab: return ImGuiKey_Tab;       case K::Backspace: return ImGuiKey_Backspace;
-        case K::Delete: return ImGuiKey_Delete; case K::Left: return ImGuiKey_LeftArrow;
-        case K::Right: return ImGuiKey_RightArrow; case K::Up: return ImGuiKey_UpArrow;
-        case K::Down: return ImGuiKey_DownArrow; case K::Home: return ImGuiKey_Home;
-        case K::End: return ImGuiKey_End;       case K::A: return ImGuiKey_A;
-        default: return ImGuiKey_None;
-        }
-    };
     switch (e.kind){
-    case UiEvent::MousePressed:  scriptButtonDown = true; break;
-    case UiEvent::MouseReleased: scriptButtonDown = false; break;
-    case UiEvent::KeyPressed:
-        if (key(e.key) != ImGuiKey_None){
-            if (e.ctrl) io.AddKeyEvent(ImGuiMod_Ctrl, true);
-            io.AddKeyEvent(key(e.key), true); io.AddKeyEvent(key(e.key), false);
-            if (e.ctrl) io.AddKeyEvent(ImGuiMod_Ctrl, false);
-        }
-        break;
-    case UiEvent::TextEntered: io.AddInputCharacter((unsigned)e.unicode); break;
+    case ScriptEvent::MousePressed:  scriptButtonDown_ = true; break;
+    case ScriptEvent::MouseReleased: scriptButtonDown_ = false; break;
+    case ScriptEvent::KeyPressed: {
+        ImGuiKey k = imguiKey(e.key);
+        if (k == ImGuiKey_None) break;
+        if (e.ctrl) io.AddKeyEvent(ImGuiMod_Ctrl, true);
+        io.AddKeyEvent(k, true); io.AddKeyEvent(k, false);
+        if (e.ctrl) io.AddKeyEvent(ImGuiMod_Ctrl, false);
+        break; }
+    case ScriptEvent::TextEntered: io.AddInputCharacter((unsigned)e.unicode); break;
     default: break;
     }
+}
+
+// Executes the next due step; at most one step per frame so the UI gets a
+// frame between inputs, like a real user.
+void App::stepScript(){
+    if (nowMs() < scriptWaitUntil_) return;
+    const UiScriptStep s = script_[scriptPos_++];        // copy: steps may insert more steps
+    ScriptEvent e;
+    auto insert = [&](std::vector<UiScriptStep> steps){
+        script_.insert(script_.begin() + (long)scriptPos_, steps.begin(), steps.end());
+    };
+    auto step = [](const char* op, std::vector<float> nums = {}){ UiScriptStep x; x.op = op; x.nums = nums; return x; };
+    auto squarePoint = [&](const std::string& name, ImVec2& out){
+        BoardView* b = activeBoard();
+        int sq = nameToSquare(name);
+        if (!b || sq < 0){
+            std::fprintf(stderr, "[script] no board or bad square '%s'\n", name.c_str());
+            scriptFailed_ = true; return false;
+        }
+        out = b->squareCenter(sq);
+        out = ImVec2(out.x / dpiScale_, out.y / dpiScale_);
+        return true;
+    };
+    if (s.op == "wait") scriptWaitUntil_ = nowMs() + (long long)s.nums[0];
+    else if (s.op == "move") scriptMouse_ = logicalToPixels(s.nums[0], s.nums[1]);
+    else if (s.op == "click"){
+        // like a user: hover for a frame, then press, then release on the next frame
+        scriptMouse_ = logicalToPixels(s.nums[0], s.nums[1]);
+        insert({step("_press"), step("_release")});
+    }
+    else if (s.op == "_press"){ e.kind = ScriptEvent::MousePressed; scriptEvent(e); }
+    else if (s.op == "_release"){ e.kind = ScriptEvent::MouseReleased; scriptEvent(e); }
+    else if (s.op == "drag"){
+        scriptMouse_ = logicalToPixels(s.nums[0], s.nums[1]);
+        insert({step("_press"), step("move", {(s.nums[0] + s.nums[2]) / 2, (s.nums[1] + s.nums[3]) / 2}),
+                step("move", {s.nums[2], s.nums[3]}), step("_release")});
+    }
+    else if (s.op == "click-square"){
+        ImVec2 p;
+        if (squarePoint(s.arg, p)) insert({step("click", {p.x, p.y})});
+    }
+    else if (s.op == "drag-square"){
+        std::istringstream ss(s.arg); std::string a, b; ss >> a >> b;
+        ImVec2 p, q;
+        if (squarePoint(a, p) && squarePoint(b, q)) insert({step("drag", {p.x, p.y, q.x, q.y})});
+    }
+    else if (s.op == "key"){
+        if (keyFromName(s.arg, e.key)){ e.kind = ScriptEvent::KeyPressed; e.ctrl = s.ctrl; scriptEvent(e); }
+        else std::fprintf(stderr, "[script] unknown key %s\n", s.arg.c_str());
+    }
+    else if (s.op == "text"){
+        for (unsigned char c : s.arg){ e.kind = ScriptEvent::TextEntered; e.unicode = c; scriptEvent(e); }
+    }
+    else if (s.op == "click-item" || s.op == "wait-item"){
+        auto items = uiitems::find(s.arg);
+        if (s.op == "wait-item"){
+            if (items.empty()){
+                if (!scriptItemDeadline_) scriptItemDeadline_ = nowMs() + (long long)s.nums[0];
+                if (nowMs() < scriptItemDeadline_){ scriptPos_--; return; }   // try again next frame
+                std::fprintf(stderr, "[script] no widget '%s' after %.0f ms\n", s.arg.c_str(), s.nums[0]);
+                scriptFailed_ = true;
+            }
+            scriptItemDeadline_ = 0;
+        } else if (items.empty()){
+            std::fprintf(stderr, "[script] no widget labelled '%s'\n", s.arg.c_str());
+            scriptFailed_ = true;
+        } else {
+            float cx = (items[0].x0 + items[0].x1) / 2, cy = (items[0].y0 + items[0].y1) / 2;
+            insert({step("click", {cx / dpiScale_, cy / dpiScale_})});
+        }
+    }
+    else if (s.op == "shot") pendingShot_ = s.arg;
+    else if (s.op == "expect"){
+        std::string fen = game_.shownFen();
+        if (fen.compare(0, s.arg.size(), s.arg) != 0){
+            std::fprintf(stderr, "[script] expected position '%s' but have '%s'\n", s.arg.c_str(), fen.c_str());
+            scriptFailed_ = true;
+        }
+    }
+    else if (s.op == "quit") window_.close();
 }
