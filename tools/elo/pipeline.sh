@@ -65,3 +65,13 @@ print(r['threshold'], r['model'])" "$WORK/data/cv.json")
 "$PY" "$T/select_positions.py" --data "$WORK/data" --items "$WORK/data/items.json" --cv "$WORK/data/cv.json" \
     --calib-nps "$NPS" --out-dir "$REPO/Resources/elo"
 echo "model written to $REPO/Resources/elo (threshold $1, $2 model)"
+
+# 9. the held-out engine through the shipped estimator, and the report for docs/elo-estimator.md
+HB=$("$PY" -c "import json,sys; print(json.load(open(sys.argv[1]))[sys.argv[2]]['binary'])" \
+     "$WORK/engines/build_status.json" "$HOLDOUT")
+"$REPO/build/chess-cli" elo-estimate --engine cmd="$HB" --full --json > "$WORK/data/holdout_full.json"
+"$REPO/build/chess-cli" elo-estimate --engine cmd="$HB" --quick --json > "$WORK/data/holdout_quick.json"
+"$PY" "$T/report.py" --cv "$WORK/data/cv.json" --model "$REPO/Resources/elo/model.json" \
+    --holdout-json "$WORK/data/holdout_full.json" "$WORK/data/holdout_quick.json" \
+    --holdout-ids "$HOLDOUT" "$HOLDOUT" > "$WORK/data/results.md"
+echo "report: $WORK/data/results.md"
