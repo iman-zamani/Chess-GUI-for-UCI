@@ -124,7 +124,7 @@ void GameScreen::shutdown(){
 }
 
 bool GameScreen::animating() const{
-    return clocksRunning_ || oppState_ != 0 || ana_ != nullptr || review_.running();
+    return clocksRunning_ || oppState_ != 0 || ana_ != nullptr || review_.running() || board_.animating();
 }
 
 // =============================================================== game flow
@@ -509,7 +509,8 @@ void GameScreen::draw(){
     float em = ImGui::GetFontSize();
     ImVec2 avail = ImGui::GetContentRegionAvail();
     float barW = ana_ ? em * 1.2f : 0;
-    float side = std::min(avail.y, avail.x * 0.60f - barW);
+    float split = (float)std::max(0.30, std::min(0.80, st.boardSplit));
+    float side = std::min(avail.y, avail.x * split - barW);
     Position shown = shownPosition();
 
     // ---- eval bar + board ----
@@ -556,6 +557,7 @@ void GameScreen::draw(){
         }
     }
     spec.dimmed = pendingPromotion_.has_value();
+    spec.animateMs = st.moveAnimationMs;
     BoardInput in = board_.draw("game-board", side, spec, app_.pieces());
     bool premoveMode = mode_ == GameMode::HUMAN_VS_ENGINE && live && !humanToMove();
     if (in.pressed >= 0){
@@ -580,6 +582,18 @@ void GameScreen::draw(){
     }
     if (in.rightPressed >= 0){ premoveFrom_ = premoveTo_ = -1; selectedSq_ = -1; legalForSelected_.clear(); }
     ImGui::EndGroup();
+
+    // ---- splitter: drag to resize the board ----
+    ImGui::SameLine(0, em * 0.2f);
+    ImVec2 sp = ImGui::GetCursorScreenPos();
+    ImGui::InvisibleButton("board-splitter", ImVec2(em * 0.5f, std::max(side, em * 4)));
+    bool spHot = ImGui::IsItemHovered() || ImGui::IsItemActive();
+    if (spHot) ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+    if (ImGui::IsItemActive() && ImGui::GetIO().MouseDelta.x != 0)
+        st.boardSplit = std::max(0.30, std::min(0.80, st.boardSplit + ImGui::GetIO().MouseDelta.x / std::max(1.f, avail.x)));
+    if (ImGui::IsItemDeactivated()) app_.saveSettings();
+    ImGui::GetWindowDrawList()->AddLine(ImVec2(sp.x + em * 0.25f, sp.y + side * 0.4f), ImVec2(sp.x + em * 0.25f, sp.y + side * 0.6f),
+                                        ImGui::GetColorU32(spHot ? ui::kAccent : ui::kDim), 2);
 
     // ---- side panel ----
     ImGui::SameLine();

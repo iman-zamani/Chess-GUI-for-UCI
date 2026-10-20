@@ -51,6 +51,7 @@ struct BoardSpec {
     int hiddenSquare = -1;               // piece on this square is not drawn
     int ghostPiece = 0;                  // drawn under the cursor (editor hand tool)
     bool dimmed = false;                 // dark overlay (e.g. promotion choice)
+    int animateMs = 0;                   // slide the piece of a new lastFrom->lastTo move (0 = off)
 };
 
 // What the user did this frame.
@@ -69,6 +70,7 @@ public:
     // Draws the board as a `size` x `size` pixel item at the cursor position.
     BoardInput draw(const char* id, float size, const BoardSpec& spec, const PieceSet& pieces);
     bool dragging() const { return dragSq_ >= 0 && dragMoved_; }
+    bool animating() const;              // a move is sliding: keep drawing frames
     int squareAt(ImVec2 p) const;        // screen position -> square (-1 outside)
     ImVec2 squareCenter(int sq) const;
     float squareSize() const { return size_ / 8; }
@@ -80,6 +82,12 @@ private:
     bool dragMoved_ = false;
     bool holding_ = false;               // left button went down on the board and is held
     ImVec2 pressPos_{0, 0};
+    // move animation
+    std::string shownKey_;               // position drawn last frame
+    int shownBoard_[64] = {0};
+    int animFrom_ = -1, animTo_ = -1, animPiece_ = 0, animMs_ = 0;
+    double animStart_ = 0;
+    int droppedOn_ = -1;                 // a drag just ended here: that move needs no slide
 };
 
 // Eval bar (white share from the bottom); cp from White's point of view.

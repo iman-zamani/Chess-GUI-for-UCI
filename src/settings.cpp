@@ -23,6 +23,7 @@ static void forEachField(S& s, F&& f){
     f("uciCheckEngine", s.uciCheckEngine);
     f("eloEngine", s.eloEngine);
     f("pieceSet", s.pieceSet);
+    f("moveAnimationMs", s.moveAnimationMs); f("moveSounds", s.moveSounds); f("boardSplit", s.boardSplit);
     f("accCount", s.accCount); f("accTestMs", s.accTestMs); f("accRefMs", s.accRefMs);
     f("accMultiPV", s.accMultiPV);
     f("matchGamesPerPair", s.matchGamesPerPair);

@@ -111,6 +111,10 @@ void PieceSet::draw(ImDrawList* dl, int piece, ImVec2 p0, ImVec2 p1, ImU32 tint)
     }
 }
 
+bool BoardView::animating() const{
+    return animTo_ >= 0 && (ImGui::GetTime() - animStart_) * 1000.0 < animMs_;
+}
+
 int BoardView::squareAt(ImVec2 p) const{
     if (size_ <= 0) return -1;
     float s8 = size_ / 8;
@@ -168,12 +172,29 @@ BoardInput BoardView::draw(const char* id, float size, const BoardSpec& spec, co
             in.releasedOn = squareAt(mouse);
             if (dragSq_ >= 0 && in.releasedOn >= 0 && in.releasedOn != dragSq_){
                 in.dropFrom = dragSq_; in.dropTo = in.releasedOn;
+                droppedOn_ = in.releasedOn;
             }
             dragSq_ = -1; dragMoved_ = false;
         }
     }
     if (!spec.pos) return in;
     const Position& p = *spec.pos;
+    // a new position reached by lastFrom -> lastTo: slide that piece (not after a drag-and-drop)
+    std::string key = p.repetitionKey();
+    double now = ImGui::GetTime();
+    if (key != shownKey_){
+        bool slide = spec.animateMs > 0 && !shownKey_.empty() && spec.lastFrom >= 0 && spec.lastTo >= 0
+                     && spec.lastTo != droppedOn_ && p.board[spec.lastTo] != 0 && shownBoard_[spec.lastFrom] != 0
+                     && (shownBoard_[spec.lastFrom] > 0) == (p.board[spec.lastTo] > 0);
+        if (slide){ animFrom_ = spec.lastFrom; animTo_ = spec.lastTo; animPiece_ = p.board[spec.lastTo];
+                    animStart_ = now; animMs_ = spec.animateMs; }
+        else animFrom_ = animTo_ = -1;
+        shownKey_ = key;
+        std::copy(std::begin(p.board), std::end(p.board), std::begin(shownBoard_));
+        droppedOn_ = -1;
+    }
+    double animT = animTo_ >= 0 && animMs_ > 0 ? (now - animStart_) * 1000.0 / animMs_ : 1.0;
+    if (animT >= 1.0) animFrom_ = animTo_ = -1;
     ImDrawList* dl = ImGui::GetWindowDrawList();
     const BoardTheme& th = boardTheme(spec.theme);
     float s8 = size_ / 8;
@@ -191,8 +212,11 @@ BoardInput BoardView::draw(const char* id, float size, const BoardSpec& spec, co
     tint(spec.lastFrom, IM_COL32(70,130,220,70));      // origin lighter, destination stronger
     tint(spec.lastTo, IM_COL32(70,130,220,150));
     tint(spec.selected, IM_COL32(110,160,90,180));
-    if (p.kingSquare(p.whiteToMove) >= 0 && p.inCheck(p.whiteToMove))
-        tint(p.kingSquare(p.whiteToMove), IM_COL32(220,80,80,170));
+    if (p.kingSquare(p.whiteToMove) >= 0 && p.inCheck(p.whiteToMove)){   // a red glow under the king in check
+        ImVec2 c = squareCenter(p.kingSquare(p.whiteToMove));
+        for (int r = 6; r >= 1; r--)
+            dl->AddCircleFilled(c, s8 * 0.12f * r, IM_COL32(230, 40, 40, 45), 32);
+    }
     for (auto& t : spec.tints) tint(t.sq, t.color);
     if (spec.interactive && hovered && dragging()){
         int h = squareAt(mouse);
@@ -205,9 +229,15 @@ BoardInput BoardView::draw(const char* id, float size, const BoardSpec& spec, co
     }
     int liftSq = dragging() ? dragSq_ : -1;
     for (int sq = 0; sq < 64; sq++){
-        if (!p.board[sq] || sq == liftSq || sq == spec.hiddenSquare) continue;
+        if (!p.board[sq] || sq == liftSq || sq == spec.hiddenSquare || sq == animTo_) continue;
         rectOf(sq, a, b);
         pieces.draw(dl, p.board[sq], a, b);
+    }
+    if (animTo_ >= 0){
+        double t = std::min(1.0, std::max(0.0, animT)), e = 1 - (1 - t) * (1 - t);   // ease out
+        ImVec2 c0 = squareCenter(animFrom_), c1 = squareCenter(animTo_);
+        ImVec2 c((float)(c0.x + (c1.x - c0.x) * e), (float)(c0.y + (c1.y - c0.y) * e));
+        pieces.draw(dl, animPiece_, ImVec2(c.x - s8 / 2, c.y - s8 / 2), ImVec2(c.x + s8 / 2, c.y + s8 / 2));
     }
     if (spec.showCoords){
         float fs = std::max(9.f, s8 * 0.16f);

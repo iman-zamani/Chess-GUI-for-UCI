@@ -12,6 +12,9 @@ struct Settings {
     std::string boardTheme = "brown";         // see BoardTheme in ui/board_view
     std::string pieceSet = "classic";         // see pieceSets() in ui/board_view
     bool showCoordinates = true;
+    int moveAnimationMs = 150;                // 0 = no piece sliding
+    bool moveSounds = false;
+    double boardSplit = 0.60;                 // share of the window width the game board may use
     // folders last used in file dialogs
     std::string lastPgnDir, lastEngineDir, lastOpeningsDir, lastSaveDir;
     // time control for games and matches
