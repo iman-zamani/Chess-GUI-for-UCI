@@ -654,6 +654,23 @@ std::string UciEngine::goMovetime(int ms){
     sendRaw("go movetime " + std::to_string(ms));
     return waitBestmove(ms + 8000);
 }
+std::string UciEngine::goMovetimeStrict(int ms, int graceMs, int stopWaitMs){
+    resetSearchInfo();
+    sendRaw("go movetime " + std::to_string(ms));
+    auto t0 = clk::now();
+    while (msSince(t0) < ms + graceMs && alive()){
+        std::string ln = readLine(std::max(1, (int)(ms + graceMs - msSince(t0))));
+        if (ln.empty()) continue;
+        parseInfo(ln);
+        if (ln.rfind("bestmove", 0) == 0){
+            std::istringstream ss(ln);
+            std::string a, b; ss >> a >> b;
+            return b == "(none)" ? "" : b;
+        }
+    }
+    if (!alive()) return "";
+    return stopAndWait(stopWaitMs);
+}
 std::string UciEngine::goDepth(int d){
     resetSearchInfo();
     sendRaw("go depth " + std::to_string(d));

@@ -126,6 +126,7 @@ endif()
 add_library(chesscore STATIC
     src/analysis.cpp
     src/chess.cpp
+    src/elo_estimator.cpp
     src/engine_config.cpp
     src/openings.cpp
     src/perft_bisect.cpp
