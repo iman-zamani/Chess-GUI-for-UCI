@@ -52,5 +52,15 @@ if(TARGET chess-cli)
     # an engine that forfeits every game: the SPRT accepts H0 (exit code 1)
     cli_test(cli_sprt_h0 1 "H0 accepted"
              "${cli}|sprt|--engine|${mock}|name=Bad|args=--illegal-bestmove|--engine|${mock}|name=B|--tc|1+0.01|--games|200|--concurrency|4|--elo1|50|--model|logistic")
+    set(kiwi "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1")
+    cli_test(cli_perft 0 "Nodes searched: 97862" "${cli}|perft|--fen|${kiwi}|--depth|3")
+    cli_test(cli_perft_engine 0 "1 of 1 passed" "${cli}|perft|--engine|${mock}|--fen|${kiwi}|--depth|3")
+    cli_test(cli_perft_engine_bug 1 "0 of 1 passed"
+             "${cli}|perft|--engine|${mock}|args=--perft-bug ep|--fen|${kiwi}|--depth|3")
+    cli_test(cli_perft_bisect 1 "missing legal move\\(s\\) b4a3"
+             "${cli}|perft-bisect|--engine|${mock}|args=--perft-bug ep|--fen|${kiwi}|--depth|4")
+    cli_test(cli_uci_check 0 "0 failed" "${cli}|uci-check|--engine|${mock}|--quick|--only|handshake,isready-during-search")
+    cli_test(cli_uci_check_fail 1 "FAIL" "${cli}|uci-check|--engine|${mock}|args=--no-readyok|--quick|--only|handshake")
+    cli_test(cli_analyse 0 "\"bestmove\"" "${cli}|analyse|--engine|${mock}|--depth|2|--json")
     add_dependencies(core_tests chess-cli)
 endif()

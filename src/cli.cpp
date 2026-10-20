@@ -1,8 +1,12 @@
 /* Chess-GUI-for-UCI — headless command-line tool (chess-cli). GPL-2.0 */
 #include "engine_config.hpp"
+#include "perft_bisect.hpp"
+#include "uci_check.hpp"
 #include "stats.hpp"
 #include "testing.hpp"
 #include "tournament.hpp"
+#include <nlohmann/json.hpp>
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <csignal>
@@ -21,7 +25,7 @@
 namespace fs = std::filesystem;
 
 // Exit codes (documented in --help).
-enum Exit { EXIT_OK = 0, EXIT_H0 = 1, EXIT_USAGE = 2, EXIT_INCONCLUSIVE = 3, EXIT_INTERRUPTED = 130 };
+enum Exit { EXIT_OK = 0, EXIT_H0 = 1, EXIT_FAILED = 1, EXIT_USAGE = 2, EXIT_INCONCLUSIVE = 3, EXIT_INTERRUPTED = 130 };
 
 static std::atomic<bool> g_interrupted{false};
 static void onSignal(int){ g_interrupted = true; }
@@ -32,8 +36,18 @@ R"(chess-cli - headless tools for UCI engine developers
 Usage:
   chess-cli match [options]     play a match, round-robin or gauntlet
   chess-cli sprt  [options]     a match that stops when the SPRT accepts H0 or H1
-  chess-cli bench [--runs N] [--json]   single-threaded speed (internal perft, best of N runs)
+  chess-cli perft [--engine E] [--fen FEN --depth N | --suite FILE] [--divide]
+                                count moves (no engine), or check an engine's "go perft" against them
+  chess-cli perft-bisect --engine E [--fen FEN] --depth N
+                                find the position where an engine's move generator goes wrong
+  chess-cli uci-check --engine E [--quick] [--only ID,ID...]
+                                check an engine against the UCI protocol
+  chess-cli analyse --engine E [--fen FEN] [--moves M...] [--depth N | --movetime MS | --nodes N]
+                    [--multipv K]
+  chess-cli bench [--runs N]    single-threaded speed (internal perft, best of N runs)
   chess-cli help
+
+Every command takes --json for machine-readable output.
 
 Engines (give two or more):
   --engine NAME                 an engine from the GUI's engine list
@@ -69,8 +83,9 @@ Output:
   --verbose                     print every game result and runner message
   --json                        print the results as JSON on stdout (progress goes to stderr)
 
-Exit codes: 0 finished (sprt: H1 accepted), 1 sprt: H0 accepted, 2 usage or start error,
-3 sprt: games ran out before a decision, 130 interrupted (the state file can resume it).
+Exit codes: 0 success (sprt: H1 accepted), 1 a check failed (perft mismatch, movegen bug found,
+UCI check FAIL; sprt: H0 accepted), 2 usage or start error, 3 sprt: games ran out before a
+decision, 130 interrupted (the match state file can resume it).
 )";
 
 static bool parseDouble(const std::string& s, double& v){
@@ -108,6 +123,39 @@ static int fail(const std::string& msg){
     return EXIT_USAGE;
 }
 
+// Parses "--engine NAME" or "--engine cmd=PATH [key=value]..." starting at a[i]
+// ("--engine"); leaves i on the last token used. Returns -1 on success.
+static int parseEngine(const std::vector<std::string>& a, size_t& i, EngineConfig& c,
+                       EngineRegistry& reg, bool& regLoaded){
+    if (i + 1 >= a.size()) return fail("--engine needs a name or cmd=PATH");
+    if (a[i + 1].rfind("cmd=", 0) != 0){
+        if (!regLoaded){ reg.load((fs::u8path(userConfigDir()) / "engines.json").u8string()); regLoaded = true; }
+        const EngineConfig* found = reg.findByName(a[++i]);
+        if (!found) return fail("no engine named '" + a[i] + "' in " + userConfigDir() + "/engines.json");
+        c = *found;
+        return -1;
+    }
+    c = EngineConfig{};
+    while (i + 1 < a.size() && a[i + 1].rfind("--", 0) != 0){
+        std::string t = a[++i];
+        size_t eq = t.find('=');
+        if (eq == std::string::npos) return fail("engine setting '" + t + "' is not key=value");
+        std::string key = t.substr(0, eq), val = t.substr(eq + 1);
+        if (key == "cmd") c.path = val;
+        else if (key == "name") c.name = val;
+        else if (key == "dir") c.workingDir = val;
+        else if (key == "args"){
+            std::string err; c.args = splitArgs(val, &err);
+            if (!err.empty()) return fail("args: " + err);
+        }
+        else if (key.rfind("option.", 0) == 0) c.setOption(key.substr(7), val);
+        else return fail("unknown engine setting '" + key + "'");
+    }
+    if (c.path.empty()) return fail("--engine needs cmd=PATH");
+    if (c.name.empty()) c.name = fs::u8path(c.path).filename().u8string();
+    return -1;
+}
+
 // Parses everything after the subcommand. Returns -1 on success, else an exit code.
 static int parseMatchArgs(const std::vector<std::string>& a, CliOptions& o){
     EngineRegistry reg;
@@ -120,32 +168,9 @@ static int parseMatchArgs(const std::vector<std::string>& a, CliOptions& o){
         const std::string& k = a[i];
         std::string v;
         if (k == "--engine"){
-            if (i + 1 >= a.size()) return fail("--engine needs a name or cmd=PATH");
-            if (a[i + 1].rfind("cmd=", 0) != 0){
-                if (!regLoaded){ reg.load((fs::u8path(userConfigDir()) / "engines.json").u8string()); regLoaded = true; }
-                const EngineConfig* c = reg.findByName(a[++i]);
-                if (!c) return fail("no engine named '" + a[i] + "' in " + userConfigDir() + "/engines.json");
-                o.s.engines.push_back(*c);
-                continue;
-            }
             EngineConfig c;
-            while (i + 1 < a.size() && a[i + 1].rfind("--", 0) != 0){
-                std::string t = a[++i];
-                size_t eq = t.find('=');
-                if (eq == std::string::npos) return fail("engine setting '" + t + "' is not key=value");
-                std::string key = t.substr(0, eq), val = t.substr(eq + 1);
-                if (key == "cmd") c.path = val;
-                else if (key == "name") c.name = val;
-                else if (key == "dir") c.workingDir = val;
-                else if (key == "args"){
-                    std::string err; c.args = splitArgs(val, &err);
-                    if (!err.empty()) return fail("args: " + err);
-                }
-                else if (key.rfind("option.", 0) == 0) c.setOption(key.substr(7), val);
-                else return fail("unknown engine setting '" + key + "'");
-            }
-            if (c.path.empty()) return fail("--engine needs cmd=PATH");
-            if (c.name.empty()) c.name = fs::u8path(c.path).filename().u8string();
+            int r = parseEngine(a, i, c, reg, regLoaded);
+            if (r >= 0) return r;
             o.s.engines.push_back(c);
         }
         else if (k == "--mode"){
@@ -314,6 +339,256 @@ static int runMatch(const std::vector<std::string>& args, bool sprt){
     return EXIT_OK;
 }
 
+// ---------------------------------------------------------------- engine tools
+struct ToolArgs {
+    bool hasEngine = false;
+    EngineConfig engine;
+    std::string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    bool fenSet = false;
+    std::vector<std::string> moves;
+    int depth = -1, movetime = -1, multipv = 1, runs = 3;
+    long long nodes = -1;
+    std::string suite;
+    bool divide = false, json = false, quick = false;
+    std::vector<std::string> only;
+};
+
+using json = nlohmann::json;
+
+static int parseToolArgs(const std::vector<std::string>& a, ToolArgs& t, const std::vector<std::string>& allowed){
+    EngineRegistry reg;
+    bool regLoaded = false;
+    auto allow = [&](const std::string& k){ return std::find(allowed.begin(), allowed.end(), k) != allowed.end(); };
+    for (size_t i = 0; i < a.size(); i++){
+        const std::string& k = a[i];
+        if (!allow(k)) return fail("unknown option '" + k + "'");
+        auto value = [&](std::string& v){ if (i + 1 >= a.size()) return false; v = a[++i]; return true; };
+        std::string v;
+        if (k == "--engine"){ int r = parseEngine(a, i, t.engine, reg, regLoaded); if (r >= 0) return r; t.hasEngine = true; }
+        else if (k == "--fen"){ if (!value(t.fen)) return fail("--fen needs a FEN"); t.fenSet = true; }
+        else if (k == "--moves"){ while (i + 1 < a.size() && a[i + 1].rfind("--", 0) != 0) t.moves.push_back(a[++i]); }
+        else if (k == "--depth"){ if (!value(v) || !parseInt(v, t.depth) || t.depth < 1) return fail("bad --depth"); }
+        else if (k == "--movetime"){ if (!value(v) || !parseInt(v, t.movetime) || t.movetime < 1) return fail("bad --movetime"); }
+        else if (k == "--nodes"){
+            if (!value(v)) return fail("--nodes needs a value");
+            char* end = nullptr; t.nodes = std::strtoll(v.c_str(), &end, 10);
+            if (!end || *end || t.nodes < 1) return fail("bad --nodes");
+        }
+        else if (k == "--multipv"){ if (!value(v) || !parseInt(v, t.multipv) || t.multipv < 1) return fail("bad --multipv"); }
+        else if (k == "--runs"){ if (!value(v) || !parseInt(v, t.runs) || t.runs < 1) return fail("bad --runs"); }
+        else if (k == "--suite"){ if (!value(t.suite)) return fail("--suite needs a file"); }
+        else if (k == "--only"){ if (!value(v)) return fail("--only needs check ids"); t.only = splitOn(v, ','); }
+        else if (k == "--divide") t.divide = true;
+        else if (k == "--quick") t.quick = true;
+        else if (k == "--json") t.json = true;
+    }
+    bool ok = false;
+    Position p = Position::fromFEN(t.fen, &ok);
+    if (!ok) return fail("invalid FEN '" + t.fen + "'");
+    for (auto& m : t.moves){
+        Move mv;
+        if (!p.uciToMove(m, mv)) return fail("illegal move '" + m + "'");
+        p.makeMove(mv);
+    }
+    return -1;
+}
+
+static Position toolPosition(const ToolArgs& t){
+    Position p = Position::fromFEN(t.fen);
+    for (auto& m : t.moves){ Move mv; p.uciToMove(m, mv); p.makeMove(mv); }
+    return p;
+}
+
+static bool startEngine(UciEngine& e, const EngineConfig& c){
+    if (e.start(c)) return true;
+    std::fprintf(stderr, "chess-cli: cannot start %s: %s\n", c.path.c_str(), e.lastError().c_str());
+    return false;
+}
+
+static int cmdPerft(const std::vector<std::string>& args){
+    ToolArgs t;
+    int rc = parseToolArgs(args, t, {"--engine", "--fen", "--moves", "--depth", "--suite", "--divide", "--json"});
+    if (rc >= 0) return rc;
+    if (!t.hasEngine){
+        // the GUI's own verified generator
+        if (t.depth < 1) return fail("perft needs --depth");
+        Position p = toolPosition(t);
+        auto t0 = std::chrono::steady_clock::now();
+        PerftDivide d = internalPerftDivide(p, t.depth);
+        double sec = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+        if (t.json){
+            json j = {{"fen", p.toFEN()}, {"depth", t.depth}, {"nodes", d.total}, {"seconds", sec}};
+            if (t.divide) j["divide"] = d.moves;
+            std::printf("%s\n", j.dump(2).c_str());
+        } else {
+            if (t.divide) for (auto& kv : d.moves) std::printf("%s: %llu\n", kv.first.c_str(), (unsigned long long)kv.second);
+            std::printf("Nodes searched: %lld (depth %d, %.3f s)\n", d.total, t.depth, sec);
+        }
+        return EXIT_OK;
+    }
+    UciEngine e;
+    if (!startEngine(e, t.engine)) return EXIT_USAGE;
+    std::vector<PerftCase> suite;
+    if (!t.suite.empty()){
+        suite = loadEpdSuite(t.suite);
+        if (suite.empty()) return fail("no perft cases in " + t.suite);
+    } else if (t.fenSet || !t.moves.empty() || t.depth > 0){
+        if (t.depth < 1) return fail("perft --engine with --fen needs --depth");
+        Position p = toolPosition(t);
+        PerftCase c; c.fen = p.toFEN(); c.depths = {{t.depth, (uint64_t)internalPerftDivide(p, t.depth).total}};
+        suite.push_back(c);
+    } else suite = builtinPerftSuite();
+    int maxDepth = t.depth > 0 ? t.depth : 99;
+    std::atomic<bool> abortFlag{false};
+    auto results = runEnginePerftSuite(e, suite, maxDepth, [&](int i, int n, const PerftResult& r){
+        if (!t.json)
+            std::printf("[%d/%d] %s  depth %d: %s (expected %llu, engine %lld)\n", i, n, r.pass ? "PASS" : "FAIL",
+                        r.depth, r.fen.c_str(), (unsigned long long)r.expected, r.engineNodes);
+        std::fflush(stdout);
+    }, abortFlag);
+    e.quit();
+    int failed = 0, unsupported = 0;
+    for (auto& r : results){ if (!r.pass) failed++; if (r.engineNodes < 0) unsupported++; }
+    if (t.json){
+        json arr = json::array();
+        for (auto& r : results) arr.push_back({{"fen", r.fen}, {"depth", r.depth}, {"expected", r.expected},
+                                               {"engine", r.engineNodes}, {"pass", r.pass}});
+        std::printf("%s\n", json{{"engine", t.engine.name}, {"cases", arr}, {"failed", failed}}.dump(2).c_str());
+    } else {
+        std::printf("%d of %d passed", (int)results.size() - failed, (int)results.size());
+        if (unsupported) std::printf(" (%d without an answer: does the engine support \"go perft\"?)", unsupported);
+        std::printf("\n");
+        if (failed && !unsupported) std::printf("Run chess-cli perft-bisect on a failing position to find the bug.\n");
+    }
+    return failed ? EXIT_FAILED : EXIT_OK;
+}
+
+static int cmdPerftBisect(const std::vector<std::string>& args){
+    ToolArgs t;
+    int rc = parseToolArgs(args, t, {"--engine", "--fen", "--moves", "--depth", "--json"});
+    if (rc >= 0) return rc;
+    if (!t.hasEngine) return fail("perft-bisect needs --engine");
+    if (t.depth < 1) return fail("perft-bisect needs --depth");
+    UciEngine e;
+    if (!startEngine(e, t.engine)) return EXIT_USAGE;
+    std::atomic<bool> abortFlag{false};
+    BisectReport r = perftBisect(e, toolPosition(t).toFEN(), t.depth, [&](const BisectStep& st){
+        if (!t.json)
+            std::printf("depth %d  %s  expected %llu, engine %lld%s\n", st.depth, st.fen.c_str(),
+                        (unsigned long long)st.expected, st.engineNodes,
+                        st.chosenMove.empty() ? "" : ("  -> " + st.chosenMove).c_str());
+        std::fflush(stdout);
+    }, abortFlag);
+    e.quit();
+    if (t.json){
+        json steps = json::array();
+        for (auto& st : r.steps) steps.push_back({{"fen", st.fen}, {"depth", st.depth}, {"expected", st.expected},
+                                                  {"engine", st.engineNodes}, {"move", st.chosenMove}});
+        std::printf("%s\n", json{{"agrees", r.engineAgrees}, {"found", r.found}, {"error", r.error},
+                                 {"bugFen", r.bugFen}, {"missing", r.missing}, {"extra", r.extra},
+                                 {"steps", steps}, {"summary", r.summary}}.dump(2).c_str());
+    } else std::printf("%s\n", r.summary.c_str());
+    if (r.error) return EXIT_USAGE;
+    return r.engineAgrees ? EXIT_OK : EXIT_FAILED;
+}
+
+static int cmdUciCheck(const std::vector<std::string>& args){
+    ToolArgs t;
+    int rc = parseToolArgs(args, t, {"--engine", "--quick", "--only", "--json"});
+    if (rc >= 0) return rc;
+    if (!t.hasEngine) return fail("uci-check needs --engine");
+    for (auto& id : t.only)
+        if (std::find(uciCheckIds().begin(), uciCheckIds().end(), id) == uciCheckIds().end())
+            return fail("unknown check '" + id + "'");
+    UciCheckOptions opt;
+    opt.quick = t.quick;
+    opt.only = t.only;
+    std::atomic<bool> abortFlag{false};
+    opt.abort = &abortFlag;
+    opt.progress = [&](const CheckResult& r){
+        if (!t.json) std::printf("%-5s %-28s %s\n", checkStatusName(r.status), r.id.c_str(), r.title.c_str());
+        std::fflush(stdout);
+    };
+    auto results = runUciChecks(t.engine, opt);
+    CheckSummary sum = summarize(results);
+    if (t.json){
+        json arr = json::array();
+        for (auto& r : results) arr.push_back({{"id", r.id}, {"title", r.title}, {"status", checkStatusName(r.status)},
+                                               {"detail", r.detail}, {"ms", r.ms}});
+        std::printf("%s\n", json{{"engine", t.engine.name}, {"checks", arr}, {"pass", sum.pass}, {"warn", sum.warn},
+                                 {"fail", sum.fail}, {"skip", sum.skip}}.dump(2).c_str());
+    } else {
+        std::printf("\n");
+        for (auto& r : results)
+            if (r.status == CheckStatus::Fail || r.status == CheckStatus::Warn)
+                std::printf("%s %s: %s\n", checkStatusName(r.status), r.id.c_str(), r.detail.c_str());
+        std::printf("%d passed, %d warnings, %d failed, %d skipped\n", sum.pass, sum.warn, sum.fail, sum.skip);
+    }
+    return sum.fail ? EXIT_FAILED : EXIT_OK;
+}
+
+static int cmdAnalyse(const std::vector<std::string>& args){
+    ToolArgs t;
+    int rc = parseToolArgs(args, t, {"--engine", "--fen", "--moves", "--depth", "--movetime", "--nodes", "--multipv", "--json"});
+    if (rc >= 0) return rc;
+    if (!t.hasEngine) return fail("analyse needs --engine");
+    int limits = (t.depth > 0) + (t.movetime > 0) + (t.nodes > 0);
+    if (limits > 1) return fail("give one of --depth, --movetime, --nodes");
+    if (limits == 0) t.movetime = 1000;
+    if (t.multipv > 1) t.engine.setOption("MultiPV", std::to_string(t.multipv));
+    UciEngine e;
+    if (!startEngine(e, t.engine)) return EXIT_USAGE;
+    Position p = toolPosition(t);
+    e.newGame();
+    e.setPosition(p.toFEN(), {});
+    auto t0 = std::chrono::steady_clock::now();
+    std::string best = t.depth > 0 ? e.goDepth(t.depth) : t.nodes > 0 ? e.goNodes(t.nodes) : e.goMovetime(t.movetime);
+    long long ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
+    auto pvs = e.lastPvs();
+    EngineInfo inf = e.lastInfo();
+    std::string ponder = e.lastPonder();
+    bool alive = e.alive();
+    e.quit();
+    if (best.empty()){
+        std::fprintf(stderr, "chess-cli: the engine returned no move%s\n", alive ? "" : " (it crashed)");
+        return EXIT_FAILED;
+    }
+    auto san = [&](const std::string& pv){
+        Position q = p; std::string out; std::istringstream in(pv); std::string u; int n = 0;
+        while (in >> u && n < 12){
+            Move m;
+            if (!q.uciToMove(u, m)) break;
+            out += (out.empty() ? "" : " ") + q.moveToSAN(m);
+            q.makeMove(m); n++;
+        }
+        return out;
+    };
+    if (t.json){
+        json lines = json::array();
+        for (auto& l : pvs){
+            if (!l.valid) continue;
+            json x = {{"multipv", l.multipv}, {"depth", l.depth}, {"seldepth", l.seldepth}, {"nodes", l.nodes},
+                      {"nps", l.nps}, {"pv", l.pv}};
+            if (l.isMate) x["mate"] = l.mateIn; else x["cp"] = l.scoreCp;
+            lines.push_back(x);
+        }
+        std::printf("%s\n", json{{"fen", p.toFEN()}, {"bestmove", best}, {"ponder", ponder}, {"ms", ms},
+                                 {"depth", inf.depth}, {"nodes", inf.nodes}, {"lines", lines}}.dump(2).c_str());
+    } else {
+        std::printf("%s\n", p.toFEN().c_str());
+        for (auto& l : pvs){
+            if (!l.valid) continue;
+            std::string sc = l.isMate ? "mate " + std::to_string(l.mateIn) : (l.scoreCp >= 0 ? "+" : "") + std::to_string(l.scoreCp) + " cp";
+            std::printf("%d. depth %d/%d  %s  nodes %lld  %s\n", l.multipv, l.depth, l.seldepth, sc.c_str(), l.nodes,
+                        san(l.pv).c_str());
+        }
+        Move bm;
+        std::printf("bestmove %s (%s)%s, %lld ms\n", best.c_str(), p.uciToMove(best, bm) ? p.moveToSAN(bm).c_str() : "?",
+                    ponder.empty() ? "" : (" ponder " + ponder).c_str(), ms);
+    }
+    return EXIT_OK;
+}
+
 int main(int argc, char** argv){
     std::vector<std::string> args(argv + 1, argv + argc);
     if (args.empty() || args[0] == "help" || args[0] == "--help" || args[0] == "-h"){
@@ -336,6 +611,10 @@ int main(int argc, char** argv){
                          (unsigned long long)b.nodes, b.bestSeconds, runs, b.nps);
         return EXIT_OK;
     }
+    if (cmd == "perft") return cmdPerft(args);
+    if (cmd == "perft-bisect") return cmdPerftBisect(args);
+    if (cmd == "uci-check") return cmdUciCheck(args);
+    if (cmd == "analyse" || cmd == "analyze") return cmdAnalyse(args);
     if (cmd == "match") return runMatch(args, false);
     if (cmd == "sprt") return runMatch(args, true);
     return fail("unknown command '" + cmd + "'");
