@@ -48,6 +48,8 @@ if(TARGET chess-cli)
     cli_test(cli_usage 2 "unknown option" "${cli}|match|--engine|${mock}|--engine|${mock}|--bogus")
     cli_test(cli_match 0 "\"gamesPlayed\": 8"
              "${cli}|match|--engine|${mock}|name=A|--engine|${mock}|name=B|--tc|1+0.01|--games|8|--concurrency|2|--json")
+    cli_test(cli_chess960 0 "960 openings.*4 of 4 games played"
+             "${cli}|match|--chess960|--random|--seed|7|--engine|${mock}|name=A|--engine|${mock}|name=B|--tc|1+0.01|--games|4|--concurrency|2|--verbose")
     cli_test(cli_rr 0 "Standings"
              "${cli}|match|--mode|roundrobin|--engine|${mock}|name=A|--engine|${mock}|name=B|--engine|${mock}|name=C|--tc|1+0.01|--games|2|--concurrency|3")
     # an engine that forfeits every game: the SPRT accepts H0 (exit code 1)
