@@ -1852,9 +1852,10 @@ void App::render(){
             }
         }
         std::string st;
-        if (game.result!=GameResult::ONGOING)
+        if (game.result!=GameResult::ONGOING){
             st = game.resultString();
             if (game.reason != ResultReason::NONE) st += "  ("+resultReasonText(game.reason)+")";
+        }
         else if (viewPly>=0)
             st = "Viewing move "+std::to_string(viewPly)+"/"+std::to_string(game.moves.size())+"  (>| returns to live)";
         else if (mode==GameMode::HUMAN_VS_ENGINE && game.pos.whiteToMove!=humanIsWhite)
