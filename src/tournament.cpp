@@ -525,7 +525,8 @@ std::string MatchRunner::resultsJson(){
     }
     json pairs = json::array();
     for (auto& ps : snap_.pairings){
-        EloEstimate e = ps.penta.pairs() > 0 ? eloFromPenta(ps.penta) : eloFromWdl(ps.wdl);
+        EloEstimate e = eloFromPenta(ps.penta);
+        if (!e.valid) e = eloFromWdl(ps.wdl);
         pairs.push_back({{"a", engineNames_[ps.a]}, {"b", engineNames_[ps.b]},
                          {"wins", ps.wdl.wins}, {"draws", ps.wdl.draws}, {"losses", ps.wdl.losses},
                          {"penta", {ps.penta.ll, ps.penta.ld, ps.penta.wl + ps.penta.dd, ps.penta.wd, ps.penta.ww}},
