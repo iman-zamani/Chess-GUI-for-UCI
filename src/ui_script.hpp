@@ -3,7 +3,7 @@
  * `chess-gui --script FILE` replays a list of input steps against the live
  * window, one step per frame. Used to take documentation screenshots and to
  * smoke-test the GUI headlessly (e.g. under Xvfb in CI). Coordinates are in
- * logical UI units (the 1280x800 design canvas), not physical pixels.
+ * logical UI units (pixels divided by the HiDPI scale), not physical pixels.
  *
  *   wait <ms>                  pause
  *   move <x> <y>               move the mouse
@@ -13,8 +13,13 @@
  *   text <string...>           type characters
  *   shot <file.png>            save the next rendered frame (relative paths are
  *                              resolved against the directory chess-gui was started from)
- *   expect <fen prefix>        fail (exit code 1) unless the current game position's
- *                              FEN starts with the given text
+ *   expect <fen prefix>        fail (exit code 1) unless the FEN of the position shown
+ *                              on the game board starts with the given text
+ *   click-item <label>         click the ImGui widget with this label (text before "##",
+ *                              or the full "label##id"); fails if there is none
+ *   wait-item <ms> <label>     wait until such a widget exists (fails after <ms>)
+ *   click-square <sq>          click a square of the board on screen (e.g. e2)
+ *   drag-square <from> <to>    drag between two squares of the board on screen
  *   quit                       close the window
  *   # comment
  */
@@ -44,7 +49,12 @@ inline bool loadUiScript(const std::string& path, std::vector<UiScriptStep>& out
         if (b == std::string::npos || line[b]=='#') continue;
         std::istringstream ss(line.substr(b));
         UiScriptStep s; ss >> s.op;
-        if (s.op=="text" || s.op=="shot" || s.op=="expect"){
+        if (s.op=="wait-item"){
+            float v = 0; ss >> v; s.nums.push_back(v);
+            std::getline(ss, s.arg);
+            if (!s.arg.empty() && s.arg[0]==' ') s.arg.erase(0, 1);
+        } else if (s.op=="text" || s.op=="shot" || s.op=="expect" || s.op=="click-item"
+                   || s.op=="click-square" || s.op=="drag-square"){
             std::getline(ss, s.arg);
             if (!s.arg.empty() && s.arg[0]==' ') s.arg.erase(0, 1);
         } else if (s.op=="key"){
@@ -54,8 +64,10 @@ inline bool loadUiScript(const std::string& path, std::vector<UiScriptStep>& out
         }
         size_t need = s.op=="wait" ? 1 : (s.op=="move"||s.op=="click") ? 2 : s.op=="drag" ? 4 : 0;
         bool known = s.op=="wait"||s.op=="move"||s.op=="click"||s.op=="drag"||s.op=="key"
-                  || s.op=="text"||s.op=="shot"||s.op=="expect"||s.op=="quit";
-        bool needArg = s.op=="key"||s.op=="shot"||s.op=="expect";
+                  || s.op=="text"||s.op=="shot"||s.op=="expect"||s.op=="quit"
+                  || s.op=="click-item"||s.op=="wait-item"||s.op=="click-square"||s.op=="drag-square";
+        bool needArg = s.op=="key"||s.op=="shot"||s.op=="expect"||s.op=="click-item"||s.op=="wait-item"
+                    || s.op=="click-square"||s.op=="drag-square";
         if (!known || s.nums.size() < need || (needArg && s.arg.empty())){
             if (err) *err = path + ":" + std::to_string(no) + ": bad step '" + line + "'";
             return false;

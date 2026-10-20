@@ -32,19 +32,12 @@ void EngineManagerWindow::draw(EngineRegistry& reg, const Callbacks& cb){
         pending_.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
         results_[pendingPath_] = pending_.get();
 
-    ImGuiIO& io = ImGui::GetIO();
-    ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSize(io.DisplaySize);
-    ImGui::Begin("Engines", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-                 ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings);
     auto& list = reg.engines();
     if (selected_ >= (int)list.size()) selected_ = (int)list.size() - 1;
 
     // ---- left: engine list ----
     float em = ImGui::GetFontSize();
     ImGui::BeginChild("list", ImVec2(em * 16, 0), ImGuiChildFlags_Borders);
-    if (ImGui::Button("Back")) { if (cb.close) cb.close(); }
-    ImGui::SameLine();
     if (ImGui::Button("Add")){
         EngineConfig c; c.name = "New engine";
         if (cb.browseFile){
@@ -92,7 +85,6 @@ void EngineManagerWindow::draw(EngineRegistry& reg, const Callbacks& cb){
     if (selected_ >= 0 && selected_ < (int)reg.engines().size())
         drawEditor(reg.engines()[selected_], cb);
     ImGui::EndChild();
-    ImGui::End();
 }
 
 void EngineManagerWindow::drawEditor(EngineConfig& c, const Callbacks& cb){

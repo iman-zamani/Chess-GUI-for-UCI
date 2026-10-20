@@ -1,29 +1,39 @@
-# GUI smoke test: start a human-vs-human game from the menu and play
-# Scholar's mate with clicks and drags. Run: chess-gui --script tests/gui_smoke.txt
-wait 500
-click 640 154
-wait 300
-click 448 638
-click 448 448
-wait 50
-drag 448 162 448 352
-wait 50
-click 542 732
-click 258 448
-wait 50
-drag 162 68 258 258
-wait 50
-click 352 732
-click 732 352
-wait 50
-drag 638 68 542 258
-wait 50
-click 732 352
-click 542 162
-wait 50
+# GUI smoke test: start a human-vs-human game from the home screen, play
+# Scholar's mate with clicks and drags, check the position, take a move back,
+# then visit the other screens. Run: chess-gui --script tests/gui_smoke.txt
+wait-item 5000 Human vs human
+click-item Human vs human
+wait-item 3000 Takeback
+click-square e2
+click-square e4
+drag-square e7 e5
+click-square f1
+click-square c4
+drag-square b8 c6
+click-square d1
+click-square h5
+drag-square g8 f6
+click-square h5
+click-square f7
+wait 100
 expect r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 4
 key F
 wait 200
 shot gui_smoke.png
+click-item Takeback
 wait 100
+expect r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 4 4
+key Escape
+wait-item 3000 Engine testing tools
+click-item Engine testing tools
+wait-item 3000 Run self-test
+key Escape
+wait-item 3000 Board editor
+click-item Board editor
+wait-item 3000 Clear board
+click-item Clear board
+key Escape
+wait-item 3000 Engines...
+click-item Engines...
+wait-item 3000 Add
 quit

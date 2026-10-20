@@ -3,9 +3,11 @@
 #include "chess.hpp"
 #include "engine_config.hpp"
 #include "uci_engine.hpp"
+#include "settings.hpp"
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <sstream>
 
 namespace fs = std::filesystem;
 static const std::string kMock = MOCK_ENGINE_PATH;
@@ -250,4 +252,25 @@ TEST_CASE("engine/args-split-join"){
     CHECK(splitArgs(joinArgs(odd)) == odd);
     splitArgs("'open", &err);
     CHECK(!err.empty());
+}
+
+TEST_CASE("engine/settings-roundtrip-keeps-unknown-keys"){
+    fs::path d = scratchDir("settings");
+    std::string file = (d / "settings.json").u8string();
+    { std::ofstream f(fs::u8path(file)); f << R"({"tcBaseMs": 180000, "futureKey": {"a": 1}, "accCount": "oops"})"; }
+    Settings s;
+    std::string err;
+    REQUIRE(s.load(file, &err));
+    CHECK_EQ(s.tcBaseMs, 180000);
+    CHECK_EQ(s.accCount, 100);                 // wrong type: default kept
+    s.theme = "light"; s.perftEngine = "Dev build";
+    REQUIRE(s.save(file, &err));
+    Settings t;
+    REQUIRE(t.load(file, &err));
+    CHECK_EQ(t.theme, std::string("light"));
+    CHECK_EQ(t.perftEngine, std::string("Dev build"));
+    std::ifstream f(fs::u8path(file)); std::stringstream ss; ss << f.rdbuf();
+    CHECK(ss.str().find("futureKey") != std::string::npos);
+    { std::ofstream g(fs::u8path(file)); g << "[1,2"; }
+    CHECK(!t.load(file, &err));
 }

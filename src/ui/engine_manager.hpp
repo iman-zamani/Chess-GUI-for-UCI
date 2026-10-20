@@ -15,10 +15,9 @@ class EngineManagerWindow {
 public:
     struct Callbacks {
         std::function<void()> save;                       // persist the registry
-        std::function<void()> close;                      // leave the screen
         std::function<std::string(const std::string&)> browseFile;   // may be empty
     };
-    // Draws a full-window panel. `registry` is edited in place.
+    // Draws into the current window. `registry` is edited in place.
     void draw(EngineRegistry& registry, const Callbacks& cb);
     void select(int index){ selected_ = index; }
 

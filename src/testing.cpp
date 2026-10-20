@@ -194,7 +194,7 @@ AccuracyReport runAccuracyTest(
         AccuracyMoveReport m;
         m.refBest = refBest; m.played = played; m.fen = fens[idx];
         for (size_t k=1;k<pvs.size();k++){
-            if (!pvs[k].valid) continue;
+            if (!pvs[k].valid || pvs[k].firstMove()==played) continue;   // not the move it played
             int d = bestScore - lineScore(pvs[k]);
             if (d < 0) d = 0;                        // MultiPV lines can jitter a few cp
             Move am;

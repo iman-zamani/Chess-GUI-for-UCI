@@ -9,9 +9,13 @@ static long long nowMs(){
         clk::now().time_since_epoch()).count();
 }
 
+// "5+0", "3+2", or "10s+0.1" when the base isn't whole minutes (PGN-style
+// "40/..." controls are not modelled).
 std::string TimeControl::label() const{
     std::ostringstream o;
-    o << baseMs/60000 << "+" << incMs/1000;
+    if (baseMs % 60000 == 0) o << baseMs / 60000;
+    else o << baseMs / 1000.0 << "s";
+    o << "+" << incMs / 1000.0;
     return o.str();
 }
 

@@ -220,3 +220,10 @@ TEST_CASE("game/result-reasons"){
     CHECK(g.result == GameResult::BLACK_WINS);
     CHECK(g.reason == ResultReason::NONE);
 }
+
+#include "tournament.hpp"
+TEST_CASE("game/time-control-label"){
+    CHECK_EQ((TimeControl{300000, 0}.label()), std::string("5+0"));
+    CHECK_EQ((TimeControl{180000, 2000}.label()), std::string("3+2"));
+    CHECK_EQ((TimeControl{10000, 100}.label()), std::string("10s+0.1"));
+}
