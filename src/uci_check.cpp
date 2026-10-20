@@ -356,10 +356,18 @@ void timeManagementGame(Check& c, UciEngine& e, int baseMs, int incMs, int moves
         std::string line = readBestmove(e, (int)clock[side] + 5000);
         long long spent = msSince(t0);
         clock[side] -= spent; used[side] += spent;
-        if (clock[side] < 0){
+        // the measured time includes the GUI's and the OS's latency: a small overrun only warns
+        const long long toleranceMs = 50;
+        if (clock[side] < -toleranceMs){
             c.fail(std::string(label) + ": lost on time on move " + std::to_string(moves[side] + 1)
                    + " (" + std::to_string(-clock[side]) + " ms over).");
             lost = true; break;
+        }
+        if (clock[side] < 0){
+            c.warn(std::string(label) + ": move " + std::to_string(moves[side] + 1) + " overran the clock by "
+                   + std::to_string(-clock[side]) + " ms (within the " + std::to_string(toleranceMs)
+                   + " ms allowed for GUI and OS latency; real GUIs may be stricter).");
+            clock[side] = 0;
         }
         clock[side] += incMs;
         std::string why = judgeMove(g.pos, line);
