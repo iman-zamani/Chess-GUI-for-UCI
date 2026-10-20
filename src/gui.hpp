@@ -9,7 +9,10 @@
 #include "tournament.hpp"
 #include "testing.hpp"
 #include "ui_script.hpp"
+#include "settings.hpp"
 #include "ui/engine_manager.hpp"
+#include "ui/board_view.hpp"
+#include "ui/tools_screen.hpp"
 
 // Input event as the app sees it (from SFML or from a --script step).
 struct UiEvent {
@@ -24,7 +27,7 @@ struct UiEvent {
 
 enum class Screen { MENU, GAME, PICK_ENGINE, MATCH_SETUP, MATCH_VIEW,
                     TESTS, TEST_RUN, EDITOR, ENGINE_OPTIONS,
-                    ACC_SETUP, PGN_LOAD, PGN_LIST, ENGINE_MANAGER };
+                    PGN_LOAD, PGN_LIST, ENGINE_MANAGER };
 
 enum class GameMode { HUMAN_VS_HUMAN, HUMAN_VS_ENGINE, ANALYSIS };
 
@@ -67,11 +70,23 @@ public:
     void run();
     bool loadScript(const std::string& path);   // see ui_script.hpp
     bool scriptFailed() const { return scriptFailed_; }
+
+    // ---- services for the screens in src/ui/ ----
+    EngineRegistry& registry(){ return registry_; }
+    void saveEngines();
+    Settings& settings(){ return settings_; }
+    void saveSettings();
+    void toast(const std::string& s){ showToast(s); }
+    void go(Screen s);
+    const PieceSet& pieces() const { return pieceSet; }
 private:
+    Settings settings_;
+    PieceSet pieceSet;
     // ---- scripted input (--script) ----
     std::vector<UiScriptStep> script;
     size_t scriptPos = 0;
     long long scriptWaitUntil = 0;
+    long long scriptItemDeadline = 0;    // wait-item timeout
     std::optional<sf::Vector2f> scriptMouse;
     std::string pendingShot;
     bool scriptFailed_ = false;
@@ -82,11 +97,15 @@ private:
     bool imguiOk = false;
     float imguiScale = 0;                // physical pixels per logical unit the fonts were built for
     sf::Clock imguiClock;
-    bool imguiScreen() const { return screen == Screen::ENGINE_MANAGER; }
+    bool imguiFrameActive = false;       // Update() called, Render()/EndFrame() pending
+    bool imguiScreen() const { return screen == Screen::ENGINE_MANAGER || screen == Screen::TESTS; }
     void setupImGuiFonts();
     void drawImGui();
+    void drawMenuBar();
+    void drawToast();
     void injectImGui(const UiEvent& e);  // --script input for ImGui screens
     EngineManagerWindow engineManager;
+    ToolsScreen tools{*this};
 
     // ---- framework ----
     sf::RenderWindow window;
@@ -96,7 +115,7 @@ private:
     int pieceCell = 150;                 // px per piece in the sprite sheet
     Screen screen = Screen::MENU;
     std::vector<Button> buttons;
-    std::string toast; sf::Clock toastClock;
+    std::string toastText; sf::Clock toastClock;
     bool forceRedraw = true;
 
     void layout();
@@ -105,7 +124,7 @@ private:
     void render();
     void onButton(int id);
     int  activityLevel();
-    void showToast(const std::string& s){ toast = s; toastClock.restart(); forceRedraw=true; }
+    void showToast(const std::string& s){ toastText = s; toastClock.restart(); forceRedraw=true; }
 
     // drawing helpers
     void text(const std::string& s, float x, float y, unsigned size,
@@ -127,9 +146,8 @@ private:
     int  boardSquareAt(sf::Vector2f mouse, float bx, float by, float side, bool flipped) const;
 
     // ---- engines & per-engine UCI option overrides ----
-    EngineRegistry registry;             // engines.json + discovered engines
+    EngineRegistry registry_;            // engines.json + discovered engines
     void scanEngines();
-    void saveEngines();
     void importLegacyOverrides();
     EngineConfig& configFor(const std::string& path);   // adds a default entry if unknown
     EngineConfig makeEntry(int idx);
@@ -242,13 +260,7 @@ private:
     std::vector<std::string> testLines;
     std::string testTitle;
     Screen testReturn = Screen::TESTS;   // where TEST_RUN "Back" goes
-    // accuracy settings
-    int accCount = 100, accTestMs = 500, accRefMs = 1000, accMultiPV = 3;
     void pushTestLine(const std::string& s);
-    void startPerftTest(const EngineConfig& e);
-    void startInternalSelfTest();
-    void startAccuracyTest(const EngineConfig& test, const EngineConfig& ref);
     void startGameReview(const std::string& enginePath);
     std::string copyAllTestLines();
-    EngineConfig accTestEngine;
 };

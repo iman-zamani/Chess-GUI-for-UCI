@@ -2,6 +2,9 @@
 #include "gui.hpp"
 #include <imgui.h>
 #include <imgui-SFML.h>
+#include "ui/item_hooks.hpp"
+#include "ui/widgets.hpp"
+#include "ui/file_dialog.hpp"
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -166,10 +169,17 @@ bool App::init(){
         pieceCell = (int)(pieceTexture.getSize().x / 6);
         if (pieceCell <= 0) pieceCell = 150;
     }
+    if (!pieceSet.load("Resources/pieceTexture@2x.png")) pieceSet.load("Resources/pieceTexture.png");
+    {
+        std::string err;
+        if (!settings_.load((fs::u8path(userConfigDir()) / "settings.json").u8string(), &err))
+            showToast("Could not read settings.json: " + err);
+    }
     scanEngines();
     game.reset(Position::startpos());
     editPos = Position::startpos();
-    tc = TimeControl{300000,0};
+    tc = TimeControl{settings_.tcBaseMs, settings_.tcIncMs};
+    arrowsN = std::max(1, std::min(5, settings_.analysisMultiPV));
     layout();
     return true;
 }
@@ -177,7 +187,7 @@ bool App::init(){
 int App::activityLevel(){
     if (dragging || editorPainting || handFrom>=0) return 2;
     bool bg = false;
-    if (!toast.empty() && toastClock.getElapsedTime().asSeconds() < 3.2f) bg = true;
+    if (!toastText.empty() && toastClock.getElapsedTime().asSeconds() < 3.2f) bg = true;
     if (screen==Screen::GAME &&
         (clocksRunning || oppState!=0 || (analysing && anaCtl))) bg = true;
     if (screen==Screen::MATCH_VIEW && (runner.running() || judgeCtl)) bg = true;
@@ -203,6 +213,8 @@ void App::run(){
         update();
         if (imguiOk && imguiScreen()){         // immediate-mode: draw every frame
             sf::Vector2u ws = window.getSize();
+            uiitems::beginFrame();
+            imguiFrameActive = true;
             if (scriptMouse)
                 ImGui::SFML::Update(sf::Vector2i(int(scriptMouse->x * ws.x / WW), int(scriptMouse->y * ws.y / WH)),
                                     sf::Vector2f(ws), imguiClock.restart());
@@ -453,22 +465,22 @@ void App::drawMoveList(float x, float y, float w, float h,
 void App::scanEngines(){
     std::string file = (fs::u8path(userConfigDir()) / "engines.json").u8string();
     std::string err;
-    if (!registry.load(file, &err)) showToast("Could not read engines.json: " + err);
+    if (!registry_.load(file, &err)) showToast("Could not read engines.json: " + err);
     importLegacyOverrides();
-    registry.discover("Resources/engines");
+    registry_.discover("Resources/engines");
     std::error_code ec;
     for (const char* p : {"/usr/games/stockfish","/usr/bin/stockfish",
                           "/usr/local/bin/stockfish","/opt/homebrew/bin/stockfish",
                           "C:\\stockfish\\stockfish.exe"})
-        if (fs::exists(p, ec) && !registry.findByPath(p)){
+        if (fs::exists(p, ec) && !registry_.findByPath(p)){
             EngineConfig c; c.path = p; c.name = fs::path(p).filename().string(); c.discovered = true;
-            registry.add(c);
+            registry_.add(c);
         }
 }
 void App::saveEngines(){
     std::string file = (fs::u8path(userConfigDir()) / "engines.json").u8string();
     std::string err;
-    if (!registry.save(file, &err)) showToast("Could not save engines.json: " + err);
+    if (!registry_.save(file, &err)) showToast("Could not save engines.json: " + err);
 }
 // Before engines.json existed, option overrides lived in engine_options.cfg
 // (path TAB option TAB value) next to the executable. Fold them in once.
@@ -490,13 +502,13 @@ void App::importLegacyOverrides(){
     }
 }
 EngineConfig& App::configFor(const std::string& path){
-    if (EngineConfig* c = registry.findByPath(path)) return *c;
+    if (EngineConfig* c = registry_.findByPath(path)) return *c;
     EngineConfig c; c.path = path; c.name = fs::u8path(path).filename().u8string();
-    registry.add(c);
-    return registry.engines().back();
+    registry_.add(c);
+    return registry_.engines().back();
 }
 EngineConfig App::makeEntry(int idx){
-    return registry.engines()[idx];
+    return registry_.engines()[idx];
 }
 void App::setOverride(const std::string& path, const std::string& name, const std::string& val){
     EngineConfig& c = configFor(path);
@@ -505,7 +517,7 @@ void App::setOverride(const std::string& path, const std::string& name, const st
     saveEngines();
 }
 std::string App::overrideOrDefault(const std::string& path, const UciOption& o){
-    if (EngineConfig* c = registry.findByPath(path))
+    if (EngineConfig* c = registry_.findByPath(path))
         if (const std::string* v = c->option(o.name)) return *v;
     return o.defVal;
 }
@@ -581,9 +593,9 @@ void App::layout(){
         break; }
     case Screen::PICK_ENGINE: {
         float w = WW-240, y=110;
-        for (size_t i=0;i<registry.engines().size() && i<12;i++){
+        for (size_t i=0;i<registry_.engines().size() && i<12;i++){
             buttons.push_back(mk(120, y, w-110, 38,
-                registry.engines()[i].name + "   (" + registry.engines()[i].path + ")", 300+(int)i));
+                registry_.engines()[i].name + "   (" + registry_.engines()[i].path + ")", 300+(int)i));
             buttons.push_back(mk(120+w-104, y, 104, 38, "Options...", 340+(int)i));
             y+=46;
         }
@@ -595,10 +607,10 @@ void App::layout(){
         break; }
     case Screen::MATCH_SETUP: {
         float w=WW-240, y=96;
-        for (size_t i=0;i<registry.engines().size() && i<6;i++){
+        for (size_t i=0;i<registry_.engines().size() && i<6;i++){
             bool sel = std::find(matchSelection.begin(),matchSelection.end(),(int)i)!=matchSelection.end();
             buttons.push_back(mk(120, y, w, 34,
-                registry.engines()[i].name + "   (" + registry.engines()[i].path + ")", 400+(int)i, sel));
+                registry_.engines()[i].name + "   (" + registry_.engines()[i].path + ")", 400+(int)i, sel));
             y+=40;
         }
         y+=24;                                     // label line: games / TC
@@ -635,34 +647,6 @@ void App::layout(){
         buttons.push_back(mk(WW-170, 56, 150, 32, "Save PGNs", 501));
         buttons.push_back(mk(WW-170, 96, 150, 32, "Copy log", 502));
         buttons.push_back(mk(WW-170, 136, 150, 32, "Flip board", 503, matchFlipped));
-        break; }
-    case Screen::TESTS: {
-        float w=520, y=170;
-        buttons.push_back(mk(cx-w/2, y, w, 46, "1. Self-test GUI move generator (perft)", 600)); y+=58;
-        buttons.push_back(mk(cx-w/2, y, w, 46, "2. Test YOUR engine's move generator (go perft)", 601)); y+=58;
-        buttons.push_back(mk(cx-w/2, y, w, 46, "3. Accuracy test vs reference engine", 602)); y+=58;
-        buttons.push_back(mk(cx-w/2, y+20, 160, 40, "Back", 699));
-        break; }
-    case Screen::ACC_SETUP: {
-        float y=150, x0=340;
-        const int counts[5] = {25,100,250,500,1000};
-        for (int i=0;i<5;i++)
-            buttons.push_back(mk(x0+i*96, y, 88, 34, std::to_string(counts[i]), 620+i, accCount==counts[i]));
-        y+=76;
-        const int tms[4] = {100,250,500,1000};
-        for (int i=0;i<4;i++)
-            buttons.push_back(mk(x0+i*96, y, 88, 34, std::to_string(tms[i])+"ms", 630+i, accTestMs==tms[i]));
-        y+=76;
-        const int rms[4] = {250,500,1000,2000};
-        for (int i=0;i<4;i++)
-            buttons.push_back(mk(x0+i*96, y, 88, 34, std::to_string(rms[i])+"ms", 640+i, accRefMs==rms[i]));
-        y+=76;
-        const int mpv[3] = {1,3,5};
-        for (int i=0;i<3;i++)
-            buttons.push_back(mk(x0+i*96, y, 88, 34, std::to_string(mpv[i]), 650+i, accMultiPV==mpv[i]));
-        y+=80;
-        buttons.push_back(mk(x0, y, 260, 42, "Continue: pick engines", 660));
-        buttons.push_back(mk(x0+280, y, 140, 42, "Back", 661));
         break; }
     case Screen::TEST_RUN: {
         buttons.push_back(mk(WW-170, 16, 150, 32, testRunning? "Abort" : "Back", 700));
@@ -1029,101 +1013,6 @@ std::string App::copyAllTestLines(){
     for (auto& l : testLines) all += l + "\n";
     return all;
 }
-void App::startInternalSelfTest(){
-    testAbort=false; testRunning=true; testReturn=Screen::TESTS;
-    { std::lock_guard<std::mutex> lk(testMx); testLines.clear(); }
-    testTitle = "GUI move generator self-test (verified perft suite)";
-    if (testThread.joinable()) testThread.join();
-    testThread = std::thread([this](){
-        auto suite = loadEpdSuite("Resources/perftsuite.epd");
-        pushTestLine(suite.empty()
-            ? "Using built-in suite (put perftsuite.epd in Resources/ for the 100-position file)"
-            : "Loaded Resources/perftsuite.epd: " + std::to_string(suite.size()) + " positions");
-        if (suite.empty()) suite = builtinPerftSuite();
-        bool all = runInternalPerftSelfTest(suite, 5,
-            [this](int i,int n,bool pass){
-                pushTestLine("["+std::to_string(i)+"/"+std::to_string(n)+"] "+(pass?"OK":"FAIL"));
-            }, testAbort);
-        pushTestLine(all? ">>> ALL PASSED - internal generator verified." : ">>> FAILURES FOUND.");
-        testRunning=false;
-    });
-}
-void App::startPerftTest(const EngineConfig& ee){
-    testAbort=false; testRunning=true; testReturn=Screen::TESTS;
-    { std::lock_guard<std::mutex> lk(testMx); testLines.clear(); }
-    testTitle = "Engine move-generator test: " + ee.name;
-    if (testThread.joinable()) testThread.join();
-    testThread = std::thread([this,ee](){
-        UciEngine e;
-        if (!e.start(ee)){ pushTestLine("Cannot start engine: "+e.lastError()); testRunning=false; return; }
-        for (auto& o : ee.options) e.setOption(o.first, o.second);
-        pushTestLine("Engine: "+e.name());
-        auto suite = loadEpdSuite("Resources/perftsuite.epd");
-        pushTestLine(suite.empty()
-            ? "Using built-in verified suite (add Resources/perftsuite.epd for 100 positions)"
-            : "Loaded perftsuite.epd: " + std::to_string(suite.size()) + " positions");
-        if (suite.empty()) suite = builtinPerftSuite();
-        pushTestLine("Sending 'go perft <depth>' for each position...");
-        int fails=0;
-        auto res = runEnginePerftSuite(e, suite, 5,
-            [this,&fails](int i,int n,const PerftResult& r){
-                std::string s = "["+std::to_string(i)+"/"+std::to_string(n)+"] d"
-                    +std::to_string(r.depth)+" want "+std::to_string(r.expected)+" got "
-                    +(r.engineNodes<0? std::string("(no perft support)") : std::to_string(r.engineNodes))
-                    +(r.pass? "  OK":"  FAIL");
-                if (!r.pass){ fails++; s += "  fen: "+r.fen; }
-                pushTestLine(s);
-            }, testAbort);
-        if (!res.empty() && res.back().engineNodes<0)
-            pushTestLine(">>> Engine does not answer 'go perft N' with 'Nodes searched: X'.");
-        else
-            pushTestLine(fails? ">>> "+std::to_string(fails)+" FAILURES - your move generator has bugs in those positions."
-                              : ">>> ALL PASSED - move generator agrees with verified node counts.");
-        e.quit();
-        testRunning=false;
-    });
-}
-void App::startAccuracyTest(const EngineConfig& tee, const EngineConfig& ree){
-    testAbort=false; testRunning=true; testReturn=Screen::TESTS;
-    { std::lock_guard<std::mutex> lk(testMx); testLines.clear(); }
-    testTitle = "Accuracy: " + tee.name + " vs reference " + ree.name
-              + "  (" + std::to_string(accCount) + " positions)";
-    if (testThread.joinable()) testThread.join();
-    int cnt=accCount, tms=accTestMs, rms=accRefMs, mpv=accMultiPV;
-    testThread = std::thread([this,tee,ree,cnt,tms,rms,mpv](){
-        UciEngine te, re;
-        if (!te.start(tee)){ pushTestLine("Cannot start test engine: "+te.lastError()); testRunning=false; return; }
-        if (!re.start(ree)){ pushTestLine("Cannot start reference engine: "+re.lastError()); testRunning=false; return; }
-        for (auto& o : tee.options) te.setOption(o.first, o.second);
-        for (auto& o : ree.options) re.setOption(o.first, o.second);
-        te.newGame(); re.newGame();
-        auto fens = loadFenList("Resources/accuracy.epd");
-        pushTestLine(fens.empty()
-            ? "Resources/accuracy.epd not found - using the 15 built-in positions"
-            : "Loaded Resources/accuracy.epd: " + std::to_string(fens.size()) + " positions");
-        if (fens.empty()) fens = defaultAccuracyPositions();
-        if ((int)fens.size() > cnt) fens.resize(cnt);
-        pushTestLine("Test engine "+std::to_string(tms)+"ms/move, reference "
-                     +std::to_string(rms)+"ms with MultiPV "+std::to_string(mpv)
-                     +" (2nd/3rd-best moves are credited at their true cp gap).");
-        auto rep = runAccuracyTest(te, re, fens, tms, rms, mpv,
-            [this](int i,int n,const AccuracyMoveReport& m){
-                std::string s = "["+std::to_string(i)+"/"+std::to_string(n)+"] "+m.san
-                    +"  loss "+std::to_string(m.cpLoss);
-                if (m.rank==0) s += "  = best move";
-                else if (m.rank>0) s += "  = choice #"+std::to_string(m.rank+1);
-                if (!m.alternatives.empty()) s += "   [also fine: "+m.alternatives+"]";
-                pushTestLine(s);
-            }, testAbort);
-        char b[200];
-        snprintf(b,200,">>> %d positions | Avg cp loss: %.1f | Accuracy: %.1f%% | blunders %d, mistakes %d, inaccuracies %d",
-                 (int)rep.moves.size(), rep.avgCpLoss, rep.accuracyPct,
-                 rep.blunders, rep.mistakes, rep.inaccuracies);
-        pushTestLine(b);
-        te.quit(); re.quit();
-        testRunning=false;
-    });
-}
 void App::startGameReview(const std::string& enginePath){
     if (game.moves.empty()){ showToast("No moves to review"); return; }
     testAbort=false; testRunning=true; testReturn=Screen::GAME;
@@ -1280,8 +1169,8 @@ void App::handleEvent(const UiEvent& e){
             return;
         }
         if (e.key==sf::Keyboard::Key::Escape){
-            if (screen==Screen::GAME || screen==Screen::TESTS || screen==Screen::EDITOR
-                || screen==Screen::PGN_LOAD || screen==Screen::PGN_LIST || screen==Screen::ACC_SETUP)
+            if (screen==Screen::GAME || screen==Screen::EDITOR
+                || screen==Screen::PGN_LOAD || screen==Screen::PGN_LIST)
                 { screen=Screen::MENU; layout(); }
             return;
         }
@@ -1410,7 +1299,9 @@ void App::handleEvent(const UiEvent& e){
 void App::onButton(int id){
     forceRedraw = true;
     if (id>=110 && id<=116){
-        tc.baseMs=TC_BASE[id-110]; tc.incMs=TC_INC[id-110]; layout(); return;
+        tc.baseMs=TC_BASE[id-110]; tc.incMs=TC_INC[id-110];
+        settings_.tcBaseMs = tc.baseMs; settings_.tcIncMs = tc.incMs; saveSettings();
+        layout(); return;
     }
     switch (id){
     // ---- menu ----
@@ -1422,11 +1313,11 @@ void App::onButton(int id){
         mode=GameMode::HUMAN_VS_ENGINE; pickPurpose=1; oneShotStart.reset();
         screen=Screen::PICK_ENGINE; scanEngines(); layout(); break;
     case 107: menuPlayWhite=!menuPlayWhite; layout(); break;
-    case 109: scanEngines(); screen=Screen::ENGINE_MANAGER; layout(); break;
+    case 109: go(Screen::ENGINE_MANAGER); break;
     case 103: matchSelection.clear(); screen=Screen::MATCH_SETUP; scanEngines(); layout(); break;
     case 104: mode=GameMode::ANALYSIS; pickPurpose=2; oneShotStart.reset();
               screen=Screen::PICK_ENGINE; scanEngines(); layout(); break;
-    case 105: screen=Screen::TESTS; layout(); break;
+    case 105: go(Screen::TESTS); break;
     case 106: editorReturn=Screen::MENU; screen=Screen::EDITOR; layout(); break;
     case 108: filePurpose=2; filePathInput.clear(); screen=Screen::PGN_LOAD; layout(); break;
     case 120: window.close(); break;
@@ -1540,21 +1431,7 @@ void App::onButton(int id){
                 sf::Clipboard::setString(all);
                 showToast("Standings + log copied to clipboard"); break; }
     case 503: matchFlipped=!matchFlipped; layout(); break;
-    // ---- tests ----
-    case 600: startInternalSelfTest(); screen=Screen::TEST_RUN; layout(); break;
-    case 601: pickPurpose=4; screen=Screen::PICK_ENGINE; scanEngines(); layout(); break;
-    case 602: screen=Screen::ACC_SETUP; layout(); break;
-    case 620: case 621: case 622: case 623: case 624:
-        { const int c[5]={25,100,250,500,1000}; accCount=c[id-620]; layout(); break; }
-    case 630: case 631: case 632: case 633:
-        { const int c[4]={100,250,500,1000}; accTestMs=c[id-630]; layout(); break; }
-    case 640: case 641: case 642: case 643:
-        { const int c[4]={250,500,1000,2000}; accRefMs=c[id-640]; layout(); break; }
-    case 650: case 651: case 652:
-        { const int c[3]={1,3,5}; accMultiPV=c[id-650]; layout(); break; }
-    case 660: pickPurpose=5; screen=Screen::PICK_ENGINE; scanEngines(); layout(); break;
-    case 661: screen=Screen::TESTS; layout(); break;
-    case 699: screen=Screen::MENU; layout(); break;
+    // ---- test output (game review) ----
     case 700: if (testRunning) testAbort=true;
               else { screen=testReturn; }
               layout(); break;
@@ -1633,7 +1510,7 @@ void App::onButton(int id){
         openPgnGame(pgnScroll + (id-1000));
     }
     // engine list clicks / configure
-    if (id>=300 && id<340 && id-300 < (int)registry.engines().size() && screen==Screen::PICK_ENGINE){
+    if (id>=300 && id<340 && id-300 < (int)registry_.engines().size() && screen==Screen::PICK_ENGINE){
         EngineConfig ee = makeEntry(id-300);
         if (pickPurpose==1){
             stopOpponent();
@@ -1658,16 +1535,6 @@ void App::onButton(int id){
                 game.whiteName="White"; game.blackName="Black";
             }
             screen=Screen::GAME; layout();
-        } else if (pickPurpose==4){
-            startPerftTest(ee);
-            screen=Screen::TEST_RUN; layout();
-        } else if (pickPurpose==5){
-            accTestEngine = ee; pickPurpose=6;
-            showToast("Now pick the REFERENCE engine (e.g. Stockfish)");
-            layout();
-        } else if (pickPurpose==6){
-            startAccuracyTest(accTestEngine, ee);
-            screen=Screen::TEST_RUN; layout();
         } else if (pickPurpose==7){
             judgePath = ee.path;
             showToast("Judge engine: "+ee.name);
@@ -1677,8 +1544,8 @@ void App::onButton(int id){
             startGameReview(ee.path);
         }
     }
-    if (id>=340 && id<380 && id-340 < (int)registry.engines().size() && screen==Screen::PICK_ENGINE){
-        const EngineConfig& ee = registry.engines()[id-340];
+    if (id>=340 && id<380 && id-340 < (int)registry_.engines().size() && screen==Screen::PICK_ENGINE){
+        const EngineConfig& ee = registry_.engines()[id-340];
         UciEngine probe;
         showToast("Querying "+ee.name+" for its options...");
         if (!probe.start(ee)){ showToast("Failed to query engine: "+probe.lastError()); return; }
@@ -1690,7 +1557,7 @@ void App::onButton(int id){
         optScroll = 0; editingOption = -1;
         screen=Screen::ENGINE_OPTIONS; layout();
     }
-    if (id>=400 && id<450 && id-400 < (int)registry.engines().size() && screen==Screen::MATCH_SETUP){
+    if (id>=400 && id<450 && id-400 < (int)registry_.engines().size() && screen==Screen::MATCH_SETUP){
         int i=id-400;
         auto it = std::find(matchSelection.begin(),matchSelection.end(),i);
         if (it==matchSelection.end()) matchSelection.push_back(i); else matchSelection.erase(it);
@@ -1882,7 +1749,7 @@ void App::render(){
         text(titles[std::min(pickPurpose,8)], WW/2, 46, 25, COL_ACCENT, true);
         text("Engines are auto-discovered from Resources/engines/. 'Options...' edits an engine's UCI settings.",
              WW/2, 80, 14, COL_DIM, true);
-        if (registry.engines().empty())
+        if (registry_.engines().empty())
             text("No engines found. Put UCI engine executables in Resources/engines/ or type a path below.",
                  WW/2, 200, 16, COL_WARN, true);
         break; }
@@ -1890,7 +1757,7 @@ void App::render(){
         text("Engine vs Engine / Tournament", WW/2, 40, 24, COL_ACCENT, true);
         text("Click engines to select (2 = match, 3+ = round-robin). Colors alternate; with multiple",
              WW/2, 68, 13, COL_DIM, true);
-        float listN = (float)std::min(registry.engines().size(),(size_t)6);
+        float listN = (float)std::min(registry_.engines().size(),(size_t)6);
         float rowY = 96 + listN*40 + 24;
         text("openings, each one is played with both colors before moving to the next.", WW/2, 82, 13, COL_DIM, true);
         text("Games per pairing:", 120, rowY-20, 13, COL_DIM);
@@ -1971,28 +1838,6 @@ void App::render(){
             text("Last result: "+resultReasonText(s.reason), tx, ty+6, 14, COL_ACCENT);
         if (s.finished) text("Tournament finished.", tx, ty+6, 16, COL_GOOD);
         break; }
-    case Screen::TESTS: {
-        text("Engine Testing Tools", WW/2, 56, 28, COL_ACCENT, true);
-        text("Tools for chess-engine developers. Test 2 requires your engine to support 'go perft N'\n"
-             "(printing 'Nodes searched: X', like Stockfish). Test 3 measures move quality against a\n"
-             "reference engine over up to 1000 positions, with credit for good alternative moves.",
-             WW/2, 112, 14, COL_DIM, true);
-        break; }
-    case Screen::ACC_SETUP: {
-        text("Accuracy Test Settings", WW/2, 56, 26, COL_ACCENT, true);
-        float y=150;
-        text("Number of positions", 90, y+8, 15);
-        text("(1000-position suite ships in Resources/accuracy.epd)", 90, y+28, 11, COL_DIM); y+=76;
-        text("Your engine: time per move", 90, y+8, 15); y+=76;
-        text("Reference: time per position", 90, y+8, 15);
-        text("(one MultiPV search scores all candidate moves fairly)", 90, y+28, 11, COL_DIM); y+=76;
-        text("Reference MultiPV", 90, y+8, 15);
-        text("(alternatives shown & credited at their true cp gap)", 90, y+28, 11, COL_DIM);
-        char est[120];
-        double mins = accCount * (accTestMs + accRefMs) / 60000.0;
-        snprintf(est,120,"Estimated duration: about %.0f-%.0f minutes", mins, mins*1.4);
-        text(est, WW/2, y+140, 14, COL_WARN, true);
-        break; }
     case Screen::TEST_RUN: {
         text(testTitle, 30, 20, 19, COL_ACCENT);
         std::vector<std::string> lines;
@@ -2044,7 +1889,7 @@ void App::render(){
             std::string meta = o.type;
             if (o.type=="spin") meta += "  ["+std::to_string(o.minV)+".."+std::to_string(o.maxV)+"]";
             bool overridden = false;
-            if (EngineConfig* c = registry.findByPath(optsPath))
+            if (EngineConfig* c = registry_.findByPath(optsPath))
                 overridden = c->option(o.name) != nullptr;
             if (overridden) meta += "   (modified)";
             text(meta, 60, y+8+16, 12, overridden? COL_GOOD : sf::Color(130,130,140));
@@ -2080,21 +1925,24 @@ void App::render(){
             drawPiece(PALETTE[i], r.position.x+2, r.position.y+2, r.size.x-4);
         }
     }
-    if (!toast.empty()){
-        if (toastClock.getElapsedTime().asSeconds()>3) toast.clear();
+    if (!toastText.empty() && !imguiScreen()){
+        if (toastClock.getElapsedTime().asSeconds()>3) toastText.clear();
         else {
             sf::RectangleShape r(sf::Vector2f(std::min(WW-40, 640.f), 34));
             r.setPosition({WW/2 - r.getSize().x/2, WH-44});
             r.setFillColor(sf::Color(20,20,25,230));
             r.setOutlineThickness(1); r.setOutlineColor(COL_ACCENT);
             window.draw(r);
-            text(toast, WW/2, WH-27, 14, sf::Color::White, true);
+            text(toastText, WW/2, WH-27, 14, sf::Color::White, true);
         }
     }
-    if (imguiOk && ImGui::GetCurrentContext() && ImGui::GetFrameCount() > 0 && imguiScreen()){
-        window.setView(window.getDefaultView());
-        ImGui::SFML::Render(window);
-        window.setView(sf::View(sf::FloatRect({0,0},{WW,WH})));
+    if (imguiFrameActive){
+        imguiFrameActive = false;
+        if (imguiScreen()){
+            window.setView(window.getDefaultView());
+            ImGui::SFML::Render(window);
+            window.setView(sf::View(sf::FloatRect({0,0},{WW,WH})));
+        } else ImGui::EndFrame();              // left for a legacy screen mid-frame
     }
     if (!pendingShot.empty()){
         sf::Texture shot;
@@ -2143,7 +1991,7 @@ static bool keyFromName(const std::string& n, sf::Keyboard::Key& k){
 // render/update pass between inputs, like a real user.
 void App::stepScript(){
     if (nowMsSteady() < scriptWaitUntil) return;
-    const UiScriptStep& s = script[scriptPos++];
+    const UiScriptStep s = script[scriptPos++];          // copy: steps may insert more steps
     UiEvent e;
     // ImGui screens get the input through ImGui's IO queue instead
     auto handleEvent = [this](const UiEvent& ev){
@@ -2153,10 +2001,15 @@ void App::stepScript(){
     if (s.op=="wait") scriptWaitUntil = nowMsSteady() + (long long)s.nums[0];
     else if (s.op=="move"){ at(s.nums[0], s.nums[1]); e.kind = UiEvent::MouseMoved; handleEvent(e); }
     else if (s.op=="click"){
+        // like a user: hover for a frame, then press, then release on the next frame
         at(s.nums[0], s.nums[1]);
-        e.kind = UiEvent::MousePressed; handleEvent(e);
-        e.kind = UiEvent::MouseReleased; handleEvent(e);
-    } else if (s.op=="drag"){
+        e.kind = UiEvent::MouseMoved; handleEvent(e);
+        UiScriptStep press; press.op = "_press";
+        UiScriptStep release; release.op = "_release";
+        script.insert(script.begin() + (long)scriptPos, {press, release});
+    }
+    else if (s.op=="_press"){ e.kind = UiEvent::MousePressed; handleEvent(e); }
+    else if (s.op=="_release"){ e.kind = UiEvent::MouseReleased; handleEvent(e); } else if (s.op=="drag"){
         at(s.nums[0], s.nums[1]); e.kind = UiEvent::MousePressed; handleEvent(e);
         at(s.nums[2], s.nums[3]); e.kind = UiEvent::MouseMoved; handleEvent(e);
         e.kind = UiEvent::MouseReleased; handleEvent(e);
@@ -2166,6 +2019,26 @@ void App::stepScript(){
         } else fprintf(stderr, "[script] unknown key %s\n", s.arg.c_str());
     } else if (s.op=="text"){
         for (unsigned char c : s.arg){ e.kind = UiEvent::TextEntered; e.unicode = c; handleEvent(e); }
+    } else if (s.op=="click-item" || s.op=="wait-item"){
+        auto items = uiitems::find(s.arg);
+        if (s.op=="wait-item"){
+            if (items.empty()){
+                if (!scriptItemDeadline) scriptItemDeadline = nowMsSteady() + (long long)s.nums[0];
+                if (nowMsSteady() < scriptItemDeadline){ scriptPos--; return; }   // try again next frame
+                fprintf(stderr, "[script] no widget '%s' after %.0f ms\n", s.arg.c_str(), s.nums[0]);
+                scriptFailed_ = true;
+            }
+            scriptItemDeadline = 0;
+        } else if (items.empty()){
+            fprintf(stderr, "[script] no widget labelled '%s'\n", s.arg.c_str());
+            scriptFailed_ = true;
+        } else {
+            sf::Vector2u ws = window.getSize();
+            float cx = (items[0].x0 + items[0].x1) / 2, cy = (items[0].y0 + items[0].y1) / 2;
+            UiScriptStep click; click.op = "click";
+            click.nums = {cx * WW / ws.x, cy * WH / ws.y};
+            script.insert(script.begin() + (long)scriptPos, click);
+        }
     } else if (s.op=="shot") pendingShot = s.arg;
     else if (s.op=="expect"){
         std::string fen = game.pos.toFEN();
@@ -2189,8 +2062,13 @@ void App::setupImGuiFonts(){
     ImGuiIO& io = ImGui::GetIO();
     io.Fonts->Clear();
     ImFontConfig fc; fc.OversampleH = 2;
-    if (!io.Fonts->AddFontFromFileTTF("Resources/Cantarell-Regular.ttf", 15.f * px, &fc))
-        io.Fonts->AddFontDefault();
+    ui::Fonts& f = ui::fonts();
+    f.body = io.Fonts->AddFontFromFileTTF("Resources/Cantarell-Regular.ttf", 15.f * px, &fc);
+    if (!f.body) f.body = io.Fonts->AddFontDefault();
+    f.mono = io.Fonts->AddFontFromFileTTF("Resources/JetBrainsMono-Regular.ttf", 13.5f * px, &fc);
+    if (!f.mono) f.mono = f.body;
+    f.large = io.Fonts->AddFontFromFileTTF("Resources/Cantarell-Regular.ttf", 26.f * px, &fc);
+    if (!f.large) f.large = f.body;
     if (!ImGui::SFML::UpdateFontTexture()) fprintf(stderr, "[imgui] font texture failed\n");
     ImGuiStyle st;
     ImGui::StyleColorsDark(&st);
@@ -2200,12 +2078,88 @@ void App::setupImGuiFonts(){
 }
 
 void App::drawImGui(){
+    drawMenuBar();
+    const ImGuiViewport* vp = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(vp->WorkPos);
+    ImGui::SetNextWindowSize(vp->WorkSize);
+    ImGui::Begin("##screen", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
+                 ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
+    const char* title = screen == Screen::ENGINE_MANAGER ? "Engines"
+                      : screen == Screen::TESTS ? "Engine testing tools" : "";
+    if (ImGui::Button("< Home")) go(Screen::MENU);
+    ImGui::SameLine();
+    ImGui::PushFont(ui::fonts().large);
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted(title);
+    ImGui::PopFont();
+    ImGui::Separator();
     if (screen == Screen::ENGINE_MANAGER){
         EngineManagerWindow::Callbacks cb;
         cb.save = [this](){ saveEngines(); };
-        cb.close = [this](){ screen = Screen::MENU; layout(); };
-        engineManager.draw(registry, cb);
+        cb.browseFile = [this](const std::string& t){
+            std::string p = filedialog::openFile(t, settings_.lastEngineDir);
+            if (!p.empty()){ settings_.lastEngineDir = fs::u8path(p).parent_path().u8string(); saveSettings(); }
+            return p;
+        };
+        if (!filedialog::available()) cb.browseFile = nullptr;
+        engineManager.draw(registry_, cb);
+    } else if (screen == Screen::TESTS){
+        tools.draw();
     }
+    ImGui::End();
+    drawToast();
+}
+
+// Top menu bar (on the ImGui screens while the migration from the old UI runs).
+void App::drawMenuBar(){
+    if (!ImGui::BeginMainMenuBar()) return;
+    if (ImGui::BeginMenu("Game")){
+        if (ImGui::MenuItem("Human vs human")) onButton(100);
+        if (ImGui::MenuItem("Play vs engine...")) onButton(101);
+        if (ImGui::MenuItem("Analysis board...")) onButton(104);
+        if (ImGui::MenuItem("Open PGN...")) onButton(108);
+        if (ImGui::MenuItem("Board editor")) onButton(106);
+        ImGui::Separator();
+        if (ImGui::MenuItem("Quit")) window.close();
+        ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("Engines")){
+        if (ImGui::MenuItem("Manage engines...")) go(Screen::ENGINE_MANAGER);
+        if (ImGui::MenuItem("Engine match / tournament...")) onButton(103);
+        ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("Tools")){
+        if (ImGui::MenuItem("Engine testing tools")) go(Screen::TESTS);
+        ImGui::EndMenu();
+    }
+    ImGui::EndMainMenuBar();
+}
+
+void App::drawToast(){
+    if (toastText.empty()) return;
+    if (toastClock.getElapsedTime().asSeconds() > 3.5f){ toastText.clear(); return; }
+    const ImGuiViewport* vp = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + vp->WorkSize.x / 2, vp->WorkPos.y + vp->WorkSize.y - 20),
+                            ImGuiCond_Always, ImVec2(0.5f, 1.f));
+    ImGui::SetNextWindowBgAlpha(0.92f);
+    ImGui::Begin("##toast", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
+                 ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav |
+                 ImGuiWindowFlags_NoInputs);
+    ImGui::TextUnformatted(toastText.c_str());
+    ImGui::End();
+}
+
+void App::go(Screen s){
+    if (s == Screen::ENGINE_MANAGER) scanEngines();
+    screen = s;
+    layout();
+    forceRedraw = true;
+}
+
+void App::saveSettings(){
+    std::string err;
+    if (!settings_.save((fs::u8path(userConfigDir()) / "settings.json").u8string(), &err))
+        showToast("Could not save settings.json: " + err);
 }
 
 void App::injectImGui(const UiEvent& e){

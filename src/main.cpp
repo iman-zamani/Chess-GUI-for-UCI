@@ -2,6 +2,7 @@
 #include "gui.hpp"
 #include <cstdio>
 #include <string>
+#include <cstdlib>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -57,6 +58,13 @@ int main(int argc, char** argv){
     // in it (and the script path itself) mean what the caller expects.
     App app;
     if (!scriptPath.empty() && !app.loadScript(scriptPath)) return 2;
+    if (!scriptPath.empty()){                 // a scripted run must never block on a modal dialog
+#ifdef _WIN32
+        _putenv_s("CHESSGUI_NO_DIALOGS", "1");
+#else
+        setenv("CHESSGUI_NO_DIALOGS", "1", 1);
+#endif
+    }
     chdirToExeDir();
     if (!app.init()){
         fprintf(stderr, "Initialization failed. Ensure the Resources folder is next to the executable.\n");

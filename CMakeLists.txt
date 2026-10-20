@@ -82,7 +82,17 @@ if(CHESSGUI_BUILD_GUI)
         URL_HASH SHA256=561a04407dcc913b8f1c25a164ad4907852b51fb4f11907d1ab9db6351af911b
         DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
     FetchContent_MakeAvailable(imgui-sfml)
+    # Item hooks (src/ui/item_hooks.cpp) let --script click widgets by label.
+    target_compile_definitions(ImGui-SFML PUBLIC IMGUI_ENABLE_TEST_ENGINE)
     list(APPEND SFML_LIBS ImGui-SFML::ImGui-SFML)
+
+    # portable-file-dialogs (WTFPL, header-only) for native file dialogs.
+    FetchContent_Declare(pfd
+        URL      https://github.com/samhocevar/portable-file-dialogs/archive/refs/tags/0.1.0.tar.gz
+        URL_HASH SHA256=db57f02a45b169613c41d1fb94edab5f03020cc5cdc5033f538c08b4982cd5d4
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+        SOURCE_SUBDIR  header-only)     # only the header is used; don't add its CMake project
+    FetchContent_MakeAvailable(pfd)
 endif()
 
 find_package(Threads REQUIRED)
@@ -112,12 +122,18 @@ if(CHESSGUI_BUILD_GUI)
 set(CHESS_SOURCES
     src/main.cpp
     src/gui.cpp
+    src/ui/board_view.cpp
     src/ui/engine_manager.cpp
+    src/ui/file_dialog.cpp
+    src/ui/tools_screen.cpp
+    src/ui/widgets.cpp
+    src/ui/item_hooks.cpp
     ${imgui_SOURCE_DIR}/misc/cpp/imgui_stdlib.cpp
 )
 
 add_executable(chess-gui ${CHESS_SOURCES})
 target_link_libraries(chess-gui PRIVATE chesscore ${SFML_LIBS})
+target_include_directories(chess-gui PRIVATE ${pfd_SOURCE_DIR})
 
 # Copy Resources next to the binary so ./chess-gui finds fonts, pieces,
 # engines and the perft suite.
@@ -141,6 +157,7 @@ if(APPLE)
     # Path B (guaranteed): a real bundle -> "Chess GUI for UCI.app".
     add_executable(chess-gui-app MACOSX_BUNDLE ${CHESS_SOURCES})
     target_link_libraries(chess-gui-app PRIVATE chesscore ${SFML_LIBS})
+    target_include_directories(chess-gui-app PRIVATE ${pfd_SOURCE_DIR})
     set_target_properties(chess-gui-app PROPERTIES
         OUTPUT_NAME "Chess GUI for UCI"
         MACOSX_BUNDLE_BUNDLE_NAME "Chess GUI for UCI"
