@@ -1,5 +1,6 @@
 /* Chess-GUI-for-UCI — UCI engine process wrapper. GPL-2.0 */
 #include "uci_engine.hpp"
+#include "chess.hpp"
 #include <algorithm>
 #include <chrono>
 #include <cctype>
@@ -526,6 +527,12 @@ void UciEngine::newGame(){
     isReady(10000);
 }
 void UciEngine::setPosition(const std::string& fen, const std::vector<std::string>& mv){
+    // Chess960 positions need UCI_Chess960 (and king-takes-rook castling), others must not have it
+    int want = Position::fromFEN(fen).chess960 ? 1 : 0;
+    if (want != chess960Mode_ && (want || chess960Mode_ == 1) && hasOption("UCI_Chess960")){
+        setOption("UCI_Chess960", want ? "true" : "false");
+        chess960Mode_ = want;
+    }
     std::string cmd = "position fen " + fen;
     if (!mv.empty()){
         cmd += " moves";

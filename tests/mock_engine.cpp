@@ -308,6 +308,7 @@ int main(int argc, char** argv){
             out("option name Style type combo default Normal var Solid var Normal var Risky");
             out("option name EvalFile type string default <empty>");
             out("option name Clear Hash type button");
+            out("option name UCI_Chess960 type check default false");
             if (F.reportEnv){
                 std::error_code ec;
                 out("info string cwd " + std::filesystem::current_path(ec).string());

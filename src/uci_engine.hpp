@@ -181,6 +181,7 @@ private:
 
     EngineConfig cfg_;
     std::vector<UciOption> opts;
+    int chess960Mode_ = -1;                      // UCI_Chess960 as last sent (-1 = never)
     std::string engName = "engine", engAuthor, errMsg;
     std::atomic<bool> running{false};
     EngineInfo info;
