@@ -70,16 +70,25 @@ endif()
 
 find_package(Threads REQUIRED)
 
+# nlohmann/json (MIT, header-only) for engines.json, settings and exports.
+include(FetchContent)
+FetchContent_Declare(nlohmann_json
+    URL      https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz
+    URL_HASH SHA256=42f6e95cad6ec532fd372391373363b62a14af6d771056dbfc86160e6dfff7aa
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+FetchContent_MakeAvailable(nlohmann_json)
+
 # Core logic: rules, UCI process wrapper, matches, test tools. No SFML here;
 # it is shared by the GUI, the tests and the headless CLI.
 add_library(chesscore STATIC
     src/chess.cpp
+    src/engine_config.cpp
     src/uci_engine.cpp
     src/testing.cpp
     src/tournament.cpp
 )
 target_include_directories(chesscore PUBLIC src)
-target_link_libraries(chesscore PUBLIC Threads::Threads)
+target_link_libraries(chesscore PUBLIC Threads::Threads nlohmann_json::nlohmann_json)
 
 if(CHESSGUI_BUILD_GUI)
 set(CHESS_SOURCES

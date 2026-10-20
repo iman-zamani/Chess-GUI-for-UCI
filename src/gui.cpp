@@ -65,11 +65,9 @@ static bool pollUiEvent(sf::RenderWindow& w, UiEvent& out){
 }
 
 // =============================================================== AnalysisController
-bool AnalysisController::start(const std::string& path,
-        const std::vector<std::pair<std::string,std::string>>& opts){
+bool AnalysisController::start(const EngineConfig& cfg){
     eng = std::make_unique<UciEngine>();
-    if (!eng->start(path)){ err = eng->lastError(); eng.reset(); return false; }
-    for (auto& o : opts) eng->setOption(o.first, o.second);
+    if (!eng->start(cfg)){ err = eng->lastError(); eng.reset(); return false; }
     eng->newGame();
     stop_ = false;
     th = std::thread([this](){ loop(); });
@@ -163,7 +161,6 @@ bool App::init(){
         pieceCell = (int)(pieceTexture.getSize().x / 6);
         if (pieceCell <= 0) pieceCell = 150;
     }
-    loadOverrides();
     scanEngines();
     game.reset(Position::startpos());
     editPos = Position::startpos();
@@ -427,54 +424,65 @@ void App::drawMoveList(float x, float y, float w, float h,
 }
 
 // =============================================================== engines & overrides
+// Engines: engines.json in the user config dir, plus anything dropped into
+// Resources/engines/ and common Stockfish install locations.
 void App::scanEngines(){
-    knownEngines.clear();
-    auto add=[&](const std::string& p){
-        for (auto& e : knownEngines) if (e.path==p) return;
-        knownEngines.push_back({p, fs::path(p).filename().string(), {}});
-    };
+    std::string file = (fs::u8path(userConfigDir()) / "engines.json").u8string();
+    std::string err;
+    if (!registry.load(file, &err)) showToast("Could not read engines.json: " + err);
+    importLegacyOverrides();
+    registry.discover("Resources/engines");
     std::error_code ec;
-    if (fs::exists("Resources/engines", ec))
-        for (auto& e : fs::directory_iterator("Resources/engines", ec))
-            if (e.is_regular_file()) add(e.path().string());
     for (const char* p : {"/usr/games/stockfish","/usr/bin/stockfish",
                           "/usr/local/bin/stockfish","/opt/homebrew/bin/stockfish",
                           "C:\\stockfish\\stockfish.exe"})
-        if (fs::exists(p, ec)) add(p);
+        if (fs::exists(p, ec) && !registry.findByPath(p)){
+            EngineConfig c; c.path = p; c.name = fs::path(p).filename().string(); c.discovered = true;
+            registry.add(c);
+        }
 }
-EngineEntry App::makeEntry(int idx){
-    EngineEntry e = knownEngines[idx];
-    auto it = engineOverrides.find(e.path);
-    if (it != engineOverrides.end()) e.options = it->second;
-    return e;
+void App::saveEngines(){
+    std::string file = (fs::u8path(userConfigDir()) / "engines.json").u8string();
+    std::string err;
+    if (!registry.save(file, &err)) showToast("Could not save engines.json: " + err);
 }
-void App::loadOverrides(){
-    engineOverrides.clear();
+// Before engines.json existed, option overrides lived in engine_options.cfg
+// (path TAB option TAB value) next to the executable. Fold them in once.
+void App::importLegacyOverrides(){
     std::ifstream f("engine_options.cfg");
-    std::string line;
+    if (!f) return;
+    std::string line; bool any = false;
     while (std::getline(f, line)){
         size_t t1 = line.find('\t'); if (t1==std::string::npos) continue;
         size_t t2 = line.find('\t', t1+1); if (t2==std::string::npos) continue;
-        engineOverrides[line.substr(0,t1)].push_back(
-            { line.substr(t1+1, t2-t1-1), line.substr(t2+1) });
+        configFor(line.substr(0,t1)).setOption(line.substr(t1+1, t2-t1-1), line.substr(t2+1));
+        any = true;
+    }
+    f.close();
+    if (any){
+        saveEngines();
+        std::error_code ec;
+        fs::rename("engine_options.cfg", "engine_options.cfg.imported", ec);
     }
 }
-void App::saveOverrides(){
-    std::ofstream f("engine_options.cfg");
-    for (auto& [path, opts] : engineOverrides)
-        for (auto& [n,v] : opts)
-            f << path << '\t' << n << '\t' << v << '\n';
+EngineConfig& App::configFor(const std::string& path){
+    if (EngineConfig* c = registry.findByPath(path)) return *c;
+    EngineConfig c; c.path = path; c.name = fs::u8path(path).filename().u8string();
+    registry.add(c);
+    return registry.engines().back();
+}
+EngineConfig App::makeEntry(int idx){
+    return registry.engines()[idx];
 }
 void App::setOverride(const std::string& path, const std::string& name, const std::string& val){
-    auto& v = engineOverrides[path];
-    for (auto& p : v) if (p.first==name){ p.second=val; saveOverrides(); return; }
-    v.push_back({name,val});
-    saveOverrides();
+    EngineConfig& c = configFor(path);
+    c.setOption(name, val);
+    c.discovered = false;                 // has settings now: keep it in engines.json
+    saveEngines();
 }
 std::string App::overrideOrDefault(const std::string& path, const UciOption& o){
-    auto it = engineOverrides.find(path);
-    if (it != engineOverrides.end())
-        for (auto& p : it->second) if (p.first==o.name) return p.second;
+    if (EngineConfig* c = registry.findByPath(path))
+        if (const std::string* v = c->option(o.name)) return *v;
     return o.defVal;
 }
 
@@ -548,9 +556,9 @@ void App::layout(){
         break; }
     case Screen::PICK_ENGINE: {
         float w = WW-240, y=110;
-        for (size_t i=0;i<knownEngines.size() && i<12;i++){
+        for (size_t i=0;i<registry.engines().size() && i<12;i++){
             buttons.push_back(mk(120, y, w-110, 38,
-                knownEngines[i].name + "   (" + knownEngines[i].path + ")", 300+(int)i));
+                registry.engines()[i].name + "   (" + registry.engines()[i].path + ")", 300+(int)i));
             buttons.push_back(mk(120+w-104, y, 104, 38, "Options...", 340+(int)i));
             y+=46;
         }
@@ -562,10 +570,10 @@ void App::layout(){
         break; }
     case Screen::MATCH_SETUP: {
         float w=WW-240, y=96;
-        for (size_t i=0;i<knownEngines.size() && i<6;i++){
+        for (size_t i=0;i<registry.engines().size() && i<6;i++){
             bool sel = std::find(matchSelection.begin(),matchSelection.end(),(int)i)!=matchSelection.end();
             buttons.push_back(mk(120, y, w, 34,
-                knownEngines[i].name + "   (" + knownEngines[i].path + ")", 400+(int)i, sel));
+                registry.engines()[i].name + "   (" + registry.engines()[i].path + ")", 400+(int)i, sel));
             y+=40;
         }
         y+=24;                                     // label line: games / TC
@@ -885,11 +893,9 @@ void App::applyEngineMoveIfReady(){
 void App::startAnalysis(const std::string& path){
     stopAnalysis();
     anaCtl = std::make_unique<AnalysisController>();
-    std::vector<std::pair<std::string,std::string>> opts;
-    auto it = engineOverrides.find(path);
-    if (it != engineOverrides.end()) opts = it->second;
-    opts.push_back({"MultiPV", std::to_string(arrowsN)});
-    if (!anaCtl->start(path, opts)){
+    EngineConfig cfg = configFor(path);
+    cfg.setOption("MultiPV", std::to_string(arrowsN));
+    if (!anaCtl->start(cfg)){
         showToast("Analysis engine failed: " + anaCtl->lastError());
         anaCtl.reset();
         return;
@@ -1017,14 +1023,14 @@ void App::startInternalSelfTest(){
         testRunning=false;
     });
 }
-void App::startPerftTest(const EngineEntry& ee){
+void App::startPerftTest(const EngineConfig& ee){
     testAbort=false; testRunning=true; testReturn=Screen::TESTS;
     { std::lock_guard<std::mutex> lk(testMx); testLines.clear(); }
     testTitle = "Engine move-generator test: " + ee.name;
     if (testThread.joinable()) testThread.join();
     testThread = std::thread([this,ee](){
         UciEngine e;
-        if (!e.start(ee.path)){ pushTestLine("Cannot start engine: "+e.lastError()); testRunning=false; return; }
+        if (!e.start(ee)){ pushTestLine("Cannot start engine: "+e.lastError()); testRunning=false; return; }
         for (auto& o : ee.options) e.setOption(o.first, o.second);
         pushTestLine("Engine: "+e.name());
         auto suite = loadEpdSuite("Resources/perftsuite.epd");
@@ -1052,7 +1058,7 @@ void App::startPerftTest(const EngineEntry& ee){
         testRunning=false;
     });
 }
-void App::startAccuracyTest(const EngineEntry& tee, const EngineEntry& ree){
+void App::startAccuracyTest(const EngineConfig& tee, const EngineConfig& ree){
     testAbort=false; testRunning=true; testReturn=Screen::TESTS;
     { std::lock_guard<std::mutex> lk(testMx); testLines.clear(); }
     testTitle = "Accuracy: " + tee.name + " vs reference " + ree.name
@@ -1061,8 +1067,8 @@ void App::startAccuracyTest(const EngineEntry& tee, const EngineEntry& ree){
     int cnt=accCount, tms=accTestMs, rms=accRefMs, mpv=accMultiPV;
     testThread = std::thread([this,tee,ree,cnt,tms,rms,mpv](){
         UciEngine te, re;
-        if (!te.start(tee.path)){ pushTestLine("Cannot start test engine: "+te.lastError()); testRunning=false; return; }
-        if (!re.start(ree.path)){ pushTestLine("Cannot start reference engine: "+re.lastError()); testRunning=false; return; }
+        if (!te.start(tee)){ pushTestLine("Cannot start test engine: "+te.lastError()); testRunning=false; return; }
+        if (!re.start(ree)){ pushTestLine("Cannot start reference engine: "+re.lastError()); testRunning=false; return; }
         for (auto& o : tee.options) te.setOption(o.first, o.second);
         for (auto& o : ree.options) re.setOption(o.first, o.second);
         te.newGame(); re.newGame();
@@ -1105,12 +1111,10 @@ void App::startGameReview(const std::string& enginePath){
     int startNo = game.start.fullmoveNumber;
     bool startWhite = game.start.whiteToMove;
     { Position p=game.start; for (auto& m : game.moves){ uciMoves.push_back(p.moveToUCI(m)); p.makeMove(m);} }
-    testThread = std::thread([this,enginePath,startFen,uciMoves,sans,startNo,startWhite](){
+    EngineConfig cfg = configFor(enginePath);
+    testThread = std::thread([this,cfg,startFen,uciMoves,sans,startNo,startWhite](){
         UciEngine e;
-        if (!e.start(enginePath)){ pushTestLine("Cannot start engine: "+e.lastError()); testRunning=false; return; }
-        auto it = engineOverrides.find(enginePath);
-        if (it != engineOverrides.end())
-            for (auto& o : it->second) e.setOption(o.first, o.second);
+        if (!e.start(cfg)){ pushTestLine("Cannot start engine: "+e.lastError()); testRunning=false; return; }
         e.setOption("MultiPV","1");
         e.newGame();
         pushTestLine("Engine: "+e.name()+"  (400ms per position, "
@@ -1167,7 +1171,8 @@ void App::commitTextInput(){
     if (t == TextTarget::ENGINE_PATH){
         std::error_code ec;
         if (!enginePathInput.empty() && fs::exists(enginePathInput, ec)){
-            knownEngines.push_back({enginePathInput, fs::path(enginePathInput).filename().string(), {}});
+            configFor(enginePathInput).discovered = false;
+            saveEngines();
             enginePathInput.clear();
             showToast("Engine added");
         } else if (!enginePathInput.empty())
@@ -1475,17 +1480,15 @@ void App::onButton(int id){
               commitTextInput(); break;
     case 460: {
         if (matchSelection.size()<2){ showToast("Select at least 2 engines"); break; }
-        std::vector<EngineEntry> es;
+        std::vector<EngineConfig> es;
         for (int i : matchSelection) es.push_back(makeEntry(i));
         runner.startTournament(es, tc, matchGamesPerPair, matchFens);
         if (judgeCtl){ judgeCtl->shutdown(); judgeCtl.reset(); }
         if (!judgePath.empty()){
             judgeCtl = std::make_unique<AnalysisController>();
-            std::vector<std::pair<std::string,std::string>> opts;
-            auto it = engineOverrides.find(judgePath);
-            if (it != engineOverrides.end()) opts = it->second;
-            opts.push_back({"MultiPV", std::to_string(arrowsN)});
-            if (!judgeCtl->start(judgePath, opts)){
+            EngineConfig cfg = configFor(judgePath);
+            cfg.setOption("MultiPV", std::to_string(arrowsN));
+            if (!judgeCtl->start(cfg)){
                 showToast("Judge engine failed: "+judgeCtl->lastError());
                 judgeCtl.reset();
             }
@@ -1584,7 +1587,7 @@ void App::onButton(int id){
     // ---- options editor ----
     case 950: optScroll=std::max(0,optScroll-5); layout(); break;
     case 951: optScroll=std::min(std::max(0,(int)optsList.size()-5), optScroll+5); layout(); break;
-    case 955: engineOverrides.erase(optsPath); saveOverrides();
+    case 955: configFor(optsPath).options.clear(); saveEngines();
               showToast("Options reset to engine defaults"); layout(); break;
     case 999: screen=Screen::PICK_ENGINE; layout(); break;
     // ---- pgn ----
@@ -1603,12 +1606,12 @@ void App::onButton(int id){
         openPgnGame(pgnScroll + (id-1000));
     }
     // engine list clicks / configure
-    if (id>=300 && id<340 && id-300 < (int)knownEngines.size() && screen==Screen::PICK_ENGINE){
-        EngineEntry ee = makeEntry(id-300);
+    if (id>=300 && id<340 && id-300 < (int)registry.engines().size() && screen==Screen::PICK_ENGINE){
+        EngineConfig ee = makeEntry(id-300);
         if (pickPurpose==1){
             stopOpponent();
             oppEngine = std::make_unique<UciEngine>();
-            if (!oppEngine->start(ee.path)){ showToast("Failed: "+oppEngine->lastError()); return; }
+            if (!oppEngine->start(ee)){ showToast("Failed: "+oppEngine->lastError()); return; }
             for (auto& o : ee.options) oppEngine->setOption(o.first, o.second);
             oppPonderEnabled = false;
             for (auto& o : ee.options)
@@ -1647,11 +1650,11 @@ void App::onButton(int id){
             startGameReview(ee.path);
         }
     }
-    if (id>=340 && id<380 && id-340 < (int)knownEngines.size() && screen==Screen::PICK_ENGINE){
-        const EngineEntry& ee = knownEngines[id-340];
+    if (id>=340 && id<380 && id-340 < (int)registry.engines().size() && screen==Screen::PICK_ENGINE){
+        const EngineConfig& ee = registry.engines()[id-340];
         UciEngine probe;
         showToast("Querying "+ee.name+" for its options...");
-        if (!probe.start(ee.path)){ showToast("Failed to query engine: "+probe.lastError()); return; }
+        if (!probe.start(ee)){ showToast("Failed to query engine: "+probe.lastError()); return; }
         optsPath = ee.path;
         optsList = probe.options();
         probe.quit();
@@ -1660,7 +1663,7 @@ void App::onButton(int id){
         optScroll = 0; editingOption = -1;
         screen=Screen::ENGINE_OPTIONS; layout();
     }
-    if (id>=400 && id<450 && id-400 < (int)knownEngines.size() && screen==Screen::MATCH_SETUP){
+    if (id>=400 && id<450 && id-400 < (int)registry.engines().size() && screen==Screen::MATCH_SETUP){
         int i=id-400;
         auto it = std::find(matchSelection.begin(),matchSelection.end(),i);
         if (it==matchSelection.end()) matchSelection.push_back(i); else matchSelection.erase(it);
@@ -1865,7 +1868,7 @@ void App::render(){
         text(titles[std::min(pickPurpose,8)], WW/2, 46, 25, COL_ACCENT, true);
         text("Engines are auto-discovered from Resources/engines/. 'Options...' edits an engine's UCI settings.",
              WW/2, 80, 14, COL_DIM, true);
-        if (knownEngines.empty())
+        if (registry.engines().empty())
             text("No engines found. Put UCI engine executables in Resources/engines/ or type a path below.",
                  WW/2, 200, 16, COL_WARN, true);
         break; }
@@ -1873,7 +1876,7 @@ void App::render(){
         text("Engine vs Engine / Tournament", WW/2, 40, 24, COL_ACCENT, true);
         text("Click engines to select (2 = match, 3+ = round-robin). Colors alternate; with multiple",
              WW/2, 68, 13, COL_DIM, true);
-        float listN = (float)std::min(knownEngines.size(),(size_t)6);
+        float listN = (float)std::min(registry.engines().size(),(size_t)6);
         float rowY = 96 + listN*40 + 24;
         text("openings, each one is played with both colors before moving to the next.", WW/2, 82, 13, COL_DIM, true);
         text("Games per pairing:", 120, rowY-20, 13, COL_DIM);
@@ -2027,9 +2030,8 @@ void App::render(){
             std::string meta = o.type;
             if (o.type=="spin") meta += "  ["+std::to_string(o.minV)+".."+std::to_string(o.maxV)+"]";
             bool overridden = false;
-            auto it = engineOverrides.find(optsPath);
-            if (it!=engineOverrides.end())
-                for (auto& p : it->second) if (p.first==o.name) overridden=true;
+            if (EngineConfig* c = registry.findByPath(optsPath))
+                overridden = c->option(o.name) != nullptr;
             if (overridden) meta += "   (modified)";
             text(meta, 60, y+8+16, 12, overridden? COL_GOOD : sf::Color(130,130,140));
             y += 44;

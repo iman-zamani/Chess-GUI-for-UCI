@@ -102,12 +102,12 @@ void MatchRunner::playOneGame(UciEngine& we, UciEngine& be, TimeControl tc, Game
     post([&](Snapshot& s){ s.result=g.result; s.reason=g.reason; });
 }
 
-void MatchRunner::startMatch(EngineEntry a, EngineEntry b, TimeControl tc, int games,
+void MatchRunner::startMatch(EngineConfig a, EngineConfig b, TimeControl tc, int games,
                              const std::vector<std::string>& startFens){
     startTournament({a,b}, tc, games, startFens);
 }
 
-void MatchRunner::startTournament(std::vector<EngineEntry> engines, TimeControl tc, int gamesPerPair,
+void MatchRunner::startTournament(std::vector<EngineConfig> engines, TimeControl tc, int gamesPerPair,
                                   const std::vector<std::string>& startFens){
     abort();
     done_ = false;
@@ -132,13 +132,12 @@ void MatchRunner::startTournament(std::vector<EngineEntry> engines, TimeControl 
         std::vector<Standing> table;
         for (auto& e : engines){
             auto u = std::make_unique<UciEngine>();
-            if (!u->start(e.path)){
+            if (!u->start(e)){
                 logMsg("Failed to start engine: " + e.path + " (" + u->lastError() + ")");
                 done_ = true; 
                 post([](Snapshot& s){ s.finished = true; });
                 return;
             }
-            for (auto& opt : e.options) u->setOption(opt.first, opt.second);
             table.push_back({u->name(),0,0,0});
             eng.push_back(std::move(u));
         }

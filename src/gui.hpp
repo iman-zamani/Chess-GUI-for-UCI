@@ -42,8 +42,7 @@ struct Button {
 class AnalysisController {
 public:
     ~AnalysisController(){ shutdown(); }
-    bool start(const std::string& path,
-               const std::vector<std::pair<std::string,std::string>>& opts);
+    bool start(const EngineConfig& cfg);
     void shutdown();
     void setFen(const std::string& fen);
     EngineInfo info();
@@ -117,11 +116,12 @@ private:
     int  boardSquareAt(sf::Vector2f mouse, float bx, float by, float side, bool flipped) const;
 
     // ---- engines & per-engine UCI option overrides ----
-    std::vector<EngineEntry> knownEngines;
+    EngineRegistry registry;             // engines.json + discovered engines
     void scanEngines();
-    EngineEntry makeEntry(int idx);
-    std::map<std::string, std::vector<std::pair<std::string,std::string>>> engineOverrides;
-    void loadOverrides(); void saveOverrides();
+    void saveEngines();
+    void importLegacyOverrides();
+    EngineConfig& configFor(const std::string& path);   // adds a default entry if unknown
+    EngineConfig makeEntry(int idx);
     void setOverride(const std::string& path, const std::string& name, const std::string& val);
     std::string overrideOrDefault(const std::string& path, const UciOption& o);
     std::string optsPath;
@@ -234,10 +234,10 @@ private:
     // accuracy settings
     int accCount = 100, accTestMs = 500, accRefMs = 1000, accMultiPV = 3;
     void pushTestLine(const std::string& s);
-    void startPerftTest(const EngineEntry& e);
+    void startPerftTest(const EngineConfig& e);
     void startInternalSelfTest();
-    void startAccuracyTest(const EngineEntry& test, const EngineEntry& ref);
+    void startAccuracyTest(const EngineConfig& test, const EngineConfig& ref);
     void startGameReview(const std::string& enginePath);
     std::string copyAllTestLines();
-    EngineEntry accTestEngine;
+    EngineConfig accTestEngine;
 };
