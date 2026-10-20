@@ -374,13 +374,15 @@ void App::drawHome(){
 void App::drawAbout(){
     if (showAbout_){ ImGui::OpenPopup("About"); showAbout_ = false; }
     if (ImGui::BeginPopupModal("About", nullptr, ImGuiWindowFlags_AlwaysAutoResize)){
-        ImGui::TextUnformatted("Chess GUI for UCI");
+        ImGui::Text("Chess GUI for UCI %s", CHESSGUI_VERSION);
         ImGui::TextDisabled("GPL-2.0. A GUI for playing, analysing and testing UCI chess engines.");
         ImGui::Separator();
         ImGui::TextUnformatted("Third-party components:");
         ImGui::BulletText("SFML 3 (zlib), Dear ImGui and ImGui-SFML (MIT)");
         ImGui::BulletText("nlohmann/json (MIT), portable-file-dialogs (WTFPL)");
+        ImGui::BulletText("Fathom (MIT), nanosvg (zlib), miniaudio (public domain / MIT-0)");
         ImGui::BulletText("Cantarell and JetBrains Mono fonts (SIL OFL 1.1)");
+        ImGui::BulletText("Pieces: cburnett, merida (GPLv2+), fantasy, celtic (MIT); see Resources/pieces");
         ImGui::Text("Settings and engines are stored in:");
         ImGui::TextDisabled("%s", userConfigDir().c_str());
         if (ImGui::Button("Close")) ImGui::CloseCurrentPopup();

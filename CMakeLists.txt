@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(ChessGUIForUCI LANGUAGES CXX)
+project(ChessGUIForUCI VERSION 2.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -163,6 +163,7 @@ add_library(chesscore STATIC
     src/tournament.cpp
 )
 target_include_directories(chesscore PUBLIC src)
+target_compile_definitions(chesscore PUBLIC CHESSGUI_VERSION="${PROJECT_VERSION}")
 target_link_libraries(chesscore PUBLIC Threads::Threads nlohmann_json::nlohmann_json PRIVATE fathom)
 if(APPLE)
     target_link_libraries(chesscore PUBLIC "-framework IOKit" "-framework CoreFoundation")   # KeepAwake

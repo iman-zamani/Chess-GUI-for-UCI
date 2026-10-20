@@ -50,7 +50,7 @@ Usage:
   chess-cli elo-estimate --engine E [--quick | --full] [--model FILE] [--factor F] [--markdown FILE]
                                 estimate the engine's Elo from test positions (not from games)
   chess-cli bench [--runs N]    single-threaded speed (internal perft, best of N runs)
-  chess-cli help
+  chess-cli help | --version
 
 Every command takes --json for machine-readable output.
 
@@ -649,6 +649,10 @@ static int cmdEloEstimate(const std::vector<std::string>& args){
 
 int main(int argc, char** argv){
     std::vector<std::string> args(argv + 1, argv + argc);
+    if (!args.empty() && (args[0] == "--version" || args[0] == "version")){
+        std::printf("chess-cli %s\n", CHESSGUI_VERSION);
+        return EXIT_OK;
+    }
     if (args.empty() || args[0] == "help" || args[0] == "--help" || args[0] == "-h"){
         std::fputs(kUsage, args.empty() ? stderr : stdout);
         return args.empty() ? EXIT_USAGE : EXIT_OK;
