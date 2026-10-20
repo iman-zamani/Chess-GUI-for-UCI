@@ -64,3 +64,33 @@ jobs:
           name: gui-smoke-${{ matrix.os }}
           path: build/gui_smoke.png
           if-no-files-found: ignore
+
+  # The composite action at the repo root, run the way an engine repository
+  # would use it, but with the chess-cli built here (no release needed).
+  github-action:
+    name: action (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build chess-cli and the mock engine (no GUI)
+        shell: bash
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCHESSGUI_BUILD_GUI=OFF
+          cmake --build build --config Release --parallel --target chess-cli mock_engine
+          cli=build/chess-cli; mock=build/tests/mock_engine
+          if [ "$RUNNER_OS" = "Windows" ]; then cli=build/Release/chess-cli.exe; mock=build/tests/Release/mock_engine.exe; fi
+          echo "CLI=$PWD/$cli" >> "$GITHUB_ENV"
+          echo "MOCK=$PWD/$mock" >> "$GITHUB_ENV"
+
+      - name: Run the action against the mock engine
+        uses: ./
+        with:
+          engine: ${{ env.MOCK }}
+          chess-cli: ${{ env.CLI }}
+          checks: uci-check,perft
+          perft-args: --depth 3
