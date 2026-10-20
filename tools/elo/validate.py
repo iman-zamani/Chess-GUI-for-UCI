@@ -27,43 +27,24 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ENGINES = os.path.join(HERE, "..", "..", "data", "elo", "engines.json")
 
 
-def fit(model, Y, M, elo):
-    """Item parameters from the training engines -> (a, b, to_elo)."""
-    if model == "anchored":
-        a, b, _, _ = irt.fit_items_anchored(Y, M, irt.theta_of(elo))
-        return a, b, irt.elo_of
-    theta, a, b = irt.fit_joint(Y, M)
-    slope, icept = np.polyfit(theta, elo, 1)
-    # express b on the Elo-based theta scale so selection bins mean the same thing
-    to_elo = lambda t: icept + slope * t
-    return a, b, to_elo
-
-
-def predict(model, Y, M, a, b, to_elo, sel):
-    out = []
-    for k in range(Y.shape[0]):
-        t, se = irt.estimate_theta(Y[k, sel], M[k, sel], a[sel], b[sel])
-        out.append((to_elo(t), se))
-    return out
-
-
-def run_folds(d, Y, M, model, n_items, folds):
-    """folds: list of (train mask, test mask) over engines. Returns predicted Elo per engine."""
+def run_folds(d, T, model, n_items, folds):
+    """Refit and reselect without the test engines, then estimate them.
+    folds: list of (train mask, test mask) over engines. Returns (Elo, SE) per engine."""
+    from fit_irt import fit_all
+    from select_positions import choose
     pred = np.full(len(d["engines"]), np.nan)
     se = np.full(len(d["engines"]), np.nan)
     for train, test in folds:
-        a, b, to_elo = fit(model, Y[train], M[train], d["elo"][train])
-        if model == "joint":
-            # selection works on Elo-scaled difficulties
-            b_sel = irt.theta_of(to_elo(b))
-            a_sel = a / max(1e-9, (to_elo(1) - to_elo(0)) / irt.SCALE)
-        else:
-            a_sel, b_sel = a, b
-        sel = irt.select_items(a_sel, b_sel, d["categories"], n=n_items)
-        idx = np.where(test)[0]
-        for k, (p, s) in zip(idx, predict(model, Y[idx], M[idx], a, b, to_elo, sel)):
-            pred[k] = p
-            se[k] = s * (to_elo(1) - to_elo(0))
+        f = fit_all(d, T, model, train)
+        items = {"intercept": f["intercept"], "slope": f["slope"],
+                 "items": [{"a": f["a"][i], "b": f["b"][i], "fit": f["fit"][i], "category": d["categories"][i]}
+                           for i in range(len(d["positions"]))]}
+        sel = choose(items, n_items)
+        Y, M = f["Y"], f["M"]
+        for k in np.where(test)[0]:
+            t, s = irt.estimate_theta(Y[k, sel], M[k, sel], f["a"][sel], f["b"][sel])
+            pred[k] = f["intercept"] + f["slope"] * t
+            se[k] = s * f["slope"]
     return pred, se
 
 
@@ -96,12 +77,11 @@ def main():
     lofo = [(use & (fam != f), real & (fam == f)) for f in sorted(set(fam[real]))]
     results = []
     for T in a.thresholds:
-        Y, M = irt.responses(d["L"], T)
         for model in a.models:
             for n in a.items:
                 row = {"threshold": T, "model": model, "items": n}
                 for name, folds in (("loeo", loeo), ("lofo", lofo)):
-                    pred, se = run_folds(d, Y, M, model, n, folds)
+                    pred, se = run_folds(d, T, model, n, folds)
                     row[name] = metrics(pred, d["elo"], real)
                     row[name + "_pred"] = {d["engines"][k]: [round(float(pred[k]), 1), round(float(se[k]), 1)]
                                            for k in np.where(real)[0]}
