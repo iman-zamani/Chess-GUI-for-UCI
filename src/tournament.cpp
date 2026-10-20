@@ -97,7 +97,10 @@ void MatchRunner::playOneGame(UciEngine& we, UciEngine& be, TimeControl tc, Game
             s.scoreIsMate = inf.isMate; s.mateIn = inf.mateIn;
             s.result = g.result; s.reason = g.reason;
         });
-        if (g.moves.size() > 500){ g.result=GameResult::DRAW; g.reason=ResultReason::AGREEMENT; }
+        if (g.moves.size() > 500 && g.result == GameResult::ONGOING){   // max-length adjudication
+            g.result=GameResult::DRAW; g.reason=ResultReason::ADJUDICATION;
+            logMsg("Game adjudicated a draw after 500 plies");
+        }
     }
     post([&](Snapshot& s){ s.result=g.result; s.reason=g.reason; });
 }

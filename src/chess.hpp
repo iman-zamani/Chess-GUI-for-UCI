@@ -23,7 +23,10 @@ struct Move {
 
 enum class GameResult { ONGOING, WHITE_WINS, BLACK_WINS, DRAW };
 enum class ResultReason { NONE, CHECKMATE, STALEMATE, FIFTY_MOVE, REPETITION,
-                          INSUFFICIENT, RESIGNATION, TIMEOUT, ILLEGAL_MOVE, AGREEMENT };
+                          INSUFFICIENT, RESIGNATION, TIMEOUT, ILLEGAL_MOVE, AGREEMENT,
+                          ADJUDICATION };
+// Human-readable reason ("checkmate", "50-move rule", ...); "" for NONE.
+std::string resultReasonText(ResultReason r);
 
 struct Position {
     int board[64] = {0};       // piece values from values.hpp, 0 = empty

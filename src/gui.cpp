@@ -1742,21 +1742,6 @@ static std::string clockStr(long long ms){
     else snprintf(b,32,"%02lld:%02lld",s/60,s%60);
     return b;
 }
-static std::string reasonStr(ResultReason r){
-    switch(r){
-    case ResultReason::CHECKMATE: return "checkmate";
-    case ResultReason::STALEMATE: return "stalemate";
-    case ResultReason::FIFTY_MOVE: return "50-move rule";
-    case ResultReason::REPETITION: return "threefold repetition";
-    case ResultReason::INSUFFICIENT: return "insufficient material";
-    case ResultReason::RESIGNATION: return "resignation";
-    case ResultReason::TIMEOUT: return "time forfeit";
-    case ResultReason::ILLEGAL_MOVE: return "illegal move";
-    case ResultReason::AGREEMENT: return "agreement";
-    default: return "";
-    }
-}
-
 void App::render(){
     window.clear(COL_BG);
     switch (screen){
@@ -1841,7 +1826,8 @@ void App::render(){
         }
         std::string st;
         if (game.result!=GameResult::ONGOING)
-            st = game.resultString()+"  ("+reasonStr(game.reason)+")";
+            st = game.resultString();
+            if (game.reason != ResultReason::NONE) st += "  ("+resultReasonText(game.reason)+")";
         else if (viewPly>=0)
             st = "Viewing move "+std::to_string(viewPly)+"/"+std::to_string(game.moves.size())+"  (>| returns to live)";
         else if (mode==GameMode::HUMAN_VS_ENGINE && game.pos.whiteToMove!=humanIsWhite)
@@ -1954,7 +1940,7 @@ void App::render(){
             text(ln, tx, ty, 14, COL_DIM); ty+=20;
         }
         if (s.result!=GameResult::ONGOING && !s.finished)
-            text("Last result: "+reasonStr(s.reason), tx, ty+6, 14, COL_ACCENT);
+            text("Last result: "+resultReasonText(s.reason), tx, ty+6, 14, COL_ACCENT);
         if (s.finished) text("Tournament finished.", tx, ty+6, 16, COL_GOOD);
         break; }
     case Screen::TESTS: {
