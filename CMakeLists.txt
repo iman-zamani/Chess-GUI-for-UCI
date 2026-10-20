@@ -100,6 +100,7 @@ FetchContent_MakeAvailable(nlohmann_json)
 add_library(chesscore STATIC
     src/chess.cpp
     src/engine_config.cpp
+    src/settings.cpp
     src/uci_engine.cpp
     src/testing.cpp
     src/tournament.cpp
