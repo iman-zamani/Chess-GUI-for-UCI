@@ -127,6 +127,13 @@ bool GameScreen::animating() const{
     return clocksRunning_ || oppState_ != 0 || ana_ != nullptr || review_.running() || board_.animating();
 }
 
+// The sound for a move just played (pos = the position after it).
+static Sounds::Kind moveSound(const Move& m, const Position& after, bool over){
+    if (over) return Sounds::Kind::End;
+    if (after.inCheck(after.whiteToMove)) return Sounds::Kind::Check;
+    return m.captured || m.isEnPassant ? Sounds::Kind::Capture : Sounds::Kind::Move;
+}
+
 // =============================================================== game flow
 Position GameScreen::shownPosition() const{
     return atLiveEnd() ? game_.pos : tree_.at(cur_).pos;
@@ -154,6 +161,7 @@ void GameScreen::syncMainLine(){
 
 void GameScreen::branchMove(Move m){
     int n = tree_.add(cur_, m);
+    if (app_.settings().moveSounds) app_.sounds().play(moveSound(m, tree_.at(n).pos, false));
     if (tree_.onMainLine(n)) syncMainLine();       // extended the main line (analysis)
     goTo(n);
 }
@@ -181,6 +189,7 @@ void GameScreen::commitMove(Move m){
         tree_.at(n).clockMs = game_.pos.whiteToMove ? bClockMs_ : wClockMs_;   // the mover's clock
     }
     selectedSq_ = -1; legalForSelected_.clear(); cur_ = n;
+    if (app_.settings().moveSounds) app_.sounds().play(moveSound(m, game_.pos, game_.result != GameResult::ONGOING));
     if (game_.result != GameResult::ONGOING) clocksRunning_ = false;
     scrollMoves_ = true;
 }

@@ -308,6 +308,7 @@ void App::drawMenuBar(){
         if (ImGui::MenuItem("Show coordinates", nullptr, &settings_.showCoordinates)) saveSettings();
         bool anim = settings_.moveAnimationMs > 0;
         if (ImGui::MenuItem("Animate moves", nullptr, &anim)){ settings_.moveAnimationMs = anim ? 150 : 0; saveSettings(); }
+        if (ImGui::MenuItem("Move sounds", nullptr, &settings_.moveSounds)) saveSettings();
         if (ImGui::BeginMenu("Board colours")){
             for (auto& t : boardThemes())
                 if (ImGui::MenuItem(t.name, nullptr, settings_.boardTheme == t.name)){ settings_.boardTheme = t.name; saveSettings(); }

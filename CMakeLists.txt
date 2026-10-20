@@ -101,6 +101,20 @@ if(CHESSGUI_BUILD_GUI)
         DOWNLOAD_EXTRACT_TIMESTAMP TRUE
         SOURCE_SUBDIR  no-cmake)        # headers only; don't add its CMake project
     FetchContent_MakeAvailable(nanosvg)
+
+    # miniaudio (public domain / MIT-0, single header) plays the move sounds.
+    FetchContent_Declare(miniaudio
+        URL      https://github.com/mackron/miniaudio/archive/refs/tags/0.11.24.tar.gz
+        URL_HASH SHA256=3fdeb62a9387a3164e901475c663f5ab5c8318de268fd2c64af937c6a65980bd
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+        SOURCE_SUBDIR  no-cmake)        # the header only
+    FetchContent_MakeAvailable(miniaudio)
+    set(AUDIO_LIBS ${CMAKE_DL_LIBS})
+    if(APPLE)
+        list(APPEND AUDIO_LIBS "-framework CoreAudio" "-framework AudioToolbox" "-framework CoreFoundation")
+    elseif(UNIX)
+        list(APPEND AUDIO_LIBS m)
+    endif()
 endif()
 
 find_package(Threads REQUIRED)
@@ -168,6 +182,7 @@ set(CHESS_SOURCES
     src/ui/file_dialog.cpp
     src/ui/game_screen.cpp
     src/ui/tools_screen.cpp
+    src/ui/sounds.cpp
     src/ui/uci_console.cpp
     src/ui/widgets.cpp
     src/ui/item_hooks.cpp
@@ -176,8 +191,8 @@ set(CHESS_SOURCES
 )
 
 add_executable(chess-gui ${CHESS_SOURCES})
-target_link_libraries(chess-gui PRIVATE chesscore ${SFML_LIBS})
-target_include_directories(chess-gui PRIVATE ${pfd_SOURCE_DIR} ${nanosvg_SOURCE_DIR}/src)
+target_link_libraries(chess-gui PRIVATE chesscore ${SFML_LIBS} ${AUDIO_LIBS})
+target_include_directories(chess-gui PRIVATE ${pfd_SOURCE_DIR} ${nanosvg_SOURCE_DIR}/src ${miniaudio_SOURCE_DIR})
 
 # Copy Resources next to the binary so ./chess-gui finds fonts, pieces,
 # engines and the perft suite.
@@ -200,8 +215,8 @@ if(APPLE)
 
     # Path B (guaranteed): a real bundle -> "Chess GUI for UCI.app".
     add_executable(chess-gui-app MACOSX_BUNDLE ${CHESS_SOURCES})
-    target_link_libraries(chess-gui-app PRIVATE chesscore ${SFML_LIBS})
-    target_include_directories(chess-gui-app PRIVATE ${pfd_SOURCE_DIR} ${nanosvg_SOURCE_DIR}/src)
+    target_link_libraries(chess-gui-app PRIVATE chesscore ${SFML_LIBS} ${AUDIO_LIBS})
+    target_include_directories(chess-gui-app PRIVATE ${pfd_SOURCE_DIR} ${nanosvg_SOURCE_DIR}/src ${miniaudio_SOURCE_DIR})
     set_target_properties(chess-gui-app PROPERTIES
         OUTPUT_NAME "Chess GUI for UCI"
         MACOSX_BUNDLE_BUNDLE_NAME "Chess GUI for UCI"

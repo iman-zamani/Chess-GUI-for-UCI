@@ -1,0 +1,3 @@
+move.wav, capture.wav, check.wav, end.wav: synthesised for Chess-GUI-for-UCI by
+tools/make_sounds.py and dedicated to the public domain under CC0 1.0
+(https://creativecommons.org/publicdomain/zero/1.0/).
