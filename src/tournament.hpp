@@ -5,6 +5,7 @@
 #include "stats.hpp"
 #include "uci_engine.hpp"
 #include <atomic>
+#include <deque>
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -182,6 +183,7 @@ private:
     std::unique_ptr<OpeningSchedule> schedule_;
     std::vector<std::pair<int, int>> pairings_;
     std::vector<Job> jobs_;
+    std::deque<Job> retry_;                   // games abandoned because the computer slept
     std::vector<bool> done_;                  // per game index
     size_t nextJob_ = 0;
     std::vector<std::thread> threads_;

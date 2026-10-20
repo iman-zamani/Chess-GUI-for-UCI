@@ -1,6 +1,7 @@
 /* Chess-GUI-for-UCI — match runner tests (concurrency, books, adjudication,
  * time losses, crashes, SPRT stop, resume) against the mock engine. GPL-2.0 */
 #include "testlib.hpp"
+#include "power.hpp"
 #include "tournament.hpp"
 #include <nlohmann/json.hpp>
 #include <chrono>
@@ -215,4 +216,21 @@ TEST_CASE("match/gauntlet-and-round-robin"){
     REQUIRE(rr.start(s));
     waitDone(rr);
     CHECK_EQ(rr.snapshot().gamesDone, 6);
+}
+
+TEST_CASE("match/game-interrupted-by-sleep-is-replayed"){
+    MatchSettings s = base();
+    s.gamesPerPairing = 4;
+    s.concurrency = 1;
+    injectSuspendForTests(60000);                // the first move "spans" a 60 s sleep
+    MatchRunner m;
+    REQUIRE(m.start(s));
+    for (int i = 0; i < 600 && m.running(); i++) std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    REQUIRE(!m.running());
+    auto snap = m.snapshot();
+    CHECK_EQ(snap.gamesDone, 4);                 // still four games, none lost on time
+    CHECK_EQ(snap.pairings[0].timeLosses, 0);
+    bool noted = false;
+    for (auto& l : snap.log) if (l.find("interrupted: the computer slept for 60 s") != std::string::npos) noted = true;
+    CHECK(noted);
 }

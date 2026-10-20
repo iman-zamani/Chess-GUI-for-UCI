@@ -129,6 +129,7 @@ add_library(chesscore STATIC
     src/engine_config.cpp
     src/openings.cpp
     src/perft_bisect.cpp
+    src/power.cpp
     src/settings.cpp
     src/stats.cpp
     src/syzygy.cpp
@@ -139,6 +140,9 @@ add_library(chesscore STATIC
 )
 target_include_directories(chesscore PUBLIC src)
 target_link_libraries(chesscore PUBLIC Threads::Threads nlohmann_json::nlohmann_json PRIVATE fathom)
+if(APPLE)
+    target_link_libraries(chesscore PUBLIC "-framework IOKit" "-framework CoreFoundation")   # KeepAwake
+endif()
 
 # Headless command-line tool: core only, no SFML.
 add_executable(chess-cli src/cli.cpp)

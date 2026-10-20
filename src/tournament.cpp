@@ -1,5 +1,6 @@
 /* Chess-GUI-for-UCI — engine matches, tournaments and SPRT runs. GPL-2.0 */
 #include "tournament.hpp"
+#include "power.hpp"
 #include "syzygy.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
@@ -208,6 +209,7 @@ bool MatchRunner::start(const MatchSettings& settings, std::string* err){
         if (!syzygy::init(s_.adj.syzygyPath, &e)) return fail(e);
     }
     // openings
+    retry_.clear();
     book_.clear();
     if (!s_.bookPath.empty()){
         BookLoadResult r = loadOpeningBook(s_.bookPath, s_.bookFormat, s_.bookPlies);
@@ -298,13 +300,16 @@ std::vector<std::string> MatchRunner::collectedPGNs(){
 
 bool MatchRunner::nextJob(Job& j){
     std::lock_guard<std::mutex> lk(mx_);
+    if (stop_) return false;
+    if (!retry_.empty()){ j = retry_.front(); retry_.pop_front(); return true; }
     while (nextJob_ < jobs_.size() && done_[nextJob_]) nextJob_++;
-    if (stop_ || nextJob_ >= jobs_.size()) return false;
+    if (nextJob_ >= jobs_.size()) return false;
     j = jobs_[nextJob_++];
     return true;
 }
 
 void MatchRunner::workerLoop(int w){
+    KeepAwake awake("Chess-GUI-for-UCI is playing an engine match");   // held by this worker thread
     std::vector<std::unique_ptr<UciEngine>> engines(s_.engines.size());
     Job j;
     while (!stop_ && nextJob(j)) playGame(w, j, engines);
@@ -386,9 +391,18 @@ void MatchRunner::playGame(int w, const Job& job, std::vector<std::unique_ptr<Uc
         e.setPosition(startFen, ucis);
         post([&](LiveGame& L){ L.wClockMs = clock[0]; L.bClockMs = clock[1]; L.postedAtMs = nowMs(); });
         auto t0 = clk::now();
+        SuspendMark asleep = suspendMark();
         std::string bm = e.goClock((int)clock[0], (int)clock[1], s_.tc.incMs, s_.tc.incMs);
         long long spent = std::chrono::duration_cast<std::chrono::milliseconds>(clk::now() - t0).count();
         if (stop_) return;                                   // aborted: the game doesn't count
+        if (long long slept = suspendedMsSince(asleep); slept > 500){
+            // the clocks are meaningless across a system sleep: play the game again
+            log("Game " + std::to_string(job.index + 1) + " was interrupted: the computer slept for "
+                + std::to_string(slept / 1000) + " s. It will be replayed.");
+            std::lock_guard<std::mutex> lk(mx_);
+            retry_.push_back(job);
+            return;
+        }
         clock[side] -= spent;
         GameResult loss = side == 0 ? GameResult::BLACK_WINS : GameResult::WHITE_WINS;
         if (clock[side] < -s_.timeMarginMs){
