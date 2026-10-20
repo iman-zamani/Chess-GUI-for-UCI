@@ -1,0 +1,730 @@
+{
+ "description": "Calibration engines for the position-based Elo estimator. Ratings are copied from the CCRL Blitz list (single-CPU entries); engines are built from the pinned tags by tools/elo/build_engines.py and are not redistributed.",
+ "ccrlSource": {
+  "list": "CCRL Blitz, all engines, text rating list",
+  "url": "https://computerchess.org.uk/ccrl/404/cgi/compare_engines.cgi?print=Rating+list+%28text%29&class=all+engines&only_best_in_class=0",
+  "listDate": "2026-10-17",
+  "retrieved": "2026-10-20"
+ },
+ "engines": [
+  {
+   "id": "stash-9.0.1",
+   "family": "Stash",
+   "version": "9.0.1",
+   "repo": "https://github.com/mhouppin/stash-bot",
+   "tag": "v9",
+   "patches": [
+    "guard-x86-headers"
+   ],
+   "build": "make CC=\"clang -include stdlib.h\" -j{jobs}",
+   "binary": "stash-bot",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Stash 9.0.1 64-bit",
+    "rating": 1271,
+    "plus": 24,
+    "minus": 24,
+    "games": 684
+   },
+   "commit": "b7e07471798da75708a34b52f51a3d203f7acc9d",
+   "idName": "Stash v9.0.1"
+  },
+  {
+   "id": "stash-11.0.1",
+   "family": "Stash",
+   "version": "11.0.1",
+   "repo": "https://github.com/mhouppin/stash-bot",
+   "tag": "v11",
+   "patches": [
+    "guard-x86-headers"
+   ],
+   "build": "make CC=\"clang -include stdlib.h\" -j{jobs}",
+   "binary": "stash-bot",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Stash 11.0.1 64-bit",
+    "rating": 1687,
+    "plus": 28,
+    "minus": 28,
+    "games": 490
+   },
+   "commit": "62c525c52580b31767cb0f1b47a48ba26f4b589c",
+   "idName": "Stash v11.0.1"
+  },
+  {
+   "id": "stash-12.0",
+   "family": "Stash",
+   "version": "12.0",
+   "repo": "https://github.com/mhouppin/stash-bot",
+   "tag": "v12",
+   "patches": [
+    "guard-x86-headers"
+   ],
+   "build": "make CC=\"clang -include stdlib.h\" -j{jobs}",
+   "binary": "stash-bot",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Stash 12.0 64-bit",
+    "rating": 1883,
+    "plus": 22,
+    "minus": 22,
+    "games": 750
+   },
+   "commit": "c59e2739e3d33eef9b177f2063187dbe2795233c",
+   "idName": "Stash v12.0"
+  },
+  {
+   "id": "stash-13.0.1",
+   "family": "Stash",
+   "version": "13.0.1",
+   "repo": "https://github.com/mhouppin/stash-bot",
+   "tag": "v13",
+   "patches": [
+    "guard-x86-headers"
+   ],
+   "build": "make -C src CC=clang -j{jobs}",
+   "binary": "src/stash-bot",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Stash 13.0.1 64-bit",
+    "rating": 1968,
+    "plus": 20,
+    "minus": 20,
+    "games": 848
+   },
+   "commit": "5863d3abeb1770bee4389e96a01d565ce1e924e5",
+   "idName": "Stash v13.0.1"
+  },
+  {
+   "id": "stash-14.0",
+   "family": "Stash",
+   "version": "14.0",
+   "repo": "https://github.com/mhouppin/stash-bot",
+   "tag": "v14",
+   "patches": [
+    "guard-x86-headers"
+   ],
+   "build": "make -C src CC=clang -j{jobs}",
+   "binary": "src/stash-bot",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Stash 14.0 64-bit",
+    "rating": 2059,
+    "plus": 20,
+    "minus": 20,
+    "games": 856
+   },
+   "commit": "d87eaa36ffdf778ba1fee05ce34861f89ac610e9",
+   "idName": "Stash v14.0"
+  },
+  {
+   "id": "stash-15.3",
+   "family": "Stash",
+   "version": "15.3",
+   "repo": "https://github.com/mhouppin/stash-bot",
+   "tag": "v15.3",
+   "patches": [
+    "guard-x86-headers"
+   ],
+   "build": "make -C src CC=clang -j{jobs}",
+   "binary": "src/stash-bot",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Stash 15.3 64-bit",
+    "rating": 2174,
+    "plus": 19,
+    "minus": 19,
+    "games": 982
+   },
+   "commit": "7d17ff80eb53b9d4808fd285c7439e641f1c5a3b",
+   "idName": "Stash v15.3"
+  },
+  {
+   "id": "stash-17.0",
+   "family": "Stash",
+   "version": "17.0",
+   "repo": "https://github.com/mhouppin/stash-bot",
+   "tag": "v17.0",
+   "patches": [
+    "guard-x86-headers"
+   ],
+   "build": "make -C src CC=clang -j{jobs}",
+   "binary": "src/stash-bot",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Stash 17.0 64-bit",
+    "rating": 2297,
+    "plus": 19,
+    "minus": 19,
+    "games": 955
+   },
+   "commit": "f85863d68b2f20812f8e1b330cd2613212a1b12a",
+   "idName": "Stash v17.0"
+  },
+  {
+   "id": "stash-19.0",
+   "family": "Stash",
+   "version": "19.0",
+   "repo": "https://github.com/mhouppin/stash-bot",
+   "tag": "v19.0",
+   "patches": [
+    "guard-x86-headers"
+   ],
+   "build": "make -C src CC=clang -j{jobs}",
+   "binary": "src/stash-bot",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Stash 19.0 64-bit",
+    "rating": 2474,
+    "plus": 18,
+    "minus": 18,
+    "games": 1052
+   },
+   "commit": "de408a3e8d8ffbd41f4b1608b19f18c69eac2512",
+   "idName": "Stash v19.0"
+  },
+  {
+   "id": "stash-21.0",
+   "family": "Stash",
+   "version": "21.0",
+   "repo": "https://github.com/mhouppin/stash-bot",
+   "tag": "v21.0",
+   "patches": [
+    "guard-x86-headers"
+   ],
+   "build": "make -C src CC=clang -j{jobs}",
+   "binary": "src/stash-bot",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Stash 21.0 64-bit",
+    "rating": 2714,
+    "plus": 14,
+    "minus": 14,
+    "games": 1493
+   },
+   "commit": "6dc8c9cdefaa43e3d82a7c59cd2a5f93bcbd9d5a",
+   "idName": "Stash v21.0"
+  },
+  {
+   "id": "stash-25.0",
+   "family": "Stash",
+   "version": "25.0",
+   "repo": "https://github.com/mhouppin/stash-bot",
+   "tag": "v25.0",
+   "patches": [
+    "guard-x86-headers"
+   ],
+   "build": "make -C src CC=clang -j{jobs}",
+   "binary": "src/stash-bot",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Stash 25.0 64-bit",
+    "rating": 2933,
+    "plus": 18,
+    "minus": 18,
+    "games": 874
+   },
+   "commit": "664849453d3fa0b5b60869325a3764921c902512",
+   "idName": "Stash v25.0"
+  },
+  {
+   "id": "stash-27.0",
+   "family": "Stash",
+   "version": "27.0",
+   "repo": "https://github.com/mhouppin/stash-bot",
+   "tag": "v27.0",
+   "patches": [
+    "guard-x86-headers"
+   ],
+   "build": "make -C src CC=clang ARCH=unknown native=yes -j{jobs}",
+   "binary": "src/stash-bot",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Stash 27.0 64-bit",
+    "rating": 3049,
+    "plus": 16,
+    "minus": 16,
+    "games": 989
+   },
+   "commit": "8f7808e2650a0765f7f4a3117461eecce0f92be0",
+   "idName": "Stash v27.0"
+  },
+  {
+   "id": "stash-29.0",
+   "family": "Stash",
+   "version": "29.0",
+   "repo": "https://github.com/mhouppin/stash-bot",
+   "tag": "v29.0",
+   "patches": [
+    "guard-x86-headers"
+   ],
+   "build": "make -C src CC=clang ARCH=unknown native=yes -j{jobs}",
+   "binary": "src/stash-bot",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Stash 29.0 64-bit",
+    "rating": 3128,
+    "plus": 18,
+    "minus": 18,
+    "games": 827
+   },
+   "commit": "80db6d9b41b2612d0613ab67266316e442c4f678",
+   "idName": "Stash v29.0"
+  },
+  {
+   "id": "stash-33.0",
+   "family": "Stash",
+   "version": "33.0",
+   "repo": "https://github.com/mhouppin/stash-bot",
+   "tag": "v33.0",
+   "patches": [
+    "guard-x86-headers"
+   ],
+   "build": "make -C src CC=clang ARCH=unknown native=yes -j{jobs}",
+   "binary": "src/stash-bot",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Stash 33.0 64-bit",
+    "rating": 3273,
+    "plus": 14,
+    "minus": 14,
+    "games": 1374
+   },
+   "commit": "8be4b7f20249ea64fcebc24c49399a5093cad9c5",
+   "idName": "Stash v33.0"
+  },
+  {
+   "id": "stash-35.0",
+   "family": "Stash",
+   "version": "35.0",
+   "repo": "https://github.com/mhouppin/stash-bot",
+   "tag": "v35.0",
+   "patches": [
+    "guard-x86-headers"
+   ],
+   "build": "make -C src CC=clang ARCH=unknown native=yes -j{jobs}",
+   "binary": "src/stash-bot",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Stash 35.0 64-bit",
+    "rating": 3345,
+    "plus": 12,
+    "minus": 12,
+    "games": 1932
+   },
+   "commit": "67c3a08dd8b96e3d917507c34cca90a629451302",
+   "idName": "Stash v35.0"
+  },
+  {
+   "id": "stash-37.0",
+   "family": "Stash",
+   "version": "37.0",
+   "repo": "https://github.com/mhouppin/stash-bot",
+   "tag": "v37.0",
+   "patches": [
+    "guard-x86-headers"
+   ],
+   "build": "make -C src CC=clang ARCH=unknown native=yes -j{jobs}",
+   "binary": "src/stash",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Stash 37.0 64-bit",
+    "rating": 3418,
+    "plus": 11,
+    "minus": 11,
+    "games": 2327
+   },
+   "commit": "077a93828fee354853ffac322f178d1a4f1670ff",
+   "idName": "Stash v37.0"
+  },
+  {
+   "id": "bit-genie-2",
+   "family": "Bit-Genie",
+   "version": "2",
+   "repo": "https://github.com/Aryan1508/Bit-Genie",
+   "tag": "v2",
+   "build": "make -C Bit-Genie CXX=clang++ EXE=bitgenie -j{jobs}",
+   "binary": "Bit-Genie/bitgenie",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Bit-Genie 2 64-bit",
+    "rating": 1793,
+    "plus": 21,
+    "minus": 21,
+    "games": 862
+   },
+   "commit": "edf80bdaa5f10def761155517746ce9456b09ae0",
+   "idName": "Bit-Genie 2"
+  },
+  {
+   "id": "bit-genie-4",
+   "family": "Bit-Genie",
+   "version": "4",
+   "repo": "https://github.com/Aryan1508/Bit-Genie",
+   "tag": "v4",
+   "build": "make -C Bit-Genie CXX=clang++ EXE=bitgenie -j{jobs}",
+   "binary": "Bit-Genie/bitgenie",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Bit-Genie 4 64-bit",
+    "rating": 2166,
+    "plus": 19,
+    "minus": 19,
+    "games": 946
+   },
+   "commit": "80f08ec662710971f132b981f088c17fe23e8c7e",
+   "idName": "Bit-Genie 4"
+  },
+  {
+   "id": "bit-genie-5",
+   "family": "Bit-Genie",
+   "version": "5",
+   "repo": "https://github.com/Aryan1508/Bit-Genie",
+   "tag": "v5",
+   "build": "make -C Bit-Genie CXX=clang++ EXE=bitgenie -j{jobs}",
+   "binary": "Bit-Genie/bitgenie",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Bit-Genie 5 64-bit",
+    "rating": 2361,
+    "plus": 19,
+    "minus": 19,
+    "games": 826
+   },
+   "commit": "8d095f16e9e08f58827224c254daf8526722f9c9",
+   "idName": "Bit-Genie 5"
+  },
+  {
+   "id": "bit-genie-8",
+   "family": "Bit-Genie",
+   "version": "8",
+   "repo": "https://github.com/Aryan1508/Bit-Genie",
+   "tag": "v8",
+   "build": "make -C src CXX=clang++ EXE=bitgenie -j{jobs}",
+   "binary": "src/bitgenie",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Bit-Genie 8 64-bit",
+    "rating": 2860,
+    "plus": 25,
+    "minus": 25,
+    "games": 440
+   },
+   "commit": "3eced05b93bd6dbfbdc77681354a2306be68450b",
+   "idName": "Bit-Genie 8"
+  },
+  {
+   "id": "weiss-0.8",
+   "family": "Weiss",
+   "version": "0.8",
+   "repo": "https://github.com/TerjeKir/weiss",
+   "tag": "v0.8",
+   "build": "make -C src CC=clang WARN=-Wall -j{jobs}",
+   "binary": "src/weiss",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Weiss 0.8 64-bit",
+    "rating": 2609,
+    "plus": 17,
+    "minus": 17,
+    "games": 1096
+   },
+   "commit": "c263e27dfb5cf3d2d7c586f3359226db600cd05c",
+   "idName": "weiss 0.8"
+  },
+  {
+   "id": "weiss-1.0",
+   "family": "Weiss",
+   "version": "1.0",
+   "repo": "https://github.com/TerjeKir/weiss",
+   "tag": "v1.0",
+   "build": "make -C src CC=clang WARN=-Wall -j{jobs}",
+   "binary": "src/weiss",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Weiss 1.0 64-bit",
+    "rating": 2896,
+    "plus": 17,
+    "minus": 17,
+    "games": 895
+   },
+   "commit": "f44a4c654c67139ecbd5f3afd9da1ebe41241464",
+   "idName": "Weiss 1.0"
+  },
+  {
+   "id": "weiss-1.2",
+   "family": "Weiss",
+   "version": "1.2",
+   "repo": "https://github.com/TerjeKir/weiss",
+   "tag": "v1.2",
+   "build": "make -C src basic CC=clang WARN=-Wall -j{jobs}",
+   "binary": "src/weiss",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Weiss 1.2 64-bit",
+    "rating": 3056,
+    "plus": 15,
+    "minus": 15,
+    "games": 1195
+   },
+   "commit": "f8d625d26f82e6656e348daded9c258413fb83e3",
+   "idName": "Weiss 1.2"
+  },
+  {
+   "id": "weiss-1.4",
+   "family": "Weiss",
+   "version": "1.4",
+   "repo": "https://github.com/TerjeKir/weiss",
+   "tag": "v1.4",
+   "build": "make -C src basic CC=clang WARN=-Wall -j{jobs}",
+   "binary": "src/weiss",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Weiss 1.4 64-bit",
+    "rating": 3255,
+    "plus": 16,
+    "minus": 16,
+    "games": 978
+   },
+   "commit": "d1ea87308fd2dcdde5a83db97e2e06c90b5dca7b",
+   "idName": "Weiss 1.4"
+  },
+  {
+   "id": "weiss-2.0",
+   "family": "Weiss",
+   "version": "2.0",
+   "repo": "https://github.com/TerjeKir/weiss",
+   "tag": "v2.0",
+   "build": "make -C src basic CC=clang WARN=-Wall -j{jobs}",
+   "binary": "src/weiss",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Weiss 2.0 64-bit",
+    "rating": 3319,
+    "plus": 8,
+    "minus": 8,
+    "games": 6590
+   },
+   "commit": "0db49c7270f5c6286a983390a5ea2780e1e0c9f4",
+   "idName": "Weiss 2.0"
+  },
+  {
+   "id": "berserk-2.0.0",
+   "family": "Berserk",
+   "version": "2.0.0",
+   "repo": "https://github.com/jhonnold/berserk",
+   "tag": "2.0.0",
+   "patches": [
+    "guard-x86-headers"
+   ],
+   "build": "make -C src CC=clang EXE=berserk POPCOUNT=-DPOPCOUNT -j{jobs}",
+   "binary": "src/berserk",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Berserk 2.0.0 64-bit",
+    "rating": 2529,
+    "plus": 17,
+    "minus": 17,
+    "games": 1101
+   },
+   "commit": "0c1c0c0e9a9f05c88c5b90e3f12ee8c76a4e858c",
+   "idName": "Berserk 2.0.0"
+  },
+  {
+   "id": "berserk-3.2.0",
+   "family": "Berserk",
+   "version": "3.2.0",
+   "repo": "https://github.com/jhonnold/berserk",
+   "tag": "3.2.0",
+   "patches": [
+    "guard-x86-headers"
+   ],
+   "build": "make -C src CC=clang EXE=berserk POPCOUNT=-DPOPCOUNT -j{jobs}",
+   "binary": "src/berserk",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Berserk 3.2.0 64-bit",
+    "rating": 2910,
+    "plus": 17,
+    "minus": 17,
+    "games": 943
+   },
+   "commit": "8a040a20bfb0712e94d5cad0665305f99d9455b9",
+   "idName": "Berserk 3.2.0"
+  },
+  {
+   "id": "berserk-4.1.0",
+   "family": "Berserk",
+   "version": "4.1.0",
+   "repo": "https://github.com/jhonnold/berserk",
+   "tag": "4.1.0",
+   "patches": [
+    "guard-x86-headers"
+   ],
+   "build": "make -C src CC=clang EXE=berserk POPCOUNT=-DPOPCOUNT -j{jobs}",
+   "binary": "src/berserk",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Berserk 4.1.0 64-bit",
+    "rating": 3133,
+    "plus": 17,
+    "minus": 17,
+    "games": 893
+   },
+   "commit": "7f4b87578aab3ca27a93d917189d9a5c3521acab",
+   "idName": "Berserk 4.1.0"
+  },
+  {
+   "id": "ethereal-12.00",
+   "family": "Ethereal",
+   "version": "12.00",
+   "repo": "https://github.com/AndyGrant/Ethereal",
+   "tag": "V12.00",
+   "build": "cd src && clang -std=gnu11 -O3 -flto -DNDEBUG -march=native *.c fathom/tbprobe.c -lpthread -lm -o Ethereal",
+   "binary": "src/Ethereal",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Ethereal 12.00 64-bit",
+    "rating": 3391,
+    "plus": 17,
+    "minus": 17,
+    "games": 946
+   },
+   "commit": "37ccbfe233ac418a49cb9a5c9f54d62b060d44ad",
+   "idName": "Ethereal 12.00"
+  },
+  {
+   "id": "ethereal-13.00",
+   "family": "Ethereal",
+   "version": "13.00",
+   "repo": "https://github.com/AndyGrant/Ethereal",
+   "tag": "v13.00",
+   "build": "make -C src nopopcnt CC=clang -j{jobs}",
+   "binary": "src/Ethereal",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Ethereal 13.00 64-bit",
+    "rating": 3487,
+    "plus": 13,
+    "minus": 13,
+    "games": 1564
+   },
+   "commit": "2687b3834179fc3ebf52f0f13b96499f4f6977e9",
+   "idName": "Ethereal 13.00"
+  },
+  {
+   "id": "blunder-4.0.0",
+   "family": "Blunder",
+   "version": "4.0.0",
+   "repo": "https://github.com/algerbrex/blunder",
+   "tag": "v4.0.0",
+   "build": "go build -o blunder-bin ./blunder",
+   "binary": "blunder-bin",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Blunder 4.0.0 64-bit",
+    "rating": 1616,
+    "plus": 22,
+    "minus": 22,
+    "games": 748
+   },
+   "commit": "89f77a3c420b7b99878525b89c18fc82501b540e",
+   "idName": "Blunder 4.0.0"
+  },
+  {
+   "id": "blunder-5.0.0",
+   "family": "Blunder",
+   "version": "5.0.0",
+   "repo": "https://github.com/algerbrex/blunder",
+   "tag": "v5.0.0",
+   "build": "go build -o blunder-bin ./blunder",
+   "binary": "blunder-bin",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Blunder 5.0.0 64-bit",
+    "rating": 2018,
+    "plus": 20,
+    "minus": 20,
+    "games": 877
+   },
+   "commit": "82e4fd405194a69384df574c9ced4bc5cb55fed6",
+   "idName": "Blunder 5.0.0"
+  },
+  {
+   "id": "blunder-7.1.0",
+   "family": "Blunder",
+   "version": "7.1.0",
+   "repo": "https://github.com/algerbrex/blunder",
+   "tag": "v7.1.0",
+   "build": "go build -o blunder-bin ./blunder",
+   "binary": "blunder-bin",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Blunder 7.1.0 64-bit",
+    "rating": 2389,
+    "plus": 18,
+    "minus": 18,
+    "games": 1049
+   },
+   "commit": "4563c395ea03e12ab1679389706894aace9d4058",
+   "idName": "Blunder 7.1.0"
+  },
+  {
+   "id": "blunder-8.0.0",
+   "family": "Blunder",
+   "version": "8.0.0",
+   "repo": "https://github.com/algerbrex/blunder",
+   "tag": "v8.0.0",
+   "build": "go build -o blunder-bin ./blunder",
+   "binary": "blunder-bin",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Blunder 8.0.0 64-bit",
+    "rating": 2654,
+    "plus": 15,
+    "minus": 15,
+    "games": 1426
+   },
+   "commit": "527906ccccdb0c603dc62e9ea1a885c0c7c333f3",
+   "idName": "Blunder 8.0.0"
+  },
+  {
+   "id": "stockfish-10",
+   "family": "Stockfish",
+   "version": "10",
+   "repo": "https://github.com/official-stockfish/Stockfish",
+   "tag": "sf_10",
+   "build": "make -C src all ARCH=general-64 COMP=clang arch=arm64 EXTRACXXFLAGS=-DUSE_POPCNT -j{jobs}",
+   "binary": "src/stockfish",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Stockfish 10 64-bit",
+    "rating": 3509,
+    "plus": 19,
+    "minus": 19,
+    "games": 650
+   },
+   "commit": "b4c239b625285307c5871f1104dc3fb80aa6d5d2",
+   "idName": "Stockfish 10 64 POPCNT"
+  },
+  {
+   "id": "stockfish-11",
+   "family": "Stockfish",
+   "version": "11",
+   "repo": "https://github.com/official-stockfish/Stockfish",
+   "tag": "sf_11",
+   "build": "make -C src all ARCH=general-64 COMP=clang arch=arm64 EXTRACXXFLAGS=-DUSE_POPCNT -j{jobs}",
+   "binary": "src/stockfish",
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Stockfish 11 64-bit",
+    "rating": 3563,
+    "plus": 15,
+    "minus": 15,
+    "games": 1487
+   },
+   "commit": "c3483fa9a7d7c0ffa9fcc32b467ca844cfb63790",
+   "idName": "Stockfish 11 64 POPCNT"
+  }
+ ]
+}

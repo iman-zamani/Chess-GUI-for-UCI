@@ -1,0 +1,6 @@
+# Tooling for the Elo estimator pipeline only (not needed to build or run the GUI).
+chess==1.11.2
+numpy==2.5.4
+pandas==3.0.6
+scipy==1.18.1
+zstandard==0.25.0
