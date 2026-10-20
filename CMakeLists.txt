@@ -105,6 +105,22 @@ FetchContent_Declare(nlohmann_json
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
 FetchContent_MakeAvailable(nlohmann_json)
 
+# Fathom (MIT) for Syzygy tablebase adjudication. Pinned to a commit: its only
+# tag (v1.0, 2015) predates years of fixes. Compiled as C++ so MSVC needs no C11 atomics.
+FetchContent_Declare(fathom
+    URL      https://github.com/jdart1/Fathom/archive/c9c6fef0dddc05d2e242c183acf5833149ab676d.tar.gz
+    URL_HASH SHA256=ba4553045d796f0521a8554ef21bad44b20fd4a7657eb08ff85d17c9f27ff8ac
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+FetchContent_MakeAvailable(fathom)
+add_library(fathom STATIC ${fathom_SOURCE_DIR}/src/tbprobe.c)
+set_source_files_properties(${fathom_SOURCE_DIR}/src/tbprobe.c PROPERTIES LANGUAGE CXX)
+target_include_directories(fathom PUBLIC ${fathom_SOURCE_DIR}/src)
+if(MSVC)
+    target_compile_options(fathom PRIVATE /w)
+else()
+    target_compile_options(fathom PRIVATE -w)
+endif()
+
 # Core logic: rules, UCI process wrapper, matches, test tools. No SFML here;
 # it is shared by the GUI, the tests and the headless CLI.
 add_library(chesscore STATIC
@@ -115,13 +131,14 @@ add_library(chesscore STATIC
     src/perft_bisect.cpp
     src/settings.cpp
     src/stats.cpp
+    src/syzygy.cpp
     src/uci_check.cpp
     src/uci_engine.cpp
     src/testing.cpp
     src/tournament.cpp
 )
 target_include_directories(chesscore PUBLIC src)
-target_link_libraries(chesscore PUBLIC Threads::Threads nlohmann_json::nlohmann_json)
+target_link_libraries(chesscore PUBLIC Threads::Threads nlohmann_json::nlohmann_json PRIVATE fathom)
 
 # Headless command-line tool: core only, no SFML.
 add_executable(chess-cli src/cli.cpp)
