@@ -73,6 +73,7 @@ void GameScreen::newHumanGame(const Position& p){
 bool GameScreen::newEngineGame(const EngineConfig& cfg, const Position& p, bool humanWhite){
     stopOpponent(); stopAnalysis();
     opp_ = std::make_unique<UciEngine>();
+    opp_->setRole("Opponent");
     if (!opp_->start(cfg)){
         app_.toast("Could not start " + cfg.name + ": " + opp_->lastError());
         opp_.reset();
@@ -338,6 +339,7 @@ void GameScreen::startReview(){
     review_.start("Game review: " + game_.whiteName + " vs " + game_.blackName,
                   [cfg, startFen, moves, sans, startNo, startWhite, ms](ui::Job& j){
         UciEngine e;
+        e.setRole("Review");
         if (!e.start(cfg)){ j.log("FAIL: cannot start engine: " + e.lastError()); return; }
         e.newGame();
         int N = (int)moves.size();

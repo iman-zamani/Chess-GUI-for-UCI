@@ -2,8 +2,9 @@
 #include "analysis.hpp"
 #include <chrono>
 
-bool AnalysisController::start(const EngineConfig& cfg){
+bool AnalysisController::start(const EngineConfig& cfg, const std::string& role){
     eng = std::make_unique<UciEngine>();
+    eng->setRole(role);
     if (!eng->start(cfg)){ err = eng->lastError(); eng.reset(); return false; }
     eng->newGame();
     stop_ = false;

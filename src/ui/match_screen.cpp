@@ -133,7 +133,7 @@ void MatchScreen::start(){
             EngineConfig cfg = *c;
             cfg.setOption("MultiPV", std::to_string(judgeLines_));
             judge_ = std::make_unique<AnalysisController>();
-            if (!judge_->start(cfg)){ app_.toast("Judge engine failed: " + judge_->lastError()); judge_.reset(); }
+            if (!judge_->start(cfg, "Judge")){ app_.toast("Judge engine failed: " + judge_->lastError()); judge_.reset(); }
         }
     }
     flipped_ = false;

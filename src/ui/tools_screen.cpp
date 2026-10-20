@@ -104,6 +104,7 @@ void ToolsScreen::runEnginePerft(const EngineConfig& cfg){
     int maxDepth = perftDepth_;
     job_.start("Engine move-generator test: " + cfg.name, [cfg, suitePath, maxDepth](ui::Job& j){
         UciEngine e;
+        e.setRole("Perft test");
         if (!e.start(cfg)){ j.log("FAIL: cannot start engine: " + e.lastError()); return; }
         j.log("Engine: " + e.name());
         auto suite = loadEpdSuite(suitePath);
@@ -136,6 +137,7 @@ void ToolsScreen::runAccuracy(const EngineConfig& tee, const EngineConfig& ree){
     job_.start("Accuracy: " + tee.name + " vs reference " + ree.name + "  (" + std::to_string(cnt) + " positions)",
                [tee, ree, cnt, tms, rms, mpv](ui::Job& j){
         UciEngine te, re;
+        te.setRole("Accuracy test"); re.setRole("Reference");
         if (!te.start(tee)){ j.log("FAIL: cannot start test engine: " + te.lastError()); return; }
         if (!re.start(ree)){ j.log("FAIL: cannot start reference engine: " + re.lastError()); return; }
         te.newGame(); re.newGame();

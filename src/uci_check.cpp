@@ -100,6 +100,7 @@ std::string judgeMove(const Position& p, const std::string& line){
 
 bool started(Check& c, UciEngine& e, const EngineConfig& cfg){
     e.setStartTimeouts(10000, 30000);
+    e.setRole("UCI check");
     if (e.start(cfg)) return true;
     c.fail("The engine did not start: " + e.lastError());
     return false;

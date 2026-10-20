@@ -14,6 +14,7 @@
 #include "ui/game_screen.hpp"
 #include "ui/match_screen.hpp"
 #include "ui/tools_screen.hpp"
+#include "ui/uci_console.hpp"
 
 enum class Screen { HOME, GAME, MATCH, TOOLS, EDITOR, ENGINES };
 enum class EditorAction { PlayHuman, PlayEngine, Analyse, AddToMatch, Cancel };
@@ -82,6 +83,8 @@ private:
     ToolsScreen tools_{*this};
     EditorScreen editor_{*this};
     EngineManagerWindow engineManager_;
+    UciConsole console_;
+    bool showConsole_ = false;
 
     std::vector<UiScriptStep> script_;
     size_t scriptPos_ = 0;

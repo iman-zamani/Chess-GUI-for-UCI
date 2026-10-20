@@ -139,6 +139,7 @@ void MatchRunner::startTournament(std::vector<EngineConfig> engines, TimeControl
         std::vector<Standing> table;
         for (auto& e : engines){
             auto u = std::make_unique<UciEngine>();
+            u->setRole("Match");
             if (!u->start(e)){
                 logMsg("Failed to start engine: " + e.path + " (" + u->lastError() + ")");
                 done_ = true; 
