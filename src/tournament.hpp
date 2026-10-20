@@ -15,13 +15,6 @@ struct TimeControl {
     std::string label() const;
 };
 
-struct EngineEntry {
-    std::string path;
-    std::string name;       // filled after first launch
-    // UCI options to apply after launch (from the GUI's per-engine settings)
-    std::vector<std::pair<std::string,std::string>> options;
-};
-
 struct Standing {
     std::string name;
     int wins=0, losses=0, draws=0;
@@ -51,12 +44,12 @@ public:
 
     ~MatchRunner(){ abort(); }
     // Single match: engineA vs engineB, `games` games, colors alternate.
-    void startMatch(EngineEntry a, EngineEntry b, TimeControl tc, int games,
+    void startMatch(EngineConfig a, EngineConfig b, TimeControl tc, int games,
                     const std::vector<std::string>& startFens = {});
     // Round-robin tournament. Empty startFens => standard start position.
     // With multiple openings, each opening is played twice per pairing
     // (colors alternate), cycling through the list.
-    void startTournament(std::vector<EngineEntry> engines, TimeControl tc, int gamesPerPair,
+    void startTournament(std::vector<EngineConfig> engines, TimeControl tc, int gamesPerPair,
                          const std::vector<std::string>& startFens = {});
     void abort();
     bool running() const { return thread_.joinable() && !done_; }

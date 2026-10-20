@@ -26,9 +26,7 @@
  *                                 castle (no queenside castling),
  *                                 king-into-check (king may step onto attacked squares)
  *   --no-quit                     ignore "quit" (must be killed)
- *
- * Flags may also be given in the MOCK_ENGINE_FLAGS environment variable
- * (space separated); they are applied before the command-line ones.
+ *   --exit-at-start CODE          exit immediately with CODE (not a UCI engine)
  */
 #include "chess.hpp"
 #include <algorithm>
@@ -244,12 +242,7 @@ void handleGo(std::istringstream& ss){
 } // namespace
 
 int main(int argc, char** argv){
-    std::vector<std::string> args;
-    if (const char* env = std::getenv("MOCK_ENGINE_FLAGS")){
-        std::istringstream es(env); std::string t;
-        while (es >> t) args.push_back(t);
-    }
-    args.insert(args.end(), argv + 1, argv + argc);
+    std::vector<std::string> args(argv + 1, argv + argc);
     for (size_t i = 0; i < args.size(); i++){
         const std::string& a = args[i];
         auto next = [&]() -> std::string { return i + 1 < args.size() ? args[++i] : ""; };
@@ -272,6 +265,8 @@ int main(int argc, char** argv){
         else if (a == "--no-perft") F.noPerft = true;
         else if (a == "--perft-bug") F.perftBug = next();
         else if (a == "--no-quit") F.noQuit = true;
+        else if (a == "--exit-at-start"){ std::cerr << "mock_engine: exiting at start" << std::endl;
+                                          return std::atoi(next().c_str()); }
         else { std::cerr << "mock_engine: unknown flag " << a << "\n"; }
     }
     if (!F.stderrText.empty()) std::cerr << F.stderrText << std::endl;

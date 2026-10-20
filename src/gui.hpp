@@ -9,6 +9,7 @@
 #include "tournament.hpp"
 #include "testing.hpp"
 #include "ui_script.hpp"
+#include "ui/engine_manager.hpp"
 
 // Input event as the app sees it (from SFML or from a --script step).
 struct UiEvent {
@@ -23,7 +24,7 @@ struct UiEvent {
 
 enum class Screen { MENU, GAME, PICK_ENGINE, MATCH_SETUP, MATCH_VIEW,
                     TESTS, TEST_RUN, EDITOR, ENGINE_OPTIONS,
-                    ACC_SETUP, PGN_LOAD, PGN_LIST };
+                    ACC_SETUP, PGN_LOAD, PGN_LIST, ENGINE_MANAGER };
 
 enum class GameMode { HUMAN_VS_HUMAN, HUMAN_VS_ENGINE, ANALYSIS };
 
@@ -42,8 +43,7 @@ struct Button {
 class AnalysisController {
 public:
     ~AnalysisController(){ shutdown(); }
-    bool start(const std::string& path,
-               const std::vector<std::pair<std::string,std::string>>& opts);
+    bool start(const EngineConfig& cfg);
     void shutdown();
     void setFen(const std::string& fen);
     EngineInfo info();
@@ -77,6 +77,16 @@ private:
     bool scriptFailed_ = false;
     void stepScript();
     sf::Vector2f mouseLogical();
+
+    // ---- Dear ImGui (screens being migrated to it) ----
+    bool imguiOk = false;
+    float imguiScale = 0;                // physical pixels per logical unit the fonts were built for
+    sf::Clock imguiClock;
+    bool imguiScreen() const { return screen == Screen::ENGINE_MANAGER; }
+    void setupImGuiFonts();
+    void drawImGui();
+    void injectImGui(const UiEvent& e);  // --script input for ImGui screens
+    EngineManagerWindow engineManager;
 
     // ---- framework ----
     sf::RenderWindow window;
@@ -117,11 +127,12 @@ private:
     int  boardSquareAt(sf::Vector2f mouse, float bx, float by, float side, bool flipped) const;
 
     // ---- engines & per-engine UCI option overrides ----
-    std::vector<EngineEntry> knownEngines;
+    EngineRegistry registry;             // engines.json + discovered engines
     void scanEngines();
-    EngineEntry makeEntry(int idx);
-    std::map<std::string, std::vector<std::pair<std::string,std::string>>> engineOverrides;
-    void loadOverrides(); void saveOverrides();
+    void saveEngines();
+    void importLegacyOverrides();
+    EngineConfig& configFor(const std::string& path);   // adds a default entry if unknown
+    EngineConfig makeEntry(int idx);
     void setOverride(const std::string& path, const std::string& name, const std::string& val);
     std::string overrideOrDefault(const std::string& path, const UciOption& o);
     std::string optsPath;
@@ -234,10 +245,10 @@ private:
     // accuracy settings
     int accCount = 100, accTestMs = 500, accRefMs = 1000, accMultiPV = 3;
     void pushTestLine(const std::string& s);
-    void startPerftTest(const EngineEntry& e);
+    void startPerftTest(const EngineConfig& e);
     void startInternalSelfTest();
-    void startAccuracyTest(const EngineEntry& test, const EngineEntry& ref);
+    void startAccuracyTest(const EngineConfig& test, const EngineConfig& ref);
     void startGameReview(const std::string& enginePath);
     std::string copyAllTestLines();
-    EngineEntry accTestEngine;
+    EngineConfig accTestEngine;
 };

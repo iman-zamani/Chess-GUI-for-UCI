@@ -6,19 +6,18 @@
 
 #include <chrono>
 #include <cstdlib>
+#include <sstream>
 #include <thread>
 
 static const std::string kMock = MOCK_ENGINE_PATH;
 
-// Starts the mock engine with misbehaviour flags (passed through the
-// environment, which the child process inherits).
+// Starts the mock engine with misbehaviour flags as command-line arguments.
 static bool startMock(UciEngine& e, const std::string& flags = "", const std::string& path = kMock){
-#ifdef _WIN32
-    _putenv_s("MOCK_ENGINE_FLAGS", flags.c_str());
-#else
-    setenv("MOCK_ENGINE_FLAGS", flags.c_str(), 1);
-#endif
-    return e.start(path);
+    EngineConfig c; c.path = path;
+    std::istringstream ss(flags); std::string a;
+    while (ss >> a) c.args.push_back(a);
+    e.setStartTimeouts(2000, 2000);
+    return e.start(c);
 }
 
 TEST_CASE("uci/handshake"){

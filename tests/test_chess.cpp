@@ -208,3 +208,15 @@ TEST_CASE("game/undo"){
     CHECK_EQ(g.sans.size(), (size_t)1);
     CHECK_EQ(g.pos.toFEN(), std::string("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"));
 }
+
+TEST_CASE("game/result-reasons"){
+    CHECK_EQ(resultReasonText(ResultReason::ADJUDICATION), std::string("adjudication"));
+    CHECK_EQ(resultReasonText(ResultReason::NONE), std::string(""));
+    // a PGN result without a decisive final position keeps the result, reason unknown
+    auto games = parsePGN("[Result \"0-1\"]\n\n1. e4 e5 0-1\n");
+    REQUIRE(games.size() == 1);
+    Game g; std::string err;
+    REQUIRE(gameFromPGN(games[0], g, &err));
+    CHECK(g.result == GameResult::BLACK_WINS);
+    CHECK(g.reason == ResultReason::NONE);
+}

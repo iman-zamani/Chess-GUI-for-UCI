@@ -66,25 +66,53 @@ if(CHESSGUI_BUILD_GUI)
         endif()
     endif()
     set(SFML_LIBS SFML::Graphics SFML::Window SFML::System)
+
+    # Dear ImGui + ImGui-SFML (both MIT) for the panels and tool windows.
+    # ImGui 1.91.x: ImGui-SFML 3.0 predates the 1.92 font/texture backend API.
+    include(FetchContent)
+    FetchContent_Declare(imgui
+        URL      https://github.com/ocornut/imgui/archive/refs/tags/v1.91.9b.tar.gz
+        URL_HASH SHA256=8e1bbc76c71d74fef2fb85db7e7ca8eba13d6a86623c54992b60162db554ffdb
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+    FetchContent_MakeAvailable(imgui)
+    set(IMGUI_DIR ${imgui_SOURCE_DIR})
+    set(IMGUI_SFML_FIND_SFML OFF CACHE BOOL "" FORCE)
+    FetchContent_Declare(imgui-sfml
+        URL      https://github.com/SFML/imgui-sfml/archive/refs/tags/v3.0.tar.gz
+        URL_HASH SHA256=561a04407dcc913b8f1c25a164ad4907852b51fb4f11907d1ab9db6351af911b
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+    FetchContent_MakeAvailable(imgui-sfml)
+    list(APPEND SFML_LIBS ImGui-SFML::ImGui-SFML)
 endif()
 
 find_package(Threads REQUIRED)
+
+# nlohmann/json (MIT, header-only) for engines.json, settings and exports.
+include(FetchContent)
+FetchContent_Declare(nlohmann_json
+    URL      https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz
+    URL_HASH SHA256=42f6e95cad6ec532fd372391373363b62a14af6d771056dbfc86160e6dfff7aa
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+FetchContent_MakeAvailable(nlohmann_json)
 
 # Core logic: rules, UCI process wrapper, matches, test tools. No SFML here;
 # it is shared by the GUI, the tests and the headless CLI.
 add_library(chesscore STATIC
     src/chess.cpp
+    src/engine_config.cpp
     src/uci_engine.cpp
     src/testing.cpp
     src/tournament.cpp
 )
 target_include_directories(chesscore PUBLIC src)
-target_link_libraries(chesscore PUBLIC Threads::Threads)
+target_link_libraries(chesscore PUBLIC Threads::Threads nlohmann_json::nlohmann_json)
 
 if(CHESSGUI_BUILD_GUI)
 set(CHESS_SOURCES
     src/main.cpp
     src/gui.cpp
+    src/ui/engine_manager.cpp
+    ${imgui_SOURCE_DIR}/misc/cpp/imgui_stdlib.cpp
 )
 
 add_executable(chess-gui ${CHESS_SOURCES})

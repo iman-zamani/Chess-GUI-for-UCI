@@ -402,6 +402,21 @@ void Game::updateStatus(){
     for (const auto& s : repKeys) if (s==k) rep++;
     if (rep>=3){ result=GameResult::DRAW; reason=ResultReason::REPETITION; }
 }
+std::string resultReasonText(ResultReason r){
+    switch(r){
+    case ResultReason::CHECKMATE: return "checkmate";
+    case ResultReason::STALEMATE: return "stalemate";
+    case ResultReason::FIFTY_MOVE: return "50-move rule";
+    case ResultReason::REPETITION: return "threefold repetition";
+    case ResultReason::INSUFFICIENT: return "insufficient material";
+    case ResultReason::RESIGNATION: return "resignation";
+    case ResultReason::TIMEOUT: return "time forfeit";
+    case ResultReason::ILLEGAL_MOVE: return "illegal move";
+    case ResultReason::AGREEMENT: return "agreement";
+    case ResultReason::ADJUDICATION: return "adjudication";
+    default: return "";
+    }
+}
 std::string Game::resultString() const{
     switch(result){
         case GameResult::WHITE_WINS: return "1-0";
@@ -552,11 +567,12 @@ bool gameFromPGN(const PgnGame& pg, Game& out, std::string* err){
         ply++;
     }
     // keep PGN's stated result if the moves alone did not decide the game
+    // (the reason is unknown: resignation, time, agreement, adjudication...)
     if (out.result==GameResult::ONGOING){
         if (pg.result=="1-0") out.result=GameResult::WHITE_WINS;
         else if (pg.result=="0-1") out.result=GameResult::BLACK_WINS;
         else if (pg.result=="1/2-1/2") out.result=GameResult::DRAW;
-        if (out.result!=GameResult::ONGOING) out.reason=ResultReason::AGREEMENT;
+        out.reason=ResultReason::NONE;
     }
     return true;
 }
