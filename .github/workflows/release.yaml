@@ -31,7 +31,7 @@ jobs:
   build-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Configure & Build
         run: |
@@ -50,7 +50,7 @@ jobs:
           7z a "${DIST_NAME}.zip" "$DIST_NAME"
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: windows-x64
           path: "*.zip"
@@ -69,7 +69,7 @@ jobs:
           - target_arch: arm64
             runs_on: macos-14
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Configure & Build
         run: |
@@ -88,7 +88,7 @@ jobs:
           hdiutil create -volname "ChessGUI" -srcfolder "$STAGING" -ov -format UDZO "$DMG_NAME"
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: macos-${{ matrix.target_arch }}
           path: "*.dmg"
@@ -99,13 +99,13 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install System Deps
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential cmake libx11-dev libxrandr-dev libxcursor-dev \
-            libxi-dev libudev-dev libgl1-mesa-dev ruby ruby-dev rpm libfuse2
+            libxi-dev libudev-dev libgl1-mesa-dev libfreetype-dev ruby ruby-dev rpm libfuse2
           sudo gem install --no-document fpm
 
           wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
@@ -183,7 +183,7 @@ jobs:
           mv chess-gui-*.rpm "chess-gui-${V}-linux-x86_64.rpm"
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: linux-packages
           path: |
@@ -200,7 +200,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download All Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: artifacts
           pattern: "*"

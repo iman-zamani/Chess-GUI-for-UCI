@@ -70,7 +70,7 @@ cmake --build build -j
 CMake (3.24+) downloads and builds a pinned SFML 3 statically, so no SFML install is needed.
 To use an installed SFML 3 instead, configure with `-DCHESSGUI_USE_SYSTEM_SFML=ON`.
 
-- **Linux:** `sudo apt install cmake g++ libx11-dev libxrandr-dev libxcursor-dev libxi-dev libudev-dev libgl1-mesa-dev`
+- **Linux:** `sudo apt install cmake g++ libx11-dev libxrandr-dev libxcursor-dev libxi-dev libudev-dev libgl1-mesa-dev libfreetype-dev`
 - **macOS:** Xcode command line tools and `brew install cmake`
 - **Windows:** Visual Studio 2022 (C++ workload) and CMake
 
