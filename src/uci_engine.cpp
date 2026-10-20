@@ -371,9 +371,11 @@ void UciEngine::quit(){
     if (running) sendRaw("quit");
     if (pid > 0){
         int st = 0; bool exited = false;
-        for (int i = 0; i < 100 && !exited; i++){          // up to 1 s for a clean exit
+        auto t0 = clk::now();
+        while (!exited){                                   // up to 1 s for a clean exit
             if (waitpid((pid_t)pid, &st, WNOHANG) == (pid_t)pid) exited = true;
-            else std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            else if (msSince(t0) >= 1000) break;
+            else std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
         if (!exited){ kill((pid_t)pid, SIGKILL); waitpid((pid_t)pid, &st, 0); }
         pid = -1;
