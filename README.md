@@ -79,7 +79,7 @@ absolute path in the picker.
 ## Resources folder
 - `pieceTexture.png` — 6×2 sprite sheet of 150 px sprites (K Q B N R P; white row, black row).
   If missing, the GUI falls back to letter pieces so it still runs.
-- `arial.ttf` — UI font (falls back to system fonts if absent)
+- `Cantarell-Regular.ttf` — UI font (Cantarell, SIL OFL 1.1, see `Cantarell-OFL.txt`; falls back to system fonts if absent)
 - `engines/` — your UCI engines
 - `perftsuite.epd` — the 100-position move-generator test suite
 
@@ -92,9 +92,6 @@ absolute path in the picker.
 | `src/testing.{hpp,cpp}` | Perft suites, engine perft tester, accuracy tester |
 | `src/gui.{hpp,cpp}` | All SFML screens, board rendering, input |
 | `src/main.cpp` | Entry point |
-
-The old `board.*` / `piece.*` files from earlier versions are superseded by this
-architecture and should be removed from the build.
 
 ## Verification
 - The internal generator passes the six canonical perft positions (startpos d5 = 4,865,609;

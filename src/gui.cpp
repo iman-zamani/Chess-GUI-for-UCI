@@ -124,14 +124,14 @@ bool App::init(){
     window.setView(sf::View(FR(0,0,WW,WH)));   // draw in logical units
     window.setFramerateLimit(60);
     const char* fontPaths[] = {
-        "Resources/arial.ttf",
+        "Resources/Cantarell-Regular.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
         "/System/Library/Fonts/Supplemental/Arial.ttf",
         "C:\\Windows\\Fonts\\arial.ttf"
     };
     bool fontOk=false;
     for (auto p : fontPaths) if (loadFont(font, p)){ fontOk=true; break; }
-    if (!fontOk){ fprintf(stderr,"No font found (put arial.ttf in Resources/)\n"); return false; }
+    if (!fontOk){ fprintf(stderr,"No font found (put Cantarell-Regular.ttf in Resources/)\n"); return false; }
     // Prefer the high-resolution sheet: bitmaps only stay sharp when they are
     // DOWNscaled. 150px pieces upscaled to ~190px on HiDPI screens is exactly
     // the "blurry pieces" effect.
