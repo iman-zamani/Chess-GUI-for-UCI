@@ -52,6 +52,8 @@ Games:
   --resign CP:MOVES             resign adjudication, e.g. 600:3
   --draw MOVE:CP:MOVES          draw adjudication, e.g. 40:10:8
   --max-moves N                 draw after N full moves
+  --syzygy DIRS                 adjudicate with Syzygy tables (directories separated by ':', ';' on Windows)
+  --syzygy-pieces N             only positions with at most N pieces (default: what the tables cover)
   --pgn FILE                    append finished games to FILE
   --state FILE                  resumable state; an existing matching file is resumed
 
@@ -177,6 +179,8 @@ static int parseMatchArgs(const std::vector<std::string>& a, CliOptions& o){
             o.s.adj.draw = true;
         }
         else if (k == "--max-moves"){ if (!need(i, v) || !parseInt(v, o.s.adj.maxMoves) || o.s.adj.maxMoves < 0) return fail("bad --max-moves"); }
+        else if (k == "--syzygy"){ if (!need(i, v)) return fail("--syzygy needs a directory"); o.s.adj.syzygyPath = v; }
+        else if (k == "--syzygy-pieces"){ if (!need(i, v) || !parseInt(v, o.s.adj.syzygyPieces) || o.s.adj.syzygyPieces < 0) return fail("bad --syzygy-pieces"); }
         else if (k == "--pgn"){ if (!need(i, v)) return fail("--pgn needs a file"); o.s.pgnPath = v; }
         else if (k == "--state"){ if (!need(i, v)) return fail("--state needs a file"); o.s.statePath = v; }
         else if (k == "--elo0"){ if (!need(i, v) || !parseDouble(v, o.s.sprt.elo0)) return fail("bad --elo0"); }

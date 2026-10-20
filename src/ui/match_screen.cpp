@@ -31,7 +31,8 @@ static json toJson(const MatchSetup& m){
             {"bookPath", m.bookPath}, {"bookPlies", m.bookPlies}, {"bookRandom", m.bookRandom}, {"seed", m.seed},
             {"adj", {{"resign", m.adj.resign}, {"resignCp", m.adj.resignCp}, {"resignMoves", m.adj.resignMoves},
                      {"draw", m.adj.draw}, {"drawAfterMove", m.adj.drawAfterMove}, {"drawCp", m.adj.drawCp},
-                     {"drawMoves", m.adj.drawMoves}, {"maxMoves", m.adj.maxMoves}}},
+                     {"drawMoves", m.adj.drawMoves}, {"maxMoves", m.adj.maxMoves},
+                     {"syzygyPath", m.adj.syzygyPath}, {"syzygyPieces", m.adj.syzygyPieces}}},
             {"sprt", m.sprt}, {"elo0", m.sprtCfg.elo0}, {"elo1", m.sprtCfg.elo1}, {"alpha", m.sprtCfg.alpha},
             {"beta", m.sprtCfg.beta}, {"model", m.sprtCfg.model == SprtModel::Logistic ? "logistic" : "normalized"},
             {"savePgn", m.savePgn}, {"resumable", m.resumable}};
@@ -57,6 +58,7 @@ static MatchSetup fromJson(const json& j){
         m.adj.draw = a.value("draw", false); m.adj.drawAfterMove = a.value("drawAfterMove", 40);
         m.adj.drawCp = a.value("drawCp", 10); m.adj.drawMoves = a.value("drawMoves", 8);
         m.adj.maxMoves = a.value("maxMoves", 0);
+        m.adj.syzygyPath = a.value("syzygyPath", ""); m.adj.syzygyPieces = a.value("syzygyPieces", 0);
     }
     m.sprt = j.value("sprt", false);
     m.sprtCfg.elo0 = j.value("elo0", 0.0); m.sprtCfg.elo1 = j.value("elo1", 5.0);
@@ -277,6 +279,17 @@ void MatchScreen::drawRulesBlock(){
     ImGui::SameLine(); ImGui::SetNextItemWidth(w); ImGui::InputInt("moves each##d", &setup_.adj.drawMoves);
     ImGui::EndDisabled();
     ImGui::SetNextItemWidth(w); ImGui::InputInt("max moves (0 = none)", &setup_.adj.maxMoves);
+    ImGui::TextUnformatted("Syzygy tablebases");
+    ImGui::SetNextItemWidth(em * 20);
+    ui::pathInput("Syzygy", setup_.adj.syzygyPath, "tablebase folder (empty = off)", [&](){
+        return filedialog::selectFolder("Syzygy tablebase folder", setup_.adj.syzygyPath); });
+    if (!setup_.adj.syzygyPath.empty()){
+        ImGui::SetNextItemWidth(w); ImGui::InputInt("max pieces (0 = all)", &setup_.adj.syzygyPieces);
+        setup_.adj.syzygyPieces = std::max(0, setup_.adj.syzygyPieces);
+    }
+    ImGui::SameLine(); ui::helpMarker("Games end as soon as they reach a position the tables cover (right after a "
+                                      "capture or pawn move). Several folders: separate them with ';' on Windows, "
+                                      "':' elsewhere.");
     setup_.adj.resignCp = std::max(1, setup_.adj.resignCp); setup_.adj.resignMoves = std::max(1, setup_.adj.resignMoves);
     setup_.adj.drawCp = std::max(0, setup_.adj.drawCp); setup_.adj.drawMoves = std::max(1, setup_.adj.drawMoves);
     setup_.adj.drawAfterMove = std::max(1, setup_.adj.drawAfterMove); setup_.adj.maxMoves = std::max(0, setup_.adj.maxMoves);

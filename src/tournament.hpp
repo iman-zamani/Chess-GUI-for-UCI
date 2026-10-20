@@ -45,6 +45,8 @@ struct AdjudicationConfig {
     int drawCp = 10;             // ...both engines report |score| <= drawCp...
     int drawMoves = 8;           // ...for this many consecutive moves each
     int maxMoves = 0;            // draw after this many full moves (0 = no limit)
+    std::string syzygyPath;      // Syzygy tables ("" = off): adjudicate as soon as a game enters them
+    int syzygyPieces = 0;        // ...with at most this many pieces (0 = whatever the tables cover)
 };
 
 enum class TournamentMode { Match, RoundRobin, Gauntlet };
@@ -160,6 +162,8 @@ public:
     // Adjudication decision after a move, from White-POV scores of the last plies.
     static bool adjudicate(const AdjudicationConfig& a, const std::vector<int>& whiteScores,
                            int fullMove, GameResult& result);
+    // Tablebase adjudication of a position (Syzygy tables must be loaded).
+    static bool adjudicateSyzygy(const AdjudicationConfig& a, const Position& p, GameResult& result);
 
 private:
     struct Job { int index; int white, black; int opening; int pairing; };
@@ -167,6 +171,7 @@ private:
     void playGame(int w, const Job& job, std::vector<std::unique_ptr<UciEngine>>& engines);
     void recordGame(const Job& job, const Game& g, const std::string& pgn, bool timeLoss, bool crash);
     void log(const std::string& s);
+    void logLocked(const std::string& s);     // mx_ held
     bool nextJob(Job& j);
     void loadState();
     void saveState();

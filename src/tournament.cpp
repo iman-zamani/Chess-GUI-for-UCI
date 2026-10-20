@@ -1,5 +1,6 @@
 /* Chess-GUI-for-UCI — engine matches, tournaments and SPRT runs. GPL-2.0 */
 #include "tournament.hpp"
+#include "syzygy.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <chrono>
@@ -66,6 +67,19 @@ std::vector<std::pair<int, int>> MatchRunner::pairingsFor(TournamentMode m, int 
 }
 
 // Scores are White's point of view, one per engine move, newest last.
+bool MatchRunner::adjudicateSyzygy(const AdjudicationConfig& a, const Position& p, GameResult& res){
+    if (a.syzygyPath.empty() || (a.syzygyPieces > 0 && syzygy::pieceCount(p) > a.syzygyPieces)) return false;
+    syzygy::Wdl w = syzygy::probeWdl(p);
+    GameResult win = p.whiteToMove ? GameResult::WHITE_WINS : GameResult::BLACK_WINS;
+    GameResult loss = p.whiteToMove ? GameResult::BLACK_WINS : GameResult::WHITE_WINS;
+    switch (w){
+    case syzygy::Wdl::Win: res = win; return true;
+    case syzygy::Wdl::Loss: res = loss; return true;
+    case syzygy::Wdl::Draw: case syzygy::Wdl::CursedWin: case syzygy::Wdl::BlessedLoss: res = GameResult::DRAW; return true;
+    default: return false;
+    }
+}
+
 bool MatchRunner::adjudicate(const AdjudicationConfig& a, const std::vector<int>& ws, int fullMove, GameResult& res){
     if (a.maxMoves > 0 && fullMove > a.maxMoves){ res = GameResult::DRAW; return true; }
     if (a.resign && a.resignMoves > 0 && (int)ws.size() >= 2 * a.resignMoves){
@@ -151,6 +165,10 @@ std::string matchGamePgn(const Game& g, const MatchSettings& s, int round, int g
 // ---------------------------------------------------------------- run control
 void MatchRunner::log(const std::string& msg){
     std::lock_guard<std::mutex> lk(mx_);
+    logLocked(msg);
+}
+
+void MatchRunner::logLocked(const std::string& msg){
     snap_.log.push_back(msg);
     snap_.logTotal++;
     if (snap_.log.size() > 200) snap_.log.erase(snap_.log.begin());
@@ -183,6 +201,10 @@ bool MatchRunner::start(const MatchSettings& settings, std::string* err){
         if (s_.mode != TournamentMode::Match) return fail("SPRT needs a two-engine match");
         std::string e = s_.sprt.validate();
         if (!e.empty()) return fail("SPRT: " + e);
+    }
+    if (!s_.adj.syzygyPath.empty()){
+        std::string e;
+        if (!syzygy::init(s_.adj.syzygyPath, &e)) return fail(e);
     }
     // openings
     book_.clear();
@@ -291,8 +313,7 @@ void MatchRunner::workerLoop(int w){
         std::lock_guard<std::mutex> lk(mx_);
         snap_.running = false;
         snap_.finished = !stop_ || snap_.sprtOutcome != SprtOutcome::Continue;
-        snap_.status = snap_.finished ? "Finished." : "Stopped.";
-        snap_.log.push_back(snap_.status);
+        logLocked(snap_.finished ? "Finished." : "Stopped.");
         running_ = false;
     }
 }
@@ -347,7 +368,14 @@ void MatchRunner::playGame(int w, const Job& job, std::vector<std::unique_ptr<Uc
             g.reason = ResultReason::DISCONNECT;
             crash = true;
         }
-    if (g.result == GameResult::ONGOING){ eng[0]->newGame(); eng[1]->newGame(); }
+    if (g.result == GameResult::ONGOING){
+        GameResult r;                                       // a start position already in the tables
+        if (adjudicateSyzygy(s_.adj, g.pos, r)){
+            g.result = r; g.reason = ResultReason::ADJUDICATION;
+            log("Game " + std::to_string(job.index + 1) + ": the start position is in the Syzygy tables");
+        }
+        else { eng[0]->newGame(); eng[1]->newGame(); }
+    }
     while (g.result == GameResult::ONGOING && !stop_){
         int side = g.pos.whiteToMove ? 0 : 1;
         UciEngine& e = *eng[side];
@@ -392,7 +420,11 @@ void MatchRunner::playGame(int w, const Job& job, std::vector<std::unique_ptr<Uc
         ucis.push_back(bm);
         if (g.result == GameResult::ONGOING){
             GameResult r;
-            if (adjudicate(s_.adj, whiteScores, g.pos.fullmoveNumber, r)){ g.result = r; g.reason = ResultReason::ADJUDICATION; }
+            if (adjudicateSyzygy(s_.adj, g.pos, r)){
+                g.result = r; g.reason = ResultReason::ADJUDICATION;
+                log("Game " + std::to_string(job.index + 1) + ": Syzygy adjudication (" + std::to_string(syzygy::pieceCount(g.pos)) + " pieces)");
+            }
+            else if (adjudicate(s_.adj, whiteScores, g.pos.fullmoveNumber, r)){ g.result = r; g.reason = ResultReason::ADJUDICATION; }
             else if (g.moves.size() >= 1000){ g.result = GameResult::DRAW; g.reason = ResultReason::ADJUDICATION; }
         }
         post([&](LiveGame& L){
@@ -443,9 +475,7 @@ void MatchRunner::recordGame(const Job& job, const Game& g, const std::string& p
     if (snap_.recent.size() > 300) snap_.recent.erase(snap_.recent.begin());
     std::string line = "Game " + std::to_string(job.index + 1) + ": " + g.whiteName + " - " + g.blackName + " "
                      + g.resultString() + (g.reason != ResultReason::NONE ? " (" + resultReasonText(g.reason) + ")" : "");
-    snap_.log.push_back(line);
-    if (snap_.log.size() > 200) snap_.log.erase(snap_.log.begin());
-    snap_.status = line;
+    logLocked(line);
     // SPRT: decide after every finished pair (pentanomial), as fastchess does
     if (s_.sprtEnabled && job.pairing == 0){
         snap_.llr = ps.penta.pairs() > 0 ? sprtLlr(s_.sprt, ps.penta) : 0;
@@ -456,8 +486,7 @@ void MatchRunner::recordGame(const Job& job, const Game& g, const std::string& p
             std::snprintf(b, sizeof b, "SPRT: %s accepted (LLR %.2f, bounds %.2f / %.2f) after %d games",
                           snap_.sprtOutcome == SprtOutcome::AcceptH1 ? "H1" : "H0", snap_.llr,
                           s_.sprt.lowerBound(), s_.sprt.upperBound(), snap_.gamesDone);
-            snap_.log.push_back(b);
-            snap_.status = b;
+            logLocked(b);
         }
     }
     saveState();
