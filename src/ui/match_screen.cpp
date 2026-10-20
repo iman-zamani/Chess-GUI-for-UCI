@@ -629,6 +629,8 @@ void MatchScreen::drawLive(){
     ImGui::SameLine(); if (ImGui::Button("Export JSON...")) exportJson();
     ImGui::SameLine(); if (ImGui::Button("Flip")) flipped_ = !flipped_;
     if (!lastPgnPath_.empty()) ImGui::TextDisabled("Writing %s", lastPgnPath_.c_str());
+    if (s.gamesReplayed) ImGui::TextColored(ui::kWarn, "%d game%s replayed: the computer slept during %s.", s.gamesReplayed,
+                                            s.gamesReplayed > 1 ? "s" : "", s.gamesReplayed > 1 ? "them" : "it");
     if (!judgeLine.empty())
         ImGui::TextColored(judgeLine.find("terminated") != std::string::npos ? ui::kBad : ui::kGood, "%s", judgeLine.c_str());
     if (s.finished) ImGui::TextColored(ui::kGood, "Finished.");

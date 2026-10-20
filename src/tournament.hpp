@@ -126,6 +126,7 @@ public:
         std::vector<Standing> standings;       // per engine (same order as settings.engines)
         std::vector<PairingStats> pairings;
         int gamesDone = 0, gamesTotal = 0, gamesResumed = 0;
+        int gamesReplayed = 0;                 // games restarted because the computer slept
         bool running = false, finished = false;
         bool sprt = false; double llr = 0, llrLower = 0, llrUpper = 0;
         SprtOutcome sprtOutcome = SprtOutcome::Continue;

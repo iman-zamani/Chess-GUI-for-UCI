@@ -271,6 +271,7 @@ static void printFinal(FILE* out, const MatchRunner::Snapshot& s, const MatchSet
                  s.gamesDone, s.gamesTotal);
     if (s.gamesResumed) std::fprintf(out, " (%d from the state file)", s.gamesResumed);
     std::fprintf(out, "\n");
+    if (s.gamesReplayed) std::fprintf(out, "%d games were replayed because the computer slept during them\n", s.gamesReplayed);
     for (auto& p : s.pairings){
         std::fprintf(out, "%s vs %s: W-D-L %d-%d-%d (%.1f%% draws)  %s\n", s.standings[p.a].name.c_str(),
                      s.standings[p.b].name.c_str(), p.wdl.wins, p.wdl.draws, p.wdl.losses,

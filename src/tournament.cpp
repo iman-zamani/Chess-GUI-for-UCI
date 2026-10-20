@@ -401,6 +401,7 @@ void MatchRunner::playGame(int w, const Job& job, std::vector<std::unique_ptr<Uc
                 + std::to_string((slept + 500) / 1000) + " s. It will be replayed.");
             std::lock_guard<std::mutex> lk(mx_);
             retry_.push_back(job);
+            snap_.gamesReplayed++;
             return;
         }
         clock[side] -= spent;
@@ -588,7 +589,7 @@ std::string MatchRunner::resultsJson(){
                          {"result", resultCode(r.result)}, {"termination", terminationTag(r.reason)},
                          {"opening", r.opening}, {"plies", r.plies}});
     json j = {{"mode", tournamentModeName(s_.mode)}, {"timeControl", s_.tc.pgnTag()}, {"gamesPlanned", jobs_.size()},
-              {"gamesPlayed", snap_.gamesDone}, {"engines", engines}, {"pairings", pairs}, {"games", games}};
+              {"gamesPlayed", snap_.gamesDone}, {"gamesReplayedAfterSleep", snap_.gamesReplayed}, {"engines", engines}, {"pairings", pairs}, {"games", games}};
     if (s_.sprtEnabled)
         j["sprt"] = {{"elo0", s_.sprt.elo0}, {"elo1", s_.sprt.elo1}, {"alpha", s_.sprt.alpha}, {"beta", s_.sprt.beta},
                      {"model", sprtModelName(s_.sprt.model)}, {"llr", snap_.llr}, {"lower", s_.sprt.lowerBound()},
