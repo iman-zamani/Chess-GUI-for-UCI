@@ -77,6 +77,8 @@ private:
     PieceSet pieces_;
     std::string toastText_;
     sf::Clock toastClock_;
+    bool showShortcuts_ = false;
+    void drawShortcuts();
     bool showAbout_ = false;
 
     GameScreen game_{*this};

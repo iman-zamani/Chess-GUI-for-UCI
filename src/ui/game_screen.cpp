@@ -499,8 +499,10 @@ void GameScreen::handleKeys(){
     if (ImGui::IsKeyPressed(ImGuiKey_F, false)) flipped_ = !flipped_;
     if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow) && cur_ > 0) goTo(tree_.at(cur_).parent);
     if (ImGui::IsKeyPressed(ImGuiKey_RightArrow) && !tree_.at(cur_).children.empty()) goTo(tree_.at(cur_).children[0]);
-    if (ImGui::IsKeyPressed(ImGuiKey_UpArrow, false)) goTo(0);
-    if (ImGui::IsKeyPressed(ImGuiKey_DownArrow, false)) goTo(tree_.lineEnd(cur_));
+    if (ImGui::IsKeyPressed(ImGuiKey_UpArrow, false) || ImGui::IsKeyPressed(ImGuiKey_Home, false)) goTo(0);
+    if (ImGui::IsKeyPressed(ImGuiKey_DownArrow, false) || ImGui::IsKeyPressed(ImGuiKey_End, false)) goTo(tree_.lineEnd(cur_));
+    if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_S)) savePgn();
+    if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_O)) openPgnDialog();
 }
 
 void GameScreen::draw(){

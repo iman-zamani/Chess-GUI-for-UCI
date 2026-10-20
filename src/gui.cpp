@@ -228,6 +228,7 @@ void App::run(){
 void App::handleGlobalKeys(){
     ImGuiIO& io = ImGui::GetIO();
     if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_U)) showConsole_ = !showConsole_;
+    if (ImGui::IsKeyPressed(ImGuiKey_F1, false)) showShortcuts_ = !showShortcuts_;
     if (io.WantTextInput || ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId)) return;
     if (ImGui::IsKeyPressed(ImGuiKey_Escape, false) && screen_ != Screen::HOME) go(Screen::HOME);
 }
@@ -275,6 +276,7 @@ void App::drawFrame(){
                                               {"Log files", "*.log *.txt", "All files", "*"}); },
         [this](const std::string& m){ toast(m); });
     drawAbout();
+    drawShortcuts();
     drawToast();
 }
 
@@ -329,6 +331,7 @@ void App::drawMenuBar(){
         ImGui::EndMenu();
     }
     if (ImGui::BeginMenu("Help")){
+        if (ImGui::MenuItem("Keyboard shortcuts", "F1")) showShortcuts_ = true;
         if (ImGui::MenuItem("About")) showAbout_ = true;
         ImGui::EndMenu();
     }
@@ -425,6 +428,7 @@ static bool keyFromName(const std::string& n, sf::Keyboard::Key& k){
     };
     for (auto& p : named) if (n == p.first){ k = p.second; return true; }
     if (n.size()==1 && n[0]>='A' && n[0]<='Z'){ k = (K)((int)K::A + (n[0]-'A')); return true; }
+    if (n.size() >= 2 && n[0] == 'F'){ int f = std::atoi(n.c_str() + 1); if (f >= 1 && f <= 12){ k = (K)((int)K::F1 + f - 1); return true; } }
     return false;
 }
 
@@ -439,6 +443,7 @@ static ImGuiKey imguiKey(sf::Keyboard::Key k){
     case K::End: return ImGuiKey_End;       case K::Space: return ImGuiKey_Space;
     default:
         if (k >= K::A && k <= K::Z) return (ImGuiKey)(ImGuiKey_A + ((int)k - (int)K::A));
+        if (k >= K::F1 && k <= K::F12) return (ImGuiKey)(ImGuiKey_F1 + ((int)k - (int)K::F1));
         return ImGuiKey_None;
     }
 }
@@ -538,4 +543,41 @@ void App::stepScript(){
         }
     }
     else if (s.op == "quit") window_.close();
+}
+
+void App::drawShortcuts(){
+    if (!showShortcuts_) return;
+    float em = ImGui::GetFontSize();
+    ImGui::SetNextWindowSize(ImVec2(em * 34, 0), ImGuiCond_Appearing);
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowBgAlpha(1.0f);
+    if (!ImGui::Begin("Keyboard shortcuts", &showShortcuts_, ImGuiWindowFlags_NoCollapse)){ ImGui::End(); return; }
+    static const char* rows[][2] = {
+        {"F1", "show / hide this list"},
+        {"Ctrl+U", "UCI console (every running engine, live)"},
+        {"Esc", "back to the home screen"},
+        {"", ""},
+        {"Left / Right", "previous / next move"},
+        {"Up or Home", "start of the game"},
+        {"Down or End", "end of the line shown (the live position in a game)"},
+        {"F", "flip the board"},
+        {"Ctrl+O / Ctrl+S", "open / save PGN"},
+        {"", ""},
+        {"Click or drag", "move a piece; right-click clears the selection and premoves"},
+        {"King onto rook", "castling (also in Chess960)"},
+        {"Move from a past position", "adds a variation (analysis, or after the game)"},
+        {"Right-click a move", "make it the main line, delete from here, comment"},
+        {"Click a move of an engine line", "add that line up to the move"},
+        {"Click the eval graph", "jump to that move"},
+        {"Drag the bar right of the board", "resize the board"},
+    };
+    if (ImGui::BeginTable("keys", 2, ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp)){
+        for (auto& r : rows){
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn(); ImGui::TextColored(ui::kAccent, "%s", r[0]);
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(r[1]);
+        }
+        ImGui::EndTable();
+    }
+    ImGui::End();
 }
