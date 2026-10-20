@@ -4,6 +4,7 @@
 #include <atomic>
 #include <cstdint>
 #include <deque>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -51,6 +52,52 @@ struct UciLogLine {
     long long tMs = 0;      // milliseconds since the engine was started
     char dir = '<';         // '>' sent to engine, '<' stdout, '!' stderr, '#' GUI note
     std::string text;
+};
+
+// Bounded, thread-safe log of one engine process's I/O. Shared with the UCI
+// console, which can keep showing it after the process is gone.
+class UciLogBuffer {
+public:
+    UciLogBuffer();
+    void add(char dir, const std::string& text);
+    // `cursor` is an absolute line counter: pass 0 first, then the value
+    // returned in it to get only the lines added since.
+    std::vector<UciLogLine> since(uint64_t& cursor) const;
+    void setCapacity(size_t lines);
+    std::string stderrTail(size_t maxLines) const;
+private:
+    mutable std::mutex mx_;
+    std::deque<UciLogLine> lines_;
+    uint64_t base_ = 0;                          // absolute index of lines_.front()
+    size_t cap_ = 20000;
+    long long startMs_ = 0;
+};
+
+class UciEngine;
+
+// Every engine process the program has started, for the UCI console: live
+// ones (which can be sent raw commands) and the most recent ended ones.
+struct MonitoredEngine {
+    uint64_t id = 0;
+    std::string label;
+    std::shared_ptr<UciLogBuffer> log;
+    bool alive = false;
+    long long startedAt = 0;                     // wall-clock ms since the epoch
+};
+class EngineMonitor {
+public:
+    static EngineMonitor& instance();
+    std::vector<MonitoredEngine> list();         // newest first
+    bool send(uint64_t id, const std::string& line);   // false if the engine is gone
+    // used by UciEngine
+    uint64_t add(UciEngine* e, const std::string& label, std::shared_ptr<UciLogBuffer> log);
+    void setLabel(uint64_t id, const std::string& label);
+    void ended(uint64_t id);
+private:
+    struct Entry { MonitoredEngine info; UciEngine* engine = nullptr; };
+    std::mutex mx_;
+    std::deque<Entry> entries_;
+    uint64_t next_ = 1;
 };
 
 // Parses one "info ..." line into `info` (fields not present keep their
@@ -117,6 +164,9 @@ public:
     void setLogCapacity(size_t lines);
     void logNote(const std::string& text){ addLog('#', text); }
     std::string stderrTail(size_t maxLines = 10);
+    std::shared_ptr<UciLogBuffer> logBuffer() const { return log_; }
+    // Shown in the UCI console before the engine's name, e.g. "Opponent".
+    void setRole(const std::string& role);
 private:
     bool spawn();
     void markDead();
@@ -136,13 +186,14 @@ private:
     std::string ponder_;
     std::mutex infoMx;
     std::string rbuf, ebuf;                      // partial stdout / stderr data
-    long long startMs = 0;
     int uciokTimeout = 10000, readyTimeout = 30000;
 
-    std::mutex logMx;
-    std::deque<UciLogLine> log_;
-    uint64_t logBase = 0;                        // absolute index of log_.front()
-    size_t logCap = 20000;
+    std::shared_ptr<UciLogBuffer> log_ = std::make_shared<UciLogBuffer>();
+    size_t logCap_ = 20000;
+    uint64_t monitorId_ = 0;
+    std::string role_;
+    std::mutex writeMx_;                         // sendRaw may be called from the console too
+    void updateMonitorLabel();
 #ifdef _WIN32
     void* hChildIn = nullptr; void* hChildOut = nullptr; void* hChildErr = nullptr; void* hProc = nullptr;
 #else
