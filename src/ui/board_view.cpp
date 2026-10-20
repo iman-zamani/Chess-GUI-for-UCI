@@ -1,5 +1,15 @@
 /* Chess-GUI-for-UCI — chess board widget (ImGui draw list). GPL-2.0 */
 #include "ui/board_view.hpp"
+#include "engine_config.hpp"
+#define NANOSVG_IMPLEMENTATION
+#include "nanosvg.h"
+#define NANOSVGRAST_IMPLEMENTATION
+#include "nanosvgrast.h"
+#include <SFML/Graphics/Image.hpp>
+#include <cstdint>
+#include <filesystem>
+#include <vector>
+namespace fs = std::filesystem;
 #include <cstring>
 #include <algorithm>
 #include <cmath>
@@ -27,6 +37,54 @@ static ImTextureID textureId(const sf::Texture& t){
     unsigned int gl = t.getNativeHandle();
     std::memcpy(&id, &gl, sizeof gl);
     return id;
+}
+
+bool PieceSet::loadDir(const std::string& dir, int cell){
+    fs::path d = fs::u8path(dir);
+    std::error_code ec;
+    if (fs::exists(d / "pieces.png", ec)) return load((d / "pieces.png").u8string());
+    static const char* kinds = "KQBNRP";                   // sheet columns, white row then black row
+    std::vector<std::uint8_t> atlas((size_t)cell * 6 * cell * 2 * 4, 0), buf((size_t)cell * cell * 4);
+    NSVGrasterizer* rast = nsvgCreateRasterizer();
+    bool all = rast != nullptr;
+    for (int row = 0; row < 2 && all; row++)
+        for (int col = 0; col < 6 && all; col++){
+            std::string file = (d / (std::string(1, row ? 'b' : 'w') + kinds[col] + ".svg")).u8string();
+            NSVGimage* img = nsvgParseFromFile(file.c_str(), "px", 96.0f);
+            if (!img || img->width <= 0 || img->height <= 0){ if (img) nsvgDelete(img); all = false; break; }
+            float scale = cell / std::max(img->width, img->height);
+            float ox = (cell - img->width * scale) / 2, oy = (cell - img->height * scale) / 2;
+            std::fill(buf.begin(), buf.end(), 0);
+            nsvgRasterize(rast, img, ox, oy, scale, buf.data(), cell, cell, cell * 4);
+            nsvgDelete(img);
+            for (int y = 0; y < cell; y++)
+                std::memcpy(&atlas[(((size_t)row * cell + y) * cell * 6 + (size_t)col * cell) * 4], &buf[(size_t)y * cell * 4], (size_t)cell * 4);
+        }
+    if (rast) nsvgDeleteRasterizer(rast);
+    if (!all) return false;
+    sf::Image image(sf::Vector2u((unsigned)cell * 6, (unsigned)cell * 2), atlas.data());
+    ok_ = tex_.loadFromImage(image);
+    if (ok_){ tex_.setSmooth(true); (void)tex_.generateMipmap(); }
+    return ok_;
+}
+
+std::string userPieceDir(){ return (fs::u8path(userConfigDir()) / "pieces").u8string(); }
+
+std::vector<PieceSetInfo> pieceSets(){
+    std::vector<PieceSetInfo> out{{"classic", "Resources", false}};
+    for (auto [root, user] : {std::pair<fs::path, bool>{fs::u8path("Resources/pieces"), false},
+                              std::pair<fs::path, bool>{fs::u8path(userPieceDir()), true}}){
+        std::error_code ec;
+        std::vector<PieceSetInfo> found;
+        for (auto& e : fs::directory_iterator(root, ec)){
+            if (!e.is_directory()) continue;
+            if (fs::exists(e.path() / "wK.svg") || fs::exists(e.path() / "pieces.png"))
+                found.push_back({e.path().filename().u8string(), e.path().u8string(), user});
+        }
+        std::sort(found.begin(), found.end(), [](const PieceSetInfo& a, const PieceSetInfo& b){ return a.name < b.name; });
+        out.insert(out.end(), found.begin(), found.end());
+    }
+    return out;
 }
 
 bool PieceSet::load(const std::string& path){

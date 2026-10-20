@@ -93,6 +93,14 @@ if(CHESSGUI_BUILD_GUI)
         DOWNLOAD_EXTRACT_TIMESTAMP TRUE
         SOURCE_SUBDIR  header-only)     # only the header is used; don't add its CMake project
     FetchContent_MakeAvailable(pfd)
+
+    # nanosvg (zlib, header-only) draws the SVG piece sets. No tags: pinned to a commit.
+    FetchContent_Declare(nanosvg
+        URL      https://github.com/memononen/nanosvg/archive/239e102ec2c691f2902e20ace2ed36ee4a35cfe6.tar.gz
+        URL_HASH SHA256=2bc68bdb518d7800252042e5cad50a0ab321596f0cbf49ef2a752926329063d2
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+        SOURCE_SUBDIR  no-cmake)        # headers only; don't add its CMake project
+    FetchContent_MakeAvailable(nanosvg)
 endif()
 
 find_package(Threads REQUIRED)
@@ -169,7 +177,7 @@ set(CHESS_SOURCES
 
 add_executable(chess-gui ${CHESS_SOURCES})
 target_link_libraries(chess-gui PRIVATE chesscore ${SFML_LIBS})
-target_include_directories(chess-gui PRIVATE ${pfd_SOURCE_DIR})
+target_include_directories(chess-gui PRIVATE ${pfd_SOURCE_DIR} ${nanosvg_SOURCE_DIR}/src)
 
 # Copy Resources next to the binary so ./chess-gui finds fonts, pieces,
 # engines and the perft suite.
@@ -193,7 +201,7 @@ if(APPLE)
     # Path B (guaranteed): a real bundle -> "Chess GUI for UCI.app".
     add_executable(chess-gui-app MACOSX_BUNDLE ${CHESS_SOURCES})
     target_link_libraries(chess-gui-app PRIVATE chesscore ${SFML_LIBS})
-    target_include_directories(chess-gui-app PRIVATE ${pfd_SOURCE_DIR})
+    target_include_directories(chess-gui-app PRIVATE ${pfd_SOURCE_DIR} ${nanosvg_SOURCE_DIR}/src)
     set_target_properties(chess-gui-app PROPERTIES
         OUTPUT_NAME "Chess GUI for UCI"
         MACOSX_BUNDLE_BUNDLE_NAME "Chess GUI for UCI"

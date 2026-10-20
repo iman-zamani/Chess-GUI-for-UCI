@@ -43,6 +43,7 @@ public:
     void toast(const std::string& s);
     void go(Screen s);
     const PieceSet& pieces() const { return pieces_; }
+    void loadPieces();
     void openEditor(const Position& p);                 // edit a copy of `p`
     void openEditorForMatch();                          // "Done" adds the position to the match
     void editorDone(EditorAction a, const Position& p); // the editor's "use it" buttons

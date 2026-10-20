@@ -62,11 +62,19 @@ bool App::init(){
     if (!imguiOk_){ std::fprintf(stderr, "ImGui initialisation failed\n"); return false; }
     ImGui::GetIO().IniFilename = nullptr;                 // no imgui.ini next to the binary
     setupFonts();
-    if (!pieces_.load("Resources/pieceTexture@2x.png") && !pieces_.load("Resources/pieceTexture.png"))
-        std::fprintf(stderr, "Piece images not found; using letters\n");
+    loadPieces();
     scanEngines();
     game_.newHumanGame(Position::startpos());
     return true;
+}
+
+void App::loadPieces(){
+    bool ok = false;
+    for (auto& ps : pieceSets())
+        if (ps.name == settings_.pieceSet && ps.name != "classic") ok = pieces_.loadDir(ps.path);
+    if (!ok && settings_.pieceSet != "classic") toast("Could not load the piece set '" + settings_.pieceSet + "'");
+    if (!ok) ok = pieces_.load("Resources/pieceTexture@2x.png") || pieces_.load("Resources/pieceTexture.png");
+    if (!ok) std::fprintf(stderr, "Piece images not found; using letters\n");
 }
 
 // ImGui draws in physical pixels; fonts are rasterized at the real pixel
@@ -299,6 +307,16 @@ void App::drawMenuBar(){
         if (ImGui::BeginMenu("Board colours")){
             for (auto& t : boardThemes())
                 if (ImGui::MenuItem(t.name, nullptr, settings_.boardTheme == t.name)){ settings_.boardTheme = t.name; saveSettings(); }
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Pieces")){
+            for (auto& ps : pieceSets())
+                if (ImGui::MenuItem((ps.name + (ps.user ? "  (yours)" : "")).c_str(), nullptr, settings_.pieceSet == ps.name)){
+                    settings_.pieceSet = ps.name; saveSettings(); loadPieces();
+                }
+            ImGui::Separator();
+            ImGui::TextDisabled("Your own sets: a folder with wK.svg ... bP.svg");
+            ImGui::TextDisabled("(or a 6x2 pieces.png) in %s", userPieceDir().c_str());
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Theme")){

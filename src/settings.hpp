@@ -10,6 +10,7 @@ struct Settings {
     // appearance
     std::string theme = "dark";               // dark | light
     std::string boardTheme = "brown";         // see BoardTheme in ui/board_view
+    std::string pieceSet = "classic";         // see pieceSets() in ui/board_view
     bool showCoordinates = true;
     // folders last used in file dialogs
     std::string lastPgnDir, lastEngineDir, lastOpeningsDir, lastSaveDir;

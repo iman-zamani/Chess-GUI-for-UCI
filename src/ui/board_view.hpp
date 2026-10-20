@@ -6,6 +6,12 @@
 #include <string>
 #include <vector>
 
+// Piece sets: "classic" (the built-in sprite sheet), the folders in Resources/pieces/
+// and in <config dir>/pieces/ (user sets: wK.svg ... bP.svg, or a pieces.png sheet).
+struct PieceSetInfo { std::string name, path; bool user = false; };
+std::vector<PieceSetInfo> pieceSets();
+std::string userPieceDir();
+
 // Board colour schemes. Index stored in settings by name.
 struct BoardTheme { const char* name; ImU32 light, dark; };
 const std::vector<BoardTheme>& boardThemes();
@@ -14,7 +20,9 @@ const BoardTheme& boardTheme(const std::string& name);
 // The piece sprite sheet: 6x2 cells, K Q B N R P; white row then black row.
 class PieceSet {
 public:
-    bool load(const std::string& path);
+    bool load(const std::string& path);                       // a 6x2 sprite sheet (PNG)
+    // A folder with wK.svg ... bP.svg (rasterized at `cell` pixels) or a pieces.png sprite sheet.
+    bool loadDir(const std::string& dir, int cell = 256);
     bool ok() const { return ok_; }
     // Draws `piece` (values.hpp encoding) into the square [p0, p1].
     void draw(ImDrawList* dl, int piece, ImVec2 p0, ImVec2 p1, ImU32 tint = IM_COL32_WHITE) const;
