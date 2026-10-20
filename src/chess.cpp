@@ -593,6 +593,7 @@ std::vector<PgnGame> parsePGN(const std::string& text){
             if (sp!=std::string::npos && q1!=std::string::npos && q2>q1){
                 std::string key = line.substr(1, sp-1);
                 std::string val = line.substr(q1+1, q2-q1-1);
+                cur.tags.push_back({key, val});
                 if (key=="White") cur.white = val;
                 else if (key=="Black") cur.black = val;
                 else if (key=="Result") cur.result = val;

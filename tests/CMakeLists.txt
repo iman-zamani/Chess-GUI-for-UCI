@@ -13,6 +13,7 @@ add_executable(core_tests
     test_syzygy.cpp
     test_chess960.cpp
     test_elo.cpp
+    test_game_tree.cpp
     test_main.cpp
 )
 target_link_libraries(core_tests PRIVATE chesscore)
@@ -22,7 +23,7 @@ target_compile_definitions(core_tests PRIVATE
 add_dependencies(core_tests mock_engine)
 
 # One CTest entry per test group (name prefix understood by the runner).
-foreach(group perft fen san pgn game uci engine bisect ucicheck stats openings match syzygy chess960 elo)
+foreach(group perft fen san pgn game uci engine bisect ucicheck stats openings match syzygy chess960 elo tree)
     add_test(NAME ${group} COMMAND core_tests ${group}/)
 endforeach()
 set_tests_properties(perft PROPERTIES TIMEOUT 600)

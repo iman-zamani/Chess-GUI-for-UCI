@@ -128,6 +128,7 @@ add_library(chesscore STATIC
     src/chess.cpp
     src/elo_estimator.cpp
     src/engine_config.cpp
+    src/game_tree.cpp
     src/openings.cpp
     src/perft_bisect.cpp
     src/power.cpp

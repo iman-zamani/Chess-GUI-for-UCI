@@ -103,6 +103,7 @@ bool premovePlausible(const Position& p, int from, int to);
 // ---------------- PGN import ----------------
 struct PgnGame {
     std::string white="?", black="?", result="*", event, fenTag, variant;
+    std::vector<std::pair<std::string, std::string>> tags;   // every tag, in file order
     std::string movetext;
 };
 // Split a PGN file/text into games (headers parsed, movetext kept raw).
