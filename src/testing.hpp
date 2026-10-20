@@ -1,5 +1,6 @@
 /* Chess-GUI-for-UCI — engine developer tools. GPL-2.0 */
 #pragma once
+#include <cstdint>
 #include "chess.hpp"
 #include "uci_engine.hpp"
 #include <string>
@@ -42,6 +43,12 @@ bool runInternalPerftSelfTest(const std::vector<PerftCase>& suite, int maxDepth,
 // Load positions: plain FEN lines ('#' comments allowed), EPD lines with
 // opcodes, or a .pgn file (final position of each game's first 8 plies).
 std::vector<std::string> loadFenList(const std::string& path);
+
+// Single-threaded speed of this machine: the internal perft over a fixed set
+// of positions, best of `runs`, in nodes per second. The Elo estimator scales
+// its move time by calibration NPS / this NPS.
+struct PerftBenchmark { double nps = 0; uint64_t nodes = 0; double bestSeconds = 0; };
+PerftBenchmark runPerftBenchmark(int runs = 3);
 
 // Lichess accuracy model: cp -> expected win %, and per-move accuracy from
 // the win-percentage drop caused by the move.

@@ -43,6 +43,7 @@ if(TARGET chess-cli)
         set_tests_properties(${name} PROPERTIES TIMEOUT 120)
     endfunction()
     cli_test(cli_help 0 "Exit codes" "${cli}|help")
+    cli_test(cli_bench 0 "9625836 nodes" "${cli}|bench|--runs|1")
     cli_test(cli_usage 2 "unknown option" "${cli}|match|--engine|${mock}|--engine|${mock}|--bogus")
     cli_test(cli_match 0 "\"gamesPlayed\": 8"
              "${cli}|match|--engine|${mock}|name=A|--engine|${mock}|name=B|--tc|1+0.01|--games|8|--concurrency|2|--json")

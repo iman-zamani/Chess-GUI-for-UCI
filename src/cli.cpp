@@ -1,6 +1,7 @@
 /* Chess-GUI-for-UCI — headless command-line tool (chess-cli). GPL-2.0 */
 #include "engine_config.hpp"
 #include "stats.hpp"
+#include "testing.hpp"
 #include "tournament.hpp"
 #include <atomic>
 #include <chrono>
@@ -31,6 +32,7 @@ R"(chess-cli - headless tools for UCI engine developers
 Usage:
   chess-cli match [options]     play a match, round-robin or gauntlet
   chess-cli sprt  [options]     a match that stops when the SPRT accepts H0 or H1
+  chess-cli bench [--runs N] [--json]   single-threaded speed (internal perft, best of N runs)
   chess-cli help
 
 Engines (give two or more):
@@ -320,6 +322,20 @@ int main(int argc, char** argv){
     }
     std::string cmd = args[0];
     args.erase(args.begin());
+    if (cmd == "bench"){
+        int runs = 3; bool js = false;
+        for (size_t i = 0; i < args.size(); i++){
+            if (args[i] == "--runs" && i + 1 < args.size() && parseInt(args[i + 1], runs) && runs > 0) i++;
+            else if (args[i] == "--json") js = true;
+            else return fail("bench: unknown option '" + args[i] + "'");
+        }
+        PerftBenchmark b = runPerftBenchmark(runs);
+        if (js) std::printf("{\"nps\": %.0f, \"nodes\": %llu, \"seconds\": %.4f, \"runs\": %d}\n",
+                            b.nps, (unsigned long long)b.nodes, b.bestSeconds, runs);
+        else std::printf("perft benchmark: %llu nodes in %.3f s (best of %d) = %.0f nodes/s\n",
+                         (unsigned long long)b.nodes, b.bestSeconds, runs, b.nps);
+        return EXIT_OK;
+    }
     if (cmd == "match") return runMatch(args, false);
     if (cmd == "sprt") return runMatch(args, true);
     return fail("unknown command '" + cmd + "'");

@@ -3,6 +3,7 @@
 #include "openings.hpp"
 #include <fstream>
 #include <sstream>
+#include <chrono>
 #include <cmath>
 
 std::vector<PerftCase> builtinPerftSuite(){
@@ -134,6 +135,25 @@ std::vector<std::string> loadFenList(const std::string& path){
     std::vector<std::string> out;
     for (auto& o : loadOpeningBook(path).openings) out.push_back(o.finalPosition().toFEN());
     return out;
+}
+
+PerftBenchmark runPerftBenchmark(int runs){
+    // fixed work (about 11M leaf nodes): opening, a tactical middlegame (Kiwipete) and an endgame
+    static const std::pair<const char*, int> kWork[] = {
+        {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 5},
+        {"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 4},
+        {"8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1", 5},
+    };
+    PerftBenchmark b;
+    for (int r = 0; r < std::max(1, runs); r++){
+        auto t0 = std::chrono::steady_clock::now();
+        uint64_t nodes = 0;
+        for (auto& w : kWork) nodes += Position::fromFEN(w.first).perft(w.second);
+        double sec = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+        if (b.bestSeconds == 0 || sec < b.bestSeconds){ b.bestSeconds = sec; b.nodes = nodes; }
+    }
+    b.nps = b.bestSeconds > 0 ? b.nodes / b.bestSeconds : 0;
+    return b;
 }
 
 // cp (mover POV) -> expected win percentage (lichess model)
