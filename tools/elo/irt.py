@@ -206,3 +206,20 @@ def select_items(a, b, categories, n=1000, a_min=0.25, exclude=None):
     rest = np.where(ok & ~taken)[0]
     chosen.extend(rest[np.argsort(-a[rest])][:max(0, n - len(chosen))].tolist())
     return np.array(sorted(chosen[:n]), int)
+
+
+# ------------------------------------------------------------------ candidate filters
+MAX_ACCEPTABLE = 5          # more moves than this within T of the best: not a test of anything
+DECIDED_CP = 400            # quiet positions already decided by this much are dropped
+
+
+def unusable_positions(d, threshold):
+    """Mask of positions that make poor test items, from the reference analysis:
+    too many acceptable moves, or (positional / endgame only) already decided."""
+    bad = np.zeros(len(d["positions"]), bool)
+    for i, (table, best) in enumerate(d["tables"]):
+        n_ok = sum(1 for w in table.values() if best - w <= threshold)
+        decided = abs(best - 50.0) >= abs(win_pct(DECIDED_CP) - 50.0)
+        if n_ok > MAX_ACCEPTABLE or (decided and d["categories"][i] in ("positional", "endgame")):
+            bad[i] = True
+    return bad

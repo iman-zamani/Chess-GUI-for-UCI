@@ -29,13 +29,16 @@ def elo_scaled(a, b, intercept, slope):
     return a / k, irt.theta_of(intercept + slope * b)
 
 
-def choose(items, n):
+def choose(items, n, unusable=None):
     a = np.array([x["a"] for x in items["items"]])
     b = np.array([x["b"] for x in items["items"]])
     fit = np.array([x["fit"] for x in items["items"]])
     a_s, b_s = elo_scaled(a, b, items["intercept"], items["slope"])
     cats = [x["category"] for x in items["items"]]
-    return irt.select_items(a_s, b_s, cats, n=n, a_min=A_MIN, exclude=fit > FIT_MAX)
+    exclude = fit > FIT_MAX
+    if unusable is not None:
+        exclude |= unusable
+    return irt.select_items(a_s, b_s, cats, n=n, a_min=A_MIN, exclude=exclude)
 
 
 def main():
@@ -58,7 +61,10 @@ def main():
                 and r["items"] == a.n), None)
     if row is None:
         sys.exit("no cross-validation result for threshold %g, model %s, %d items" % (items["threshold"], items["model"], a.n))
-    sel = choose(items, a.n)
+    d = irt.load_dataset(a.engines, os.path.join(a.data, "reference.jsonl"), os.path.join(a.data, "responses.csv"))
+    if d["positions"] != [x["id"] for x in items["items"]]:
+        sys.exit("items.json does not match reference.jsonl")
+    sel = choose(items, a.n, irt.unusable_positions(d, items["threshold"]))
     T = items["threshold"]
     out_items, epd = [], []
     for i in sel:

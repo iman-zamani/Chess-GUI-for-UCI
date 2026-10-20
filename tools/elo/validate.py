@@ -39,7 +39,7 @@ def run_folds(d, T, model, n_items, folds):
         items = {"intercept": f["intercept"], "slope": f["slope"],
                  "items": [{"a": f["a"][i], "b": f["b"][i], "fit": f["fit"][i], "category": d["categories"][i]}
                            for i in range(len(d["positions"]))]}
-        sel = choose(items, n_items)
+        sel = choose(items, n_items, irt.unusable_positions(d, T))
         Y, M = f["Y"], f["M"]
         for k in np.where(test)[0]:
             t, s = irt.estimate_theta(Y[k, sel], M[k, sel], f["a"][sel], f["b"][sel])
