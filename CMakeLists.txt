@@ -123,6 +123,10 @@ add_library(chesscore STATIC
 target_include_directories(chesscore PUBLIC src)
 target_link_libraries(chesscore PUBLIC Threads::Threads nlohmann_json::nlohmann_json)
 
+# Headless command-line tool: core only, no SFML.
+add_executable(chess-cli src/cli.cpp)
+target_link_libraries(chess-cli PRIVATE chesscore)
+
 if(CHESSGUI_BUILD_GUI)
 set(CHESS_SOURCES
     src/main.cpp

@@ -152,6 +152,7 @@ std::string matchGamePgn(const Game& g, const MatchSettings& s, int round, int g
 void MatchRunner::log(const std::string& msg){
     std::lock_guard<std::mutex> lk(mx_);
     snap_.log.push_back(msg);
+    snap_.logTotal++;
     if (snap_.log.size() > 200) snap_.log.erase(snap_.log.begin());
     snap_.status = msg;
 }

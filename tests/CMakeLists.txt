@@ -31,3 +31,24 @@ if(CHESSGUI_GUI_TESTS AND TARGET chess-gui)
              WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
     set_tests_properties(gui_smoke PROPERTIES TIMEOUT 60)
 endif()
+
+# chess-cli against the mock engine: exit codes and output.
+if(TARGET chess-cli)
+    set(cli $<TARGET_FILE:chess-cli>)
+    set(mock cmd=$<TARGET_FILE:mock_engine>)
+    function(cli_test name code regex cmd)
+        add_test(NAME ${name} COMMAND ${CMAKE_COMMAND} "-DCMD=${cmd}" -DEXPECT_CODE=${code}
+                 "-DEXPECT_REGEX=${regex}" -P ${CMAKE_CURRENT_SOURCE_DIR}/run_cli.cmake)
+        set_tests_properties(${name} PROPERTIES TIMEOUT 120)
+    endfunction()
+    cli_test(cli_help 0 "Exit codes" "${cli}|help")
+    cli_test(cli_usage 2 "unknown option" "${cli}|match|--engine|${mock}|--engine|${mock}|--bogus")
+    cli_test(cli_match 0 "\"gamesPlayed\": 8"
+             "${cli}|match|--engine|${mock}|name=A|--engine|${mock}|name=B|--tc|1+0.01|--games|8|--concurrency|2|--json")
+    cli_test(cli_rr 0 "Standings"
+             "${cli}|match|--mode|roundrobin|--engine|${mock}|name=A|--engine|${mock}|name=B|--engine|${mock}|name=C|--tc|1+0.01|--games|2|--concurrency|3")
+    # an engine that forfeits every game: the SPRT accepts H0 (exit code 1)
+    cli_test(cli_sprt_h0 1 "H0 accepted"
+             "${cli}|sprt|--engine|${mock}|name=Bad|args=--illegal-bestmove|--engine|${mock}|name=B|--tc|1+0.01|--games|200|--concurrency|4|--elo1|50|--model|logistic")
+    add_dependencies(core_tests chess-cli)
+endif()
