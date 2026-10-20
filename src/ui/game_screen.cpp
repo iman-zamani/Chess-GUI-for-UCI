@@ -673,7 +673,7 @@ void GameScreen::drawPromotionPopup(){
     if (pendingPromotion_ && !ImGui::IsPopupOpen("Promote to")) ImGui::OpenPopup("Promote to");
     if (ImGui::BeginPopupModal("Promote to", nullptr, ImGuiWindowFlags_AlwaysAutoResize)){
         static const int kinds[4] = {WHITE_QUEEN, WHITE_ROOK, WHITE_BISHOP, WHITE_KNIGHT};
-        static const char* names[4] = {"Queen", "Rook", "Bishop", "Knight"};
+        static const char* names[4] = {"##Queen", "##Rook", "##Bishop", "##Knight"};   // images, no text
         float cell = ImGui::GetFontSize() * 4;
         bool white = game_.pos.whiteToMove;
         for (int i = 0; i < 4; i++){

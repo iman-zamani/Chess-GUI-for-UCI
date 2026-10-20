@@ -72,8 +72,9 @@ void ToolsScreen::drawAccuracyTab(){
     st.accCount = std::max(1, std::min(st.accCount, 1000));
     st.accTestMs = std::max(10, st.accTestMs); st.accRefMs = std::max(10, st.accRefMs);
     if (changed) app_.saveSettings();
-    double mins = st.accCount * (st.accTestMs + st.accRefMs) / 60000.0;
-    ImGui::TextColored(ui::kWarn, "Estimated duration: about %.0f-%.0f minutes", mins, mins * 1.4);
+    double secs = st.accCount * (st.accTestMs + st.accRefMs) / 1000.0;
+    if (secs < 90) ImGui::TextColored(ui::kWarn, "Estimated duration: about %.0f-%.0f seconds", secs, secs * 1.4);
+    else ImGui::TextColored(ui::kWarn, "Estimated duration: about %.0f-%.0f minutes", secs / 60, secs * 1.4 / 60);
     const EngineConfig* te = ui::findEngine(app_.registry(), st.accTestEngine);
     const EngineConfig* re = ui::findEngine(app_.registry(), st.accRefEngine);
     ImGui::BeginDisabled(busy() || !te || !re);

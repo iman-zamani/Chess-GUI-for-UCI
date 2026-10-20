@@ -148,7 +148,7 @@ void jobPanel(Job& job, const std::function<std::string()>& saveDialog,
             else if (l.rfind(">>>", 0) == 0) ImGui::TextColored(kGood, "%s", l.c_str());
             else ImGui::TextUnformatted(l.c_str());
         }
-    if (job.running() && ImGui::GetScrollY() >= ImGui::GetScrollMaxY() - ImGui::GetFontSize() * 3)
+    if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY() - ImGui::GetFontSize() * 3)
         ImGui::SetScrollHereY(1.0f);                       // follow the tail unless scrolled up
     if (fonts().mono) ImGui::PopFont();
     ImGui::EndChild();
