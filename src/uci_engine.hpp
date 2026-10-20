@@ -2,8 +2,10 @@
 #pragma once
 #include "engine_config.hpp"
 #include <atomic>
+#include <condition_variable>
 #include <cstdint>
 #include <deque>
+#include <thread>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -175,7 +177,7 @@ private:
     void parseInfo(const std::string& line);
     void parseOptionLine(const std::string& line);
     void addLog(char dir, const std::string& text);
-    bool fillBuffers(int timeoutMs);             // read whatever is available
+    void readerLoop();                           // reader thread: engine output -> log + queue
 
     EngineConfig cfg_;
     std::vector<UciOption> opts;
@@ -185,7 +187,15 @@ private:
     std::vector<PvLine> pvs_;
     std::string ponder_;
     std::mutex infoMx;
-    std::string rbuf, ebuf;                      // partial stdout / stderr data
+    // A reader thread reads stdout/stderr continuously, so output is logged as
+    // it arrives (the console sees replies even when no search is waiting)
+    // and the engine can never block on a full pipe.
+    std::thread reader_;
+    std::atomic<bool> stopReader_{false};
+    std::mutex qMx_;
+    std::condition_variable qCv_;
+    std::deque<std::string> queue_;              // stdout lines not yet read by readLine()
+    bool stdoutEof_ = false;
     int uciokTimeout = 10000, readyTimeout = 30000;
 
     std::shared_ptr<UciLogBuffer> log_ = std::make_shared<UciLogBuffer>();

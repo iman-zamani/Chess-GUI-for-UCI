@@ -191,7 +191,7 @@ bool UciEngine::start(const EngineConfig& cfg){
     }
     resetSearchInfo();
     opts.clear(); engName = "engine"; engAuthor.clear(); errMsg.clear();
-    rbuf.clear(); ebuf.clear();
+    { std::lock_guard<std::mutex> lk(qMx_); queue_.clear(); stdoutEof_ = false; }
     log_ = std::make_shared<UciLogBuffer>();          // one log per process
     log_->setCapacity(logCap_);
     monitorId_ = EngineMonitor::instance().add(this, cfg_.name.empty() ? cfg_.path : cfg_.name, log_);
@@ -203,6 +203,8 @@ bool UciEngine::start(const EngineConfig& cfg){
         return false;
     }
     running = true;
+    stopReader_ = false;
+    reader_ = std::thread(&UciEngine::readerLoop, this);
     // UCI handshake
     sendRaw("uci");
     auto t0 = clk::now();
@@ -332,92 +334,83 @@ void UciEngine::markDead(){
     if (running.exchange(false)) addLog('#', "engine process ended");
 }
 
-// Moves available stdout/stderr bytes into rbuf/ebuf, waiting up to
-// timeoutMs for something to arrive. Complete stderr lines go to the log.
-bool UciEngine::fillBuffers(int timeoutMs){
-    bool got = false;
+// Reader thread: moves engine output into the log as it arrives and queues
+// stdout lines for readLine(). Ends at stdout EOF or when quit() asks.
+void UciEngine::readerLoop(){
+    std::string rbuf, ebuf;
     char buf[8192];
-#ifdef _WIN32
-    auto t0 = clk::now();
-    while (true){
-        for (int k = 0; k < 2; k++){
-            HANDLE h = (HANDLE)(k == 0 ? hChildOut : hChildErr);
-            if (!h) continue;
-            DWORD avail = 0;
-            if (!PeekNamedPipe(h, nullptr, 0, nullptr, &avail, nullptr)){ if (k == 0) markDead(); continue; }
-            if (!avail) continue;
-            DWORD n = 0;
-            if (!ReadFile(h, buf, std::min<DWORD>(avail, sizeof buf), &n, nullptr) || !n){ if (k == 0) markDead(); continue; }
-            (k == 0 ? rbuf : ebuf).append(buf, n);
-            if (k == 0) got = true;
-        }
-        if (got || !running || msSince(t0) >= timeoutMs) break;
-        Sleep(2);
-    }
-#else
-    pollfd fds[2] = {{outFd, POLLIN, 0}, {errFd, POLLIN, 0}};
-    int r = poll(fds, 2, std::max(0, timeoutMs));
-    if (r > 0){
-        for (int k = 0; k < 2; k++){
-            if (!(fds[k].revents & (POLLIN | POLLHUP | POLLERR))) continue;
-            ssize_t n = read(fds[k].fd, buf, sizeof buf);
-            if (n > 0){ (k == 0 ? rbuf : ebuf).append(buf, (size_t)n); if (k == 0) got = true; }
-            else if (n == 0 || (errno != EAGAIN && errno != EINTR)){
-                if (k == 0) markDead();
-                else errFd = -1;                     // stderr closed; keep reading stdout
+    bool outOpen = true, errOpen = true;
+    auto flushLines = [&](std::string& b, bool isOut, bool all){
+        size_t nl;
+        while ((nl = b.find('\n')) != std::string::npos || (all && !b.empty())){
+            std::string ln = nl == std::string::npos ? b : b.substr(0, nl);
+            b.erase(0, nl == std::string::npos ? b.size() : nl + 1);
+            if (!ln.empty() && ln.back() == '\r') ln.pop_back();
+            addLog(isOut ? '<' : '!', ln);
+            if (isOut){
+                std::lock_guard<std::mutex> lk(qMx_);
+                queue_.push_back(ln);
+                if (queue_.size() > 200000) queue_.pop_front();    // nobody is reading
+                qCv_.notify_all();
             }
         }
-        if (errFd < 0) fds[1].fd = -1;
-    }
+    };
+    while (!stopReader_ && (outOpen || errOpen)){
+        bool got = false;
+#ifdef _WIN32
+        for (int k = 0; k < 2; k++){
+            bool& open = k == 0 ? outOpen : errOpen;
+            HANDLE h = (HANDLE)(k == 0 ? hChildOut : hChildErr);
+            if (!open || !h) continue;
+            DWORD avail = 0;
+            if (!PeekNamedPipe(h, nullptr, 0, nullptr, &avail, nullptr)){ open = false; continue; }
+            if (!avail) continue;
+            DWORD n = 0;
+            if (!ReadFile(h, buf, std::min<DWORD>(avail, sizeof buf), &n, nullptr) || !n){ open = false; continue; }
+            (k == 0 ? rbuf : ebuf).append(buf, n);
+            got = true;
+        }
+        if (!got && (outOpen || errOpen)) Sleep(3);
+#else
+        pollfd fds[2] = {{outOpen ? outFd : -1, POLLIN, 0}, {errOpen ? errFd : -1, POLLIN, 0}};
+        int r = poll(fds, 2, 100);
+        if (r > 0){
+            for (int k = 0; k < 2; k++){
+                if (!(fds[k].revents & (POLLIN | POLLHUP | POLLERR))) continue;
+                ssize_t n = read(fds[k].fd, buf, sizeof buf);
+                if (n > 0){ (k == 0 ? rbuf : ebuf).append(buf, (size_t)n); got = true; }
+                else if (n == 0 || (errno != EAGAIN && errno != EINTR)) (k == 0 ? outOpen : errOpen) = false;
+            }
+        }
 #endif
-    size_t nl;
-    while ((nl = ebuf.find('\n')) != std::string::npos){
-        std::string ln = ebuf.substr(0, nl);
-        if (!ln.empty() && ln.back()=='\r') ln.pop_back();
-        ebuf.erase(0, nl+1);
-        addLog('!', ln);
+        flushLines(ebuf, false, !errOpen);
+        flushLines(rbuf, true, !outOpen);
+        if (!outOpen){
+            { std::lock_guard<std::mutex> lk(qMx_); stdoutEof_ = true; }
+            markDead();
+            qCv_.notify_all();
+            if (!errOpen) break;
+        }
+        (void)got;
     }
-    return got;
 }
 
 std::string UciEngine::readLine(int timeoutMs){
-    auto t0 = clk::now();
-    while (true){
-        size_t nl = rbuf.find('\n');
-        if (nl != std::string::npos){
-            std::string ln = rbuf.substr(0, nl);
-            if (!ln.empty() && ln.back()=='\r') ln.pop_back();
-            rbuf.erase(0, nl+1);
-            addLog('<', ln);
-            return ln;
-        }
-        if (!running) return "";
-        long long left = timeoutMs - msSince(t0);
-        if (left <= 0) return "";
-        fillBuffers((int)std::min<long long>(left, 50));
-    }
+    std::unique_lock<std::mutex> lk(qMx_);
+    if (queue_.empty() && timeoutMs > 0)
+        qCv_.wait_for(lk, std::chrono::milliseconds(timeoutMs),
+                      [&]{ return !queue_.empty() || stdoutEof_ || !running; });
+    if (queue_.empty()) return "";
+    std::string ln = std::move(queue_.front());
+    queue_.pop_front();
+    return ln;
 }
 
+// True while the process runs, and afterwards until its last output is read.
 bool UciEngine::alive(){
-    if (!running) return false;
-#ifdef _WIN32
-    if (hProc && WaitForSingleObject((HANDLE)hProc, 0) == WAIT_OBJECT_0){
-        fillBuffers(0);                      // keep whatever it printed last
-        if (rbuf.find('\n') == std::string::npos) markDead();
-    }
-#else
-    if (pid > 0){
-        int st;
-        if (waitpid((pid_t)pid, &st, WNOHANG) == (pid_t)pid){
-            pid = -1;
-            addLog('#', WIFSIGNALED(st) ? "engine killed by signal " + std::to_string(WTERMSIG(st))
-                                        : "engine exited with code " + std::to_string(WEXITSTATUS(st)));
-            fillBuffers(0);
-            if (rbuf.find('\n') == std::string::npos) markDead();
-        }
-    }
-#endif
-    return running;
+    if (running) return true;
+    std::lock_guard<std::mutex> lk(qMx_);
+    return !queue_.empty();
 }
 
 void UciEngine::quit(){
@@ -428,8 +421,15 @@ void UciEngine::quit(){
         return;
     }
     if (running) sendRaw("quit");
-    if (WaitForSingleObject((HANDLE)hProc, 1000) != WAIT_OBJECT_0) TerminateProcess((HANDLE)hProc, 0);
+    if (WaitForSingleObject((HANDLE)hProc, 1000) != WAIT_OBJECT_0){
+        TerminateProcess((HANDLE)hProc, 0);
+        addLog('#', "engine killed (no exit within 1 s of quit)");
+    }
     WaitForSingleObject((HANDLE)hProc, 1000);
+    DWORD code = 0;
+    if (GetExitCodeProcess((HANDLE)hProc, &code)) addLog('#', "engine exited with code " + std::to_string(code));
+    stopReader_ = true;
+    if (reader_.joinable()) reader_.join();
     CloseHandle((HANDLE)hProc); CloseHandle((HANDLE)hChildIn); CloseHandle((HANDLE)hChildOut);
     CloseHandle((HANDLE)hChildErr);
     hProc = hChildIn = hChildOut = hChildErr = nullptr;
@@ -448,9 +448,15 @@ void UciEngine::quit(){
             else if (msSince(t0) >= 1000) break;
             else std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
-        if (!exited){ kill((pid_t)pid, SIGKILL); waitpid((pid_t)pid, &st, 0); }
+        if (!exited){
+            kill((pid_t)pid, SIGKILL); waitpid((pid_t)pid, &st, 0);
+            addLog('#', "engine killed (no exit within 1 s of quit)");
+        } else addLog('#', WIFSIGNALED(st) ? "engine killed by signal " + std::to_string(WTERMSIG(st))
+                                          : "engine exited with code " + std::to_string(WEXITSTATUS(st)));
         pid = -1;
     }
+    stopReader_ = true;
+    if (reader_.joinable()) reader_.join();
     if (inFd >= 0) close(inFd);
     if (outFd >= 0) close(outFd);
     if (errFd >= 0) close(errFd);
@@ -695,9 +701,13 @@ long long UciEngine::goPerft(int depth, int timeoutMs){
 }
 
 void UciEngine::pump(){
-    for (int i=0;i<256;i++){
-        std::string ln = readLine(i == 0 ? 1 : 0);
-        if (ln.empty()) break;
+    for (int i=0;i<4096;i++){
+        std::string ln = readLine(0);
+        if (ln.empty()){
+            std::lock_guard<std::mutex> lk(qMx_);
+            if (queue_.empty()) break;               // (an empty line was read)
+            continue;
+        }
         parseInfo(ln);
     }
 }
