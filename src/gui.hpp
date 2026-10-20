@@ -8,6 +8,7 @@
 #include "uci_engine.hpp"
 #include "tournament.hpp"
 #include "testing.hpp"
+#include "analysis.hpp"
 #include "ui_script.hpp"
 #include "settings.hpp"
 #include "ui/engine_manager.hpp"
@@ -42,29 +43,6 @@ struct Button {
     int id = 0;
     bool enabled = true;
     bool toggled = false;
-};
-
-// Runs an engine in infinite-analysis mode on its own thread; the render
-// thread never blocks on engine I/O (setFen/info/pvs/alive are all cheap).
-class AnalysisController {
-public:
-    ~AnalysisController(){ shutdown(); }
-    bool start(const EngineConfig& cfg);
-    void shutdown();
-    void setFen(const std::string& fen);
-    EngineInfo info();
-    std::vector<PvLine> pvs();
-    bool alive();
-    std::string engineName();
-    std::string lastError() const { return err; }
-private:
-    void loop();
-    std::unique_ptr<UciEngine> eng;
-    std::thread th;
-    std::atomic<bool> stop_{false};
-    std::mutex mx;
-    std::string target;
-    std::string err;
 };
 
 class App {

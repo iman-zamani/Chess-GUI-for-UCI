@@ -108,6 +108,7 @@ FetchContent_MakeAvailable(nlohmann_json)
 # Core logic: rules, UCI process wrapper, matches, test tools. No SFML here;
 # it is shared by the GUI, the tests and the headless CLI.
 add_library(chesscore STATIC
+    src/analysis.cpp
     src/chess.cpp
     src/engine_config.cpp
     src/settings.cpp
