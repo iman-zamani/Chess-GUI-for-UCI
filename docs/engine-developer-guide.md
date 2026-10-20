@@ -38,7 +38,7 @@ and the engine log behind the result:
 | `mate-scores` | forced mates are reported as `score mate N` |
 | `setoption` | every advertised option can be set, then `isready` |
 | `ponder` | `go ponder` + `ponderhit`, and `go ponder` + `stop` |
-| `time-management` | self-play games at 1s+0.01s and 10s+0.1s without losing on time (*Quick*: 1s+0.01s only) |
+| `time-management` | self-play games at 1s+0.01s and 10s+0.1s without losing on time (*Quick*: 1s+0.01s only); an overrun of up to 50 ms, which can be the GUI's own latency, only warns |
 
 Command line: `chess-cli uci-check --engine cmd=./myengine [--quick] [--only handshake,stop]`
 (exit code 1 when any check fails).
