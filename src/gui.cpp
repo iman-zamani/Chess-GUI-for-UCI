@@ -168,6 +168,8 @@ void App::run(){
         bool hadEvent = false;
         UiEvent e;
         while (pollUiEvent(window, e)){ handleEvent(e); hadEvent = true; }
+        if (scriptPos < script.size()){ stepScript(); hadEvent = true; }
+        if (!window.isOpen()) break;
         update();
         int act = activityLevel();
         if (act==2 || hadEvent || forceRedraw){
@@ -206,7 +208,7 @@ void App::text(const std::string& s, float x, float y, unsigned size, sf::Color 
 static bool hit(const sf::FloatRect& r, sf::Vector2f p){ return r.contains(p); }
 
 void App::drawButtons(){
-    sf::Vector2f m = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+    sf::Vector2f m = mouseLogical();
     for (auto& b : buttons){
         sf::RectangleShape r(sf::Vector2f(rectW(b.rect), rectH(b.rect)));
         r.setPosition({std::round(rectL(b.rect)), std::round(rectT(b.rect))});
@@ -1255,7 +1257,7 @@ void App::handleEvent(const UiEvent& e){
         }
         return;
     }
-    sf::Vector2f m = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+    sf::Vector2f m = mouseLogical();
     if (e.kind == UiEvent::MousePressed && e.button==sf::Mouse::Button::Left){
         for (auto& b : buttons)
             if (b.enabled && hit(b.rect, m)){ onButton(b.id); return; }
@@ -1979,7 +1981,7 @@ void App::render(){
         drawBoard(20, 56, side, editPos, -1, nullptr, -1, -1, false, handFrom, dragPos);
         // hand-tool ghost follows the cursor
         if (handFrom>=0 && handPiece){
-            sf::Vector2f mp = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+            sf::Vector2f mp = mouseLogical();
             drawPiece(handPiece, mp.x-(side/8)/2, mp.y-(side/8)/2, side/8, 230);
         }
         float rx = side + 40;
@@ -2052,5 +2054,73 @@ void App::render(){
             text(toast, WW/2, WH-27, 14, sf::Color::White, true);
         }
     }
+    if (!pendingShot.empty()){
+        sf::Texture shot;
+        if (shot.resize(window.getSize())){
+            shot.update(window);
+            if (!shot.copyToImage().saveToFile(pendingShot))
+                fprintf(stderr, "[script] could not save %s\n", pendingShot.c_str());
+        }
+        pendingShot.clear();
+    }
     window.display();
+}
+
+// =============================================================== scripted input
+sf::Vector2f App::mouseLogical(){
+    if (scriptMouse) return *scriptMouse;
+    return window.mapPixelToCoords(sf::Mouse::getPosition(window));
+}
+
+bool App::loadScript(const std::string& path){
+    std::string err;
+    script.clear(); scriptPos = 0;
+    if (!loadUiScript(path, script, &err)){ fprintf(stderr, "[script] %s\n", err.c_str()); return false; }
+    return true;
+}
+
+static bool keyFromName(const std::string& n, sf::Keyboard::Key& k){
+    using K = sf::Keyboard::Key;
+    static const std::pair<const char*, K> named[] = {
+        {"Left",K::Left},{"Right",K::Right},{"Up",K::Up},{"Down",K::Down},
+        {"Escape",K::Escape},{"Enter",K::Enter},{"Space",K::Space},{"Tab",K::Tab},
+        {"Backspace",K::Backspace},{"Delete",K::Delete},{"Home",K::Home},{"End",K::End},
+        {"PageUp",K::PageUp},{"PageDown",K::PageDown},
+    };
+    for (auto& p : named) if (n == p.first){ k = p.second; return true; }
+    if (n.size()==1 && n[0]>='A' && n[0]<='Z'){ k = (K)((int)K::A + (n[0]-'A')); return true; }
+    if (n.size()==1 && n[0]>='0' && n[0]<='9'){ k = (K)((int)K::Num0 + (n[0]-'0')); return true; }
+    if (n.size()>=2 && n[0]=='F' && n.size()<=3){
+        int f = std::atoi(n.c_str()+1);
+        if (f>=1 && f<=12){ k = (K)((int)K::F1 + f-1); return true; }
+    }
+    return false;
+}
+
+// Executes the next due step; at most one step per frame so the UI gets a
+// render/update pass between inputs, like a real user.
+void App::stepScript(){
+    if (nowMsSteady() < scriptWaitUntil) return;
+    const UiScriptStep& s = script[scriptPos++];
+    UiEvent e;
+    auto at = [&](float x, float y){ scriptMouse = sf::Vector2f(x, y); };
+    if (s.op=="wait") scriptWaitUntil = nowMsSteady() + (long long)s.nums[0];
+    else if (s.op=="move"){ at(s.nums[0], s.nums[1]); e.kind = UiEvent::MouseMoved; handleEvent(e); }
+    else if (s.op=="click"){
+        at(s.nums[0], s.nums[1]);
+        e.kind = UiEvent::MousePressed; handleEvent(e);
+        e.kind = UiEvent::MouseReleased; handleEvent(e);
+    } else if (s.op=="drag"){
+        at(s.nums[0], s.nums[1]); e.kind = UiEvent::MousePressed; handleEvent(e);
+        at(s.nums[2], s.nums[3]); e.kind = UiEvent::MouseMoved; handleEvent(e);
+        e.kind = UiEvent::MouseReleased; handleEvent(e);
+    } else if (s.op=="key"){
+        if (keyFromName(s.arg, e.key)){
+            e.kind = UiEvent::KeyPressed; e.ctrl = s.ctrl; e.sys = s.ctrl; handleEvent(e);
+        } else fprintf(stderr, "[script] unknown key %s\n", s.arg.c_str());
+    } else if (s.op=="text"){
+        for (unsigned char c : s.arg){ e.kind = UiEvent::TextEntered; e.unicode = c; handleEvent(e); }
+    } else if (s.op=="shot") pendingShot = s.arg;
+    else if (s.op=="quit") window.close();
+    forceRedraw = true;
 }

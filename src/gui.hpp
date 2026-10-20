@@ -7,6 +7,7 @@
 #include "uci_engine.hpp"
 #include "tournament.hpp"
 #include "testing.hpp"
+#include "ui_script.hpp"
 
 enum class Screen { MENU, GAME, PICK_ENGINE, MATCH_SETUP, MATCH_VIEW,
                     TESTS, TEST_RUN, EDITOR, ENGINE_OPTIONS,
@@ -52,7 +53,17 @@ class App {
 public:
     bool init();
     void run();
+    bool loadScript(const std::string& path);   // see ui_script.hpp
 private:
+    // ---- scripted input (--script) ----
+    std::vector<UiScriptStep> script;
+    size_t scriptPos = 0;
+    long long scriptWaitUntil = 0;
+    std::optional<sf::Vector2f> scriptMouse;
+    std::string pendingShot;
+    void stepScript();
+    sf::Vector2f mouseLogical();
+
     // ---- framework ----
     sf::RenderWindow window;
     sf::Font font;
