@@ -2,7 +2,6 @@
 #include "gui.hpp"
 #include <cstdio>
 #include <string>
-#include <filesystem>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -46,7 +45,7 @@ static void chdirToExeDir(){
 }
 
 int main(int argc, char** argv){
-    // Resolve a relative --script path before leaving the caller's directory.
+    // Command line: [--script FILE] (see ui_script.hpp).
     std::string scriptPath;
     for (int i=1; i<argc; i++){
         std::string a = argv[i];
@@ -54,18 +53,15 @@ int main(int argc, char** argv){
         else if (a.rfind("-psn", 0)==0) continue;       // old macOS Finder launch arg
         else { fprintf(stderr, "usage: %s [--script FILE]\n", argv[0]); return 2; }
     }
-    if (!scriptPath.empty()){
-        std::error_code ec;
-        auto abs = std::filesystem::absolute(scriptPath, ec);
-        if (!ec) scriptPath = abs.string();
-    }
-    chdirToExeDir();
+    // Load the script before leaving the caller's directory, so relative paths
+    // in it (and the script path itself) mean what the caller expects.
     App app;
     if (!scriptPath.empty() && !app.loadScript(scriptPath)) return 2;
+    chdirToExeDir();
     if (!app.init()){
         fprintf(stderr, "Initialization failed. Ensure the Resources folder is next to the executable.\n");
         return 1;
     }
     app.run();
-    return 0;
+    return app.scriptFailed() ? 1 : 0;
 }

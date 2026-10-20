@@ -17,3 +17,11 @@ foreach(group perft fen san pgn game uci)
     add_test(NAME ${group} COMMAND core_tests ${group}/)
 endforeach()
 set_tests_properties(perft PROPERTIES TIMEOUT 600)
+
+# Scripted GUI smoke test. Needs a display (CI runs it under Xvfb on Linux).
+option(CHESSGUI_GUI_TESTS "Register the scripted GUI smoke test with CTest" OFF)
+if(CHESSGUI_GUI_TESTS AND TARGET chess-gui)
+    add_test(NAME gui_smoke COMMAND chess-gui --script ${CMAKE_CURRENT_SOURCE_DIR}/gui_smoke.txt
+             WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+    set_tests_properties(gui_smoke PROPERTIES TIMEOUT 60)
+endif()

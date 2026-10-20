@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libxrandr-dev libxcursor-dev libxi-dev \
+            libudev-dev libgl1-mesa-dev xvfb
+
+      - name: Configure
+        shell: bash
+        run: |
+          GUI_TESTS=OFF
+          if [ "$RUNNER_OS" = "Linux" ]; then GUI_TESTS=ON; fi
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCHESSGUI_GUI_TESTS=$GUI_TESTS
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Test
+        if: runner.os != 'Linux'
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Test (with GUI smoke test under Xvfb)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a -s "-screen 0 1600x1000x24" ctest --test-dir build -C Release --output-on-failure
+
+      - name: Upload GUI smoke screenshot
+        if: runner.os == 'Linux' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gui-smoke-${{ matrix.os }}
+          path: build/gui_smoke.png
+          if-no-files-found: ignore

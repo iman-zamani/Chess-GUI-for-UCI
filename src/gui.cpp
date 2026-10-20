@@ -2142,6 +2142,13 @@ void App::stepScript(){
     } else if (s.op=="text"){
         for (unsigned char c : s.arg){ e.kind = UiEvent::TextEntered; e.unicode = c; handleEvent(e); }
     } else if (s.op=="shot") pendingShot = s.arg;
+    else if (s.op=="expect"){
+        std::string fen = game.pos.toFEN();
+        if (fen.compare(0, s.arg.size(), s.arg) != 0){
+            fprintf(stderr, "[script] expected position '%s' but have '%s'\n", s.arg.c_str(), fen.c_str());
+            scriptFailed_ = true;
+        }
+    }
     else if (s.op=="quit") window.close();
     forceRedraw = true;
 }

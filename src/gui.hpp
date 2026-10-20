@@ -66,6 +66,7 @@ public:
     bool init();
     void run();
     bool loadScript(const std::string& path);   // see ui_script.hpp
+    bool scriptFailed() const { return scriptFailed_; }
 private:
     // ---- scripted input (--script) ----
     std::vector<UiScriptStep> script;
@@ -73,6 +74,7 @@ private:
     long long scriptWaitUntil = 0;
     std::optional<sf::Vector2f> scriptMouse;
     std::string pendingShot;
+    bool scriptFailed_ = false;
     void stepScript();
     sf::Vector2f mouseLogical();
 
