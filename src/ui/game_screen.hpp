@@ -48,6 +48,9 @@ private:
     bool canBranch() const;                        // moving from a past position makes a variation
     void branchMove(Move m);                       // a move from the shown (past) position
     void goTo(int node);
+    void addLine(const std::vector<Move>& line);   // from the shown position (a PV click)
+    void syncMainLine();                           // game_ = the tree's main line (analysis)
+    void applyReview();                            // review results -> tree (UI thread)
     void squarePressed(int sq);
     void commitMove(Move m);
     void humanCommitMove(Move m);
@@ -118,6 +121,18 @@ private:
     std::string anaEngine_;                        // engine name the analysis runs
     ui::Job review_;
     int reviewMs_ = 400;
+    int reviewThreads_ = 0;                        // 0 = automatic
+    struct ReviewOut {
+        bool ready = false;
+        std::vector<int> nodes;                    // main line node of each move
+        std::vector<int> cpW, mateW;               // White's view after each move (+ the start at index 0)
+        std::vector<bool> isMate;
+        std::vector<int> nag;                      // 0 or 1..6 per move
+        std::string summary, engine;
+    };
+    std::mutex reviewMx_;
+    ReviewOut reviewOut_;
+    std::string reviewSummary_;
 
     // dialogs
     bool openNewGame_ = false;

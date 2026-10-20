@@ -11,6 +11,7 @@
 #include <fstream>
 #include <random>
 #include <sstream>
+#include <thread>
 
 namespace fs = std::filesystem;
 
@@ -29,24 +30,6 @@ static std::vector<std::string> uciMoves(const Game& g){
     std::vector<std::string> out;
     Position p = g.start;
     for (auto& m : g.moves){ out.push_back(p.moveToUCI(m)); p.makeMove(m); }
-    return out;
-}
-
-// "1. e4 e5 2. Nf3" from a UCI PV; stops at the first illegal move.
-static std::string pvToSan(const Position& start, const std::string& pv, int maxMoves = 12){
-    std::istringstream ss(pv);
-    std::string u, out;
-    Position p = start;
-    int n = 0;
-    while (ss >> u && n < maxMoves){
-        Move m;
-        if (!p.uciToMove(u, m)) break;
-        if (p.whiteToMove) out += std::to_string(p.fullmoveNumber) + ". ";
-        else if (n == 0) out += std::to_string(p.fullmoveNumber) + "... ";
-        out += p.moveToSAN(m) + " ";
-        p.makeMove(m);
-        n++;
-    }
     return out;
 }
 
@@ -160,11 +143,28 @@ void GameScreen::goTo(int node){
     scrollMoves_ = true;
 }
 
+void GameScreen::syncMainLine(){
+    Game g = tree_.lineGame(tree_.mainLineEnd());
+    g.whiteName = game_.whiteName; g.blackName = game_.blackName;
+    if (game_.result != GameResult::ONGOING && g.result == GameResult::ONGOING && g.moves.size() == game_.moves.size()){
+        g.result = game_.result; g.reason = game_.reason;   // resignation, time: not in the moves
+    }
+    game_ = g;
+}
+
 void GameScreen::branchMove(Move m){
     int n = tree_.add(cur_, m);
-    if (tree_.onMainLine(n) && n == tree_.mainLineEnd() && game_.result == GameResult::ONGOING){
-        game_.tryMove(m);                          // extends the main line (analysis)
-    }
+    if (tree_.onMainLine(n)) syncMainLine();       // extended the main line (analysis)
+    goTo(n);
+}
+
+void GameScreen::addLine(const std::vector<Move>& line){
+    if (line.empty()) return;
+    bool liveGame = mode_ != GameMode::ANALYSIS && game_.result == GameResult::ONGOING;
+    if (liveGame){ app_.toast("Lines can be added in analysis mode or once the game is over"); return; }
+    int n = cur_;
+    for (const Move& m : line) n = tree_.add(n, m);
+    if (tree_.onMainLine(n)) syncMainLine();
     goTo(n);
 }
 
@@ -349,6 +349,7 @@ void GameScreen::update(){
     }
     applyEngineMoveIfReady();
     startEngineThinkIfNeeded();
+    applyReview();
     if (ana_) ana_->setFen(shownPosition().toFEN());
 }
 
@@ -375,58 +376,125 @@ void GameScreen::stopAnalysis(){
 }
 
 void GameScreen::startReview(){
-    if (game_.moves.empty()){ app_.toast("No moves to review"); return; }
+    std::vector<int> nodes = tree_.mainLine();
+    if (nodes.empty()){ app_.toast("No moves to review"); return; }
     const EngineConfig* c = ui::findEngine(app_.registry(), app_.settings().analysisEngine);
     if (!c){ app_.toast("Pick an analysis engine first"); return; }
     EngineConfig cfg = *c;
-    cfg.setOption("MultiPV", "1");
-    std::string startFen = game_.start.toFEN();
-    auto moves = uciMoves(game_);
-    std::vector<std::string> sans = game_.sans;
-    int startNo = game_.start.fullmoveNumber;
-    bool startWhite = game_.start.whiteToMove;
+    cfg.setOption("MultiPV", "2");
+    cfg.setOption("Threads", "1");
+    std::string startFen = tree_.start().toFEN();
+    std::vector<std::string> moves;
+    std::vector<std::string> sans;
+    for (int n : nodes){ moves.push_back(tree_.at(tree_.at(n).parent).pos.moveToUCI(tree_.at(n).move)); sans.push_back(tree_.at(n).san); }
+    int startNo = tree_.start().fullmoveNumber;
+    bool startWhite = tree_.start().whiteToMove;
     int ms = reviewMs_;
+    int threads = reviewThreads_ > 0 ? reviewThreads_ : std::max(1, std::min(4, (int)std::thread::hardware_concurrency() / 2));
+    { std::lock_guard<std::mutex> lk(reviewMx_); reviewOut_ = ReviewOut{}; }
+    reviewSummary_.clear();
     review_.start("Game review: " + game_.whiteName + " vs " + game_.blackName,
-                  [cfg, startFen, moves, sans, startNo, startWhite, ms](ui::Job& j){
-        UciEngine e;
-        e.setRole("Review");
-        if (!e.start(cfg)){ j.log("FAIL: cannot start engine: " + e.lastError()); return; }
-        e.newGame();
+                  [this, cfg, startFen, moves, sans, nodes, startNo, startWhite, ms, threads](ui::Job& j){
         int N = (int)moves.size();
-        j.log("Engine: " + e.name() + "  (" + std::to_string(ms) + " ms per position, "
-              + std::to_string(N + 1) + " positions)");
-        std::vector<int> score(N + 1, 0);                 // mover's point of view at each ply
-        auto sc = [](const EngineInfo& i){
-            if (i.isMate) return i.mateIn > 0 ? 32000 - i.mateIn : -32000 - i.mateIn;
-            return i.scoreCp;
+        // per position (0..N): best and second-best score for the side to move, and the best move
+        std::vector<int> best(N + 1, 0), second(N + 1, 0), mate(N + 1, 0);
+        std::vector<bool> hasSecond(N + 1, false), isMate(N + 1, false), ok(N + 1, false);
+        std::vector<std::string> bestMove(N + 1);
+        std::atomic<int> done{0};
+        std::string engineName;
+        std::mutex nameMx;
+        auto sc = [](const PvLine& l){ return l.isMate ? (l.mateIn > 0 ? 32000 - l.mateIn : -32000 - l.mateIn) : l.scoreCp; };
+        auto worker = [&](int k){
+            UciEngine e;
+            e.setRole("Review " + std::to_string(k + 1));
+            if (!e.start(cfg)){ j.log("FAIL: cannot start engine: " + e.lastError()); return; }
+            { std::lock_guard<std::mutex> lk(nameMx); engineName = e.name(); }
+            e.newGame();
+            for (int i = k; i <= N && !j.stopRequested() && e.alive(); i += threads){
+                e.setPosition(startFen, std::vector<std::string>(moves.begin(), moves.begin() + i));
+                e.goMovetime(ms);
+                auto pvs = e.lastPvs();
+                if (!pvs.empty() && pvs[0].valid){
+                    best[i] = sc(pvs[0]); isMate[i] = pvs[0].isMate; mate[i] = pvs[0].mateIn;
+                    bestMove[i] = pvs[0].firstMove(); ok[i] = true;
+                    if (pvs.size() > 1 && pvs[1].valid){ second[i] = sc(pvs[1]); hasSecond[i] = true; }
+                }
+                int d = ++done;
+                if (d % 10 == 0) j.log(std::to_string(d) + " / " + std::to_string(N + 1) + " positions");
+            }
+            e.quit();
         };
-        for (int i = 0; i <= N && !j.stopRequested() && e.alive(); i++){
-            e.setPosition(startFen, std::vector<std::string>(moves.begin(), moves.begin() + i));
-            e.goMovetime(ms);
-            score[i] = sc(e.lastInfo());
+        j.log(std::to_string(N + 1) + " positions, " + std::to_string(ms) + " ms each, " + std::to_string(threads)
+              + " engine" + (threads > 1 ? "s" : "") + " in parallel");
+        std::vector<std::thread> pool;
+        for (int k = 0; k < threads; k++) pool.emplace_back(worker, k);
+        for (auto& t : pool) t.join();
+        if (j.stopRequested()){ j.log("Stopped."); return; }
+        ReviewOut out;
+        out.nodes = nodes;
+        out.engine = engineName;
+        out.cpW.assign(N + 1, 0); out.mateW.assign(N + 1, 0); out.isMate.assign(N + 1, false); out.nag.assign(N, 0);
+        bool wtm = startWhite;
+        for (int i = 0; i <= N; i++){                          // White's point of view of each position
+            out.cpW[i] = wtm ? best[i] : -best[i];
+            out.isMate[i] = isMate[i];
+            out.mateW[i] = wtm ? mate[i] : -mate[i];
+            wtm = !wtm;
         }
-        long long lossW = 0, lossB = 0; int cw = 0, cb = 0;
-        double accW = 0, accB = 0;
-        int num = startNo; bool wtm = startWhite;
-        for (int i = 0; i < N && !j.stopRequested(); i++){
-            int loss = std::max(0, std::min(1000, score[i] + score[i + 1]));   // POV flips each ply
-            const char* mark = loss >= 300 ? " ??" : loss >= 100 ? " ?" : loss >= 50 ? " ?!" : "";
-            int whiteCp = wtm ? score[i] : -score[i];
+        auto win = [](int cp){ return cpToWinPct(std::max(-1500, std::min(1500, cp))); };
+        double accW = 0, accB = 0; int cw = 0, cb = 0;
+        int cnt[7] = {0};
+        int num = startNo; wtm = startWhite;
+        for (int i = 0; i < N; i++){
+            if (!ok[i] || !ok[i + 1]){ if (!wtm) num++; wtm = !wtm; continue; }
+            double before = win(best[i]), after = win(-best[i + 1]);   // the mover's winning chances
+            double drop = std::max(0.0, before - after);
+            int nag = drop >= 30 ? 4 : drop >= 20 ? 2 : drop >= 10 ? 6 : 0;
+            if (!nag && moves[i] == bestMove[i] && hasSecond[i]){
+                double gap = win(best[i]) - win(second[i]);           // how much worse the next best move is
+                if (gap >= 40 && before < 80) nag = 3;
+                else if (gap >= 15) nag = 1;
+            }
+            out.nag[i] = nag;
+            cnt[nag]++;
+            double acc = moveAccuracyFromWinDrop(drop);
+            if (wtm){ accW += acc; cw++; } else { accB += acc; cb++; }
             char b[200];
-            std::snprintf(b, sizeof b, "%d.%s %-8s eval %+.2f  loss %d%s",
-                          num, wtm ? "" : "..", sans[i].c_str(), whiteCp / 100.0, loss, mark);
+            int whiteCp = out.cpW[i + 1];
+            static const char* sym[7] = {"", " !", " ?", " !!", " ??", "", " ?!"};
+            std::snprintf(b, sizeof b, "%d.%s %-8s %+.2f  win %% %.0f -> %.0f%s", num, wtm ? "" : "..", sans[i].c_str(),
+                          whiteCp / 100.0, before, after, sym[nag]);
             j.log(b);
-            double acc = moveAccuracyFromWinDrop(cpToWinPct(score[i]) - cpToWinPct(-score[i + 1]));
-            if (wtm){ lossW += loss; accW += acc; cw++; } else { lossB += loss; accB += acc; cb++; }
             if (!wtm) num++;
             wtm = !wtm;
         }
-        char b[160];
-        if (cw){ std::snprintf(b, sizeof b, ">>> White: avg cp loss %.1f, accuracy %.1f%%", (double)lossW / cw, accW / cw); j.log(b); }
-        if (cb){ std::snprintf(b, sizeof b, ">>> Black: avg cp loss %.1f, accuracy %.1f%%", (double)lossB / cb, accB / cb); j.log(b); }
-        if (!e.alive()) j.log("FAIL: the engine terminated during the review.");
-        e.quit();
+        char b[300];
+        std::snprintf(b, sizeof b, "Accuracy: White %.1f%%, Black %.1f%%.  Blunders ?? %d, mistakes ? %d, inaccuracies ?! %d, "
+                      "good moves ! %d, !! %d", cw ? accW / cw : 0.0, cb ? accB / cb : 0.0, cnt[4], cnt[2], cnt[6], cnt[1], cnt[3]);
+        out.summary = b;
+        j.log(std::string(">>> ") + b);
+        out.ready = true;
+        std::lock_guard<std::mutex> lk(reviewMx_);
+        reviewOut_ = out;
     });
+}
+
+void GameScreen::applyReview(){
+    ReviewOut r;
+    { std::lock_guard<std::mutex> lk(reviewMx_); if (!reviewOut_.ready) return; r = reviewOut_; reviewOut_.ready = false; }
+    if (tree_.mainLine() != r.nodes){ app_.toast("The game changed during the review; results not applied"); return; }
+    auto set = [&](GameNode& n, int i){
+        n.hasEval = true; n.evalMate = r.isMate[i]; n.mateIn = r.mateW[i]; n.evalCp = r.cpW[i];
+    };
+    set(tree_.at(0), 0);
+    for (size_t i = 0; i < r.nodes.size(); i++){
+        GameNode& n = tree_.at(r.nodes[i]);
+        set(n, (int)i + 1);
+        n.nags.erase(std::remove_if(n.nags.begin(), n.nags.end(), [](int g){ return g >= 1 && g <= 6; }), n.nags.end());
+        if (r.nag[i]) n.nags.insert(n.nags.begin(), r.nag[i]);
+    }
+    tree_.tags["Annotator"] = r.engine + " (Chess-GUI-for-UCI review)";
+    reviewSummary_ = r.summary;
 }
 
 // =============================================================== drawing
@@ -528,7 +596,10 @@ void GameScreen::draw(){
     float reserve = rowH * 8.5f + ui::fonts().large->FontSize * 1.3f
                   + (ana_ ? lineH * (std::max(1, st.analysisMultiPV) + 2) : 0)
                   + (mode_ == GameMode::HUMAN_VS_ENGINE ? rowH : 0)
-                  + (statsOpen_ ? lineH * 2 + em * 7 + rowH : 0);
+                  + (statsOpen_ ? lineH * 2 + em * 7 + rowH : 0)
+                  + (reviewSummary_.empty() ? 0 : lineH * 2.2f);
+    { int evals = 0; for (int n : tree_.mainLine()) evals += tree_.at(n).hasEval;
+      if (evals >= 1) reserve += em * 4 + ImGui::GetStyle().ItemSpacing.y * 2; }
     drawMoveList(std::max(em * 6, ImGui::GetContentRegionAvail().y - reserve));
     // status line
     std::string status;
@@ -795,11 +866,22 @@ void GameScreen::drawAnalysis(){
     if (ImGui::Button("Review game")) startReview();
     ImGui::EndDisabled();
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(em * 6);
-    ImGui::InputInt("ms / position", &reviewMs_, 100, 500);
+    ImGui::SetNextItemWidth(em * 5);
+    ImGui::InputInt("ms", &reviewMs_, 100, 500);
     reviewMs_ = std::max(50, std::min(reviewMs_, 60000));
-    ImGui::SameLine(); ui::helpMarker("Review: the engine evaluates every position of the game and marks "
-                                      "inaccuracies (?!), mistakes (?) and blunders (?\?).");
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(em * 4);
+    ImGui::InputInt("engines", &reviewThreads_, 1, 1);
+    reviewThreads_ = std::max(0, std::min(reviewThreads_, 16));
+    ImGui::SameLine(); ui::helpMarker("Review: the engine (single-threaded, several in parallel; 0 = automatic) "
+                                      "evaluates every position of the main line for the given time. Each move "
+                                      "is judged by how much it lowers the mover's winning chances (Lichess "
+                                      "win-% model): ?! 10, ? 20, ?\? 30 points or more. ! marks the only good "
+                                      "move (the next best is 15+ points worse), !! the same with a 40+ point "
+                                      "gap in a position not already won. Evaluations and marks go into the "
+                                      "game, and Save PGN writes them as [%eval] and NAGs.");
+    if (!reviewSummary_.empty()){ ImGui::PushTextWrapPos(0); ImGui::TextColored(ui::kGood, "%s", reviewSummary_.c_str()); ImGui::PopTextWrapPos(); }
+    drawEvalGraph();
     if (!ana_) return;
     if (!ana_->alive()){ ImGui::TextColored(ui::kBad, "The analysis engine terminated."); return; }
     Position shown = shownPosition();
@@ -816,14 +898,76 @@ void GameScreen::drawAnalysis(){
         ImGui::TextColored(ui::kGood, "%7s", sc.c_str());
         ImGui::SameLine();
         ImGui::TextDisabled("d%-2d", L.depth);
-        ImGui::SameLine();
-        ImGui::TextUnformatted(pvToSan(shown, L.pv).c_str());
+        // the line, one clickable move at a time: a click adds it up to there as a variation
+        std::istringstream ss(L.pv);
+        std::string u;
+        Position p = shown;
+        std::vector<Move> line;
+        ImGui::PushID(L.multipv);
+        for (int k = 0; k < 12 && ss >> u; k++){
+            Move m;
+            if (!p.uciToMove(u, m)) break;
+            std::string lab = (p.whiteToMove ? std::to_string(p.fullmoveNumber) + ". "
+                                             : (k == 0 ? std::to_string(p.fullmoveNumber) + "... " : "")) + p.moveToSAN(m);
+            line.push_back(m);
+            ImVec2 sz = ImGui::CalcTextSize(lab.c_str());
+            if (k == 0) ImGui::SameLine(); else flowNext(sz.x);
+            ImGui::PushID(k);
+            if (ImGui::Selectable(lab.c_str(), false, 0, sz)) addLine(line);
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Click to add the line up to here");
+            ImGui::PopID();
+            p.makeMove(m);
+        }
+        ImGui::PopID();
     }
     char stats[200];
     std::snprintf(stats, sizeof stats, "depth %d/%d  nodes %lld  nps %lld  hash %.1f%%  tbhits %lld",
                   inf.depth, inf.seldepth, inf.nodes, inf.nps, inf.hashfull < 0 ? 0.0 : inf.hashfull / 10.0, inf.tbhits);
     ImGui::TextDisabled("%s", stats);
     ImGui::PopFont();
+}
+
+// White's winning chances over the main line, from the review or [%eval] tags; a click jumps there.
+void GameScreen::drawEvalGraph(){
+    std::vector<int> line = tree_.mainLine();
+    line.insert(line.begin(), 0);
+    int have = 0;
+    for (int n : line) have += tree_.at(n).hasEval;
+    if (have < 2) return;
+    float em = ImGui::GetFontSize();
+    ImVec2 p0 = ImGui::GetCursorScreenPos();
+    float w = ImGui::GetContentRegionAvail().x, h = em * 4;
+    ImGui::InvisibleButton("eval-graph", ImVec2(w, h));
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    dl->AddRectFilled(p0, ImVec2(p0.x + w, p0.y + h), IM_COL32(40, 40, 40, 255));
+    dl->AddLine(ImVec2(p0.x, p0.y + h / 2), ImVec2(p0.x + w, p0.y + h / 2), IM_COL32(90, 90, 90, 255));
+    int N = (int)line.size();
+    auto x = [&](int i){ return p0.x + (N > 1 ? w * i / (N - 1) : 0); };
+    auto y = [&](const GameNode& n){
+        double wp = n.evalMate ? (n.mateIn > 0 ? 100 : 0) : cpToWinPct(n.evalCp);
+        return p0.y + h * (float)(1 - wp / 100);
+    };
+    std::vector<ImVec2> pts;
+    for (int i = 0; i < N; i++) if (tree_.at(line[i]).hasEval) pts.push_back(ImVec2(x(i), y(tree_.at(line[i]))));
+    // White's share filled from the bottom
+    for (size_t i = 1; i < pts.size(); i++)
+        dl->AddQuadFilled(ImVec2(pts[i - 1].x, p0.y + h), pts[i - 1], pts[i], ImVec2(pts[i].x, p0.y + h), IM_COL32(230, 230, 230, 200));
+    for (int i = 1; i < N; i++){
+        ImVec4 c = nagColour(tree_.at(line[i]).nags);
+        if (c.w > 0 && tree_.at(line[i]).hasEval)
+            dl->AddCircleFilled(ImVec2(x(i), y(tree_.at(line[i]))), em * 0.18f, ImGui::GetColorU32(c));
+    }
+    auto it = std::find(line.begin(), line.end(), cur_);
+    if (it != line.end()){ float cx = x((int)(it - line.begin())); dl->AddLine(ImVec2(cx, p0.y), ImVec2(cx, p0.y + h), ImGui::GetColorU32(ui::kAccent), 2); }
+    if (ImGui::IsItemHovered()){
+        int i = N > 1 ? (int)std::lround((ImGui::GetIO().MousePos.x - p0.x) / w * (N - 1)) : 0;
+        i = std::max(0, std::min(N - 1, i));
+        const GameNode& n = tree_.at(line[i]);
+        if (n.hasEval) ImGui::SetTooltip("%s%s  %s", i ? (std::to_string(tree_.at(n.parent).pos.fullmoveNumber)
+                                         + (tree_.at(n.parent).pos.whiteToMove ? ". " : "... ")).c_str() : "", i ? n.san.c_str() : "start",
+                                         formatScore(n.evalCp, n.evalMate, n.mateIn).c_str());
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) goTo(line[i]);
+    }
 }
 
 void GameScreen::drawPromotionPopup(){
