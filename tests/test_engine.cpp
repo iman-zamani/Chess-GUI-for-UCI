@@ -5,6 +5,7 @@
 #include "uci_engine.hpp"
 #include "settings.hpp"
 #include <chrono>
+#include <thread>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -273,4 +274,34 @@ TEST_CASE("engine/settings-roundtrip-keeps-unknown-keys"){
     CHECK(ss.str().find("futureKey") != std::string::npos);
     { std::ofstream g(fs::u8path(file)); g << "[1,2"; }
     CHECK(!t.load(file, &err));
+}
+
+TEST_CASE("engine/idle-output-is-logged-and-monitored"){
+    uint64_t id = 0;
+    std::shared_ptr<UciLogBuffer> log;
+    {
+        EngineConfig c; c.path = kMock;
+        UciEngine e;
+        REQUIRE(e.start(c));
+        e.setRole("Test");
+        for (auto& m : EngineMonitor::instance().list())
+            if (m.label == "Test: MockEngine 1.0" && m.alive){ id = m.id; log = m.log; }
+        REQUIRE(id != 0);
+        // a raw command from the console while nobody is waiting for output
+        CHECK(EngineMonitor::instance().send(id, "frobnicate"));
+        bool seen = false;
+        for (int i = 0; i < 50 && !seen; i++){
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+            uint64_t cur = 0;
+            for (auto& l : log->since(cur)) if (l.dir == '<' && l.text.find("frobnicate") != std::string::npos) seen = true;
+        }
+        CHECK(seen);
+    }
+    // the engine object is gone: the entry is kept as ended, with its log
+    bool ended = false;
+    for (auto& m : EngineMonitor::instance().list()) if (m.id == id){ ended = !m.alive; }
+    CHECK(ended);
+    CHECK(!EngineMonitor::instance().send(id, "isready"));
+    uint64_t cur = 0;
+    CHECK(!log->since(cur).empty());
 }

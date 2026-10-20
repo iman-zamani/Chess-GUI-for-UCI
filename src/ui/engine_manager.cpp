@@ -15,6 +15,7 @@ void EngineManagerWindow::startTest(const EngineConfig& cfg){
         LaunchResult r;
         UciEngine e;
         auto t0 = std::chrono::steady_clock::now();
+        e.setRole("Test launch");
         r.ok = e.start(cfg);
         r.ms = std::chrono::duration_cast<std::chrono::milliseconds>(
                    std::chrono::steady_clock::now() - t0).count();

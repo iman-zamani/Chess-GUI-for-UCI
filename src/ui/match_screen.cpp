@@ -133,7 +133,7 @@ void MatchScreen::start(){
             EngineConfig cfg = *c;
             cfg.setOption("MultiPV", std::to_string(judgeLines_));
             judge_ = std::make_unique<AnalysisController>();
-            if (!judge_->start(cfg)){ app_.toast("Judge engine failed: " + judge_->lastError()); judge_.reset(); }
+            if (!judge_->start(cfg, "Judge")){ app_.toast("Judge engine failed: " + judge_->lastError()); judge_.reset(); }
         }
     }
     flipped_ = false;
@@ -257,6 +257,12 @@ void MatchScreen::drawLive(){
             ImGui::TableNextColumn(); ImGui::Text("%.1f", stn.points());
         }
         ImGui::EndTable();
+    }
+    if (ImGui::CollapsingHeader("Search stats (this game)")){
+        ImGui::TextUnformatted(s.whiteName.c_str());
+        ui::searchStats("w", s.stats, true);
+        ImGui::TextUnformatted(s.blackName.c_str());
+        ui::searchStats("b", s.stats, false);
     }
     if (s.finished) ImGui::TextColored(ui::kGood, "Finished.");
     else if (s.result != GameResult::ONGOING) ImGui::Text("Last result: %s", resultReasonText(s.reason).c_str());

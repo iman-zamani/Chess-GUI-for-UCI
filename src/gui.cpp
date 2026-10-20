@@ -151,7 +151,7 @@ void App::editorDone(EditorAction a, const Position& p){
 
 bool App::animating() const{
     return (screen_ == Screen::GAME && game_.animating()) || match_.animating() || tools_.busy()
-        || !toastText_.empty();
+        || !toastText_.empty() || showConsole_;
 }
 
 // =============================================================== main loop
@@ -219,6 +219,7 @@ void App::run(){
 
 void App::handleGlobalKeys(){
     ImGuiIO& io = ImGui::GetIO();
+    if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_U)) showConsole_ = !showConsole_;
     if (io.WantTextInput || ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId)) return;
     if (ImGui::IsKeyPressed(ImGuiKey_Escape, false) && screen_ != Screen::HOME) go(Screen::HOME);
 }
@@ -261,6 +262,10 @@ void App::drawFrame(){
         break; }
     }
     ImGui::End();
+    console_.draw(&showConsole_,
+        [this](){ return filedialog::saveFile("Save UCI log", settings_.lastSaveDir + "/uci_" + ui::timeStamp() + ".log",
+                                              {"Log files", "*.log *.txt", "All files", "*"}); },
+        [this](const std::string& m){ toast(m); });
     drawAbout();
     drawToast();
 }
@@ -284,6 +289,7 @@ void App::drawMenuBar(){
     }
     if (ImGui::BeginMenu("Tools")){
         if (ImGui::MenuItem("Engine testing tools")) go(Screen::TOOLS);
+        ImGui::MenuItem("UCI console", "Ctrl+U", &showConsole_);
         ImGui::EndMenu();
     }
     if (ImGui::BeginMenu("View")){

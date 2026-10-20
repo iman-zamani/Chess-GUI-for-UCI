@@ -116,20 +116,39 @@ int material(const Position& p){
     return p.whiteToMove ? s : -s;
 }
 
-// Choose a move: a mate in one if there is one, else the most valuable capture,
-// else the first legal move. Deterministic, so tests are reproducible.
-bool pickMove(const Position& p, Move& best, bool& mate){
+static bool isMate(const Position& q){
+    std::vector<Move> r; q.generateLegal(r);
+    return r.empty() && q.inCheck(q.whiteToMove);
+}
+
+// Choose a move: a mate in one or two if there is one, else the most valuable
+// capture, else the first legal move. Deterministic, so tests are reproducible.
+// `mate` receives the mate distance in moves (0 = none found).
+bool pickMove(const Position& p, Move& best, int& mate){
     std::vector<Move> ms; p.generateLegal(ms);
     if (ms.empty()) return false;
-    mate = false; best = ms[0]; int bestCap = -1;
+    mate = 0; best = ms[0]; int bestCap = -1;
     for (const Move& m : ms){
         Position q = p; q.makeMove(m);
-        std::vector<Move> r; q.generateLegal(r);
-        if (r.empty() && q.inCheck(q.whiteToMove)){ best = m; mate = true; return true; }
+        if (isMate(q)){ best = m; mate = 1; return true; }
         int cap = std::abs(m.captured);
         if (cap > bestCap){ bestCap = cap; best = m; }
     }
     if (bestCap <= 0) best = ms[0];
+    for (const Move& m : ms){                       // mate in 2: every reply allows a mate in 1
+        Position q = p; q.makeMove(m);
+        std::vector<Move> replies; q.generateLegal(replies);
+        if (replies.empty()) continue;              // stalemate
+        bool all = true;
+        for (const Move& r : replies){
+            Position s2 = q; s2.makeMove(r);
+            std::vector<Move> ours; s2.generateLegal(ours);
+            bool found = false;
+            for (const Move& m2 : ours){ Position t = s2; t.makeMove(m2); if (isMate(t)){ found = true; break; } }
+            if (!found){ all = false; break; }
+        }
+        if (all){ best = m; mate = 2; return true; }
+    }
     return true;
 }
 
@@ -146,7 +165,7 @@ void runSearch(GoParams g, Position p){
     auto t0 = clk::now();
     goCount++;
     if (F.crashOnGo && goCount == F.crashOnGo){ sleepMs(20); std::fflush(stdout); std::_Exit(3); }
-    Move best; bool mate = false;
+    Move best; int mate = 0;
     bool have = pickMove(p, best, mate);
     int limit = thinkTimeMs(g, p);
     bool waitStop = g.infinite || g.ponder;
@@ -156,7 +175,7 @@ void runSearch(GoParams g, Position p){
         long long ms = std::max(1LL, msSince(t0));
         std::ostringstream o;
         o << "info depth " << depth << " seldepth " << depth + 2 << " multipv 1 score ";
-        if (mate && !F.mateBlind) o << "mate 1"; else o << "cp " << material(p);
+        if (mate && !F.mateBlind) o << "mate " << mate; else o << "cp " << material(p);
         o << " nodes " << nodes << " nps " << nodes * 1000 / ms << " hashfull " << std::min(1000, depth * 3)
           << " tbhits 0 time " << ms;
         if (have) o << " pv " << p.moveToUCI(best);

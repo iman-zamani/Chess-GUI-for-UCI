@@ -20,6 +20,7 @@ struct Settings {
     bool showArrows = true;
     // engines last chosen for each purpose (engine names from engines.json)
     std::string opponentEngine, analysisEngine, perftEngine, accTestEngine, accRefEngine, judgeEngine;
+    std::string uciCheckEngine;
     // accuracy test
     int accCount = 100, accTestMs = 500, accRefMs = 1000, accMultiPV = 3;
     // matches

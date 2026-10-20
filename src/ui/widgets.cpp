@@ -1,6 +1,7 @@
 /* Chess-GUI-for-UCI — shared ImGui widgets and helpers. GPL-2.0 */
 #include "ui/widgets.hpp"
 #include <misc/cpp/imgui_stdlib.h>
+#include <cfloat>
 #include <cstdio>
 #include <ctime>
 #include <fstream>
@@ -46,6 +47,55 @@ bool pathInput(const char* label, std::string& path, const char* hint,
     }
     ImGui::PopID();
     return changed;
+}
+
+std::string humanCount(long long n){
+    char b[32];
+    if (n >= 1000000000) std::snprintf(b, sizeof b, "%.2fG", n / 1e9);
+    else if (n >= 1000000) std::snprintf(b, sizeof b, "%.2fM", n / 1e6);
+    else if (n >= 10000) std::snprintf(b, sizeof b, "%.1fk", n / 1e3);
+    else std::snprintf(b, sizeof b, "%lld", n);
+    return b;
+}
+
+void searchStats(const char* id, const std::vector<MoveStat>& all, bool white){
+    std::vector<const MoveStat*> st;
+    for (auto& s : all) if (s.white == white) st.push_back(&s);
+    ImGui::PushID(id);
+    if (st.empty()){ ImGui::TextDisabled("No engine moves yet."); ImGui::PopID(); return; }
+    const MoveStat& l = *st.back();
+    ImGui::Text("last move: depth %d/%d  nodes %s  nps %s  hash %s  time %.2fs", l.depth, l.seldepth,
+                humanCount(l.nodes).c_str(), humanCount(l.nps).c_str(),
+                l.hashfull < 0 ? "-" : (std::to_string(l.hashfull / 10) + "%").c_str(), l.timeMs / 1000.0);
+    std::vector<float> depth, nps;
+    double sumD = 0, sumN = 0, sumT = 0;
+    for (auto* s : st){ depth.push_back((float)s->depth); nps.push_back((float)s->nps); sumD += s->depth; sumN += s->nps; sumT += s->timeMs; }
+    ImGui::TextDisabled("%d moves: avg depth %.1f, avg nps %s, avg time %.2fs", (int)st.size(), sumD / st.size(),
+                        humanCount((long long)(sumN / st.size())).c_str(), sumT / st.size() / 1000.0);
+    float w = ImGui::GetContentRegionAvail().x, h = ImGui::GetFontSize() * 3;
+    ImGui::PlotLines("##depth", depth.data(), (int)depth.size(), 0, "depth", FLT_MAX, FLT_MAX, ImVec2(w, h));
+    ImGui::PlotLines("##nps", nps.data(), (int)nps.size(), 0, "nps", FLT_MAX, FLT_MAX, ImVec2(w, h));
+    if (ImGui::TreeNode("Per move")){
+        if (ImGui::BeginTable("permove", 7, ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingStretchProp,
+                              ImVec2(0, ImGui::GetFontSize() * 10))){
+            for (const char* hdr : {"move", "depth", "seldepth", "nodes", "nps", "hash", "time"}) ImGui::TableSetupColumn(hdr);
+            ImGui::TableSetupScrollFreeze(0, 1);
+            ImGui::TableHeadersRow();
+            for (auto* s : st){
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn(); ImGui::Text("%d", s->ply / 2 + 1);
+                ImGui::TableNextColumn(); ImGui::Text("%d", s->depth);
+                ImGui::TableNextColumn(); ImGui::Text("%d", s->seldepth);
+                ImGui::TableNextColumn(); ImGui::TextUnformatted(humanCount(s->nodes).c_str());
+                ImGui::TableNextColumn(); ImGui::TextUnformatted(humanCount(s->nps).c_str());
+                ImGui::TableNextColumn(); if (s->hashfull >= 0) ImGui::Text("%d%%", s->hashfull / 10); else ImGui::TextDisabled("-");
+                ImGui::TableNextColumn(); ImGui::Text("%.2f", s->timeMs / 1000.0);
+            }
+            ImGui::EndTable();
+        }
+        ImGui::TreePop();
+    }
+    ImGui::PopID();
 }
 
 void helpMarker(const char* text){

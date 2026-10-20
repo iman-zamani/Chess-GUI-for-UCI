@@ -14,7 +14,7 @@
 class AnalysisController {
 public:
     ~AnalysisController(){ shutdown(); }
-    bool start(const EngineConfig& cfg);
+    bool start(const EngineConfig& cfg, const std::string& role = "Analysis");
     void shutdown();
     void setFen(const std::string& fen);
     std::string fen();                   // position currently being analysed

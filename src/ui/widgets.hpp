@@ -1,6 +1,7 @@
 /* Chess-GUI-for-UCI — shared ImGui widgets and helpers. GPL-2.0 */
 #pragma once
 #include "engine_config.hpp"
+#include "tournament.hpp"
 #include <imgui.h>
 #include <atomic>
 #include <functional>
@@ -27,6 +28,12 @@ const EngineConfig* findEngine(const EngineRegistry& reg, const std::string& nam
 // Text field + "Browse..." (native dialog when available). Returns true on change.
 bool pathInput(const char* label, std::string& path, const char* hint,
                const std::function<std::string()>& browse);
+
+// Search statistics of one engine over a game: the last move's depth,
+// seldepth, nodes, NPS, hashfull and time, graphs of depth and NPS per move,
+// and a per-move table. `white`: which side's moves to show.
+void searchStats(const char* id, const std::vector<MoveStat>& stats, bool white);
+std::string humanCount(long long n);         // 1234567 -> "1.23M"
 
 void helpMarker(const char* text);           // "(?)" with a tooltip
 std::string clockText(long long ms);         // 4:05, 1:02:03

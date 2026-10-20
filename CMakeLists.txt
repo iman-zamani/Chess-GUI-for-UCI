@@ -111,7 +111,9 @@ add_library(chesscore STATIC
     src/analysis.cpp
     src/chess.cpp
     src/engine_config.cpp
+    src/perft_bisect.cpp
     src/settings.cpp
+    src/uci_check.cpp
     src/uci_engine.cpp
     src/testing.cpp
     src/tournament.cpp
@@ -129,6 +131,7 @@ set(CHESS_SOURCES
     src/ui/file_dialog.cpp
     src/ui/game_screen.cpp
     src/ui/tools_screen.cpp
+    src/ui/uci_console.cpp
     src/ui/widgets.cpp
     src/ui/item_hooks.cpp
     src/ui/match_screen.cpp
