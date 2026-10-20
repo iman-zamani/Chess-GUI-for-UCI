@@ -39,7 +39,8 @@ bool runInternalPerftSelfTest(const std::vector<PerftCase>& suite, int maxDepth,
                               std::function<void(int,int,bool)> progress,
                               std::atomic<bool>& abortFlag);
 
-// Load a plain list of FENs, one per line ('#' comments allowed).
+// Load positions: plain FEN lines ('#' comments allowed), EPD lines with
+// opcodes, or a .pgn file (final position of each game's first 8 plies).
 std::vector<std::string> loadFenList(const std::string& path);
 
 // Lichess accuracy model: cp -> expected win %, and per-move accuracy from

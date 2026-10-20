@@ -1,5 +1,6 @@
 /* Chess-GUI-for-UCI — engine developer tools. GPL-2.0 */
 #include "testing.hpp"
+#include "openings.hpp"
 #include <fstream>
 #include <sstream>
 #include <cmath>
@@ -129,16 +130,9 @@ std::vector<std::string> defaultAccuracyPositions(){
 }
 
 std::vector<std::string> loadFenList(const std::string& path){
+    // plain FEN lines, EPD with opcodes (hmvc/fmvn honoured) or a PGN file
     std::vector<std::string> out;
-    std::ifstream f(path);
-    if (!f) return out;
-    std::string line;
-    while (std::getline(f, line)){
-        while (!line.empty() && (line.back()=='\r'||line.back()==' ')) line.pop_back();
-        if (line.empty() || line[0]=='#') continue;
-        bool ok=false; Position::fromFEN(line,&ok);
-        if (ok) out.push_back(line);
-    }
+    for (auto& o : loadOpeningBook(path).openings) out.push_back(o.finalPosition().toFEN());
     return out;
 }
 

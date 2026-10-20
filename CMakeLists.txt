@@ -111,6 +111,7 @@ add_library(chesscore STATIC
     src/analysis.cpp
     src/chess.cpp
     src/engine_config.cpp
+    src/openings.cpp
     src/perft_bisect.cpp
     src/settings.cpp
     src/stats.cpp
