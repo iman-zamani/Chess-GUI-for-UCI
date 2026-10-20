@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 
@@ -132,6 +133,45 @@ bool EngineRegistry::remove(size_t i){
     if (i >= list_.size()) return false;
     list_.erase(list_.begin() + (long)i);
     return true;
+}
+
+std::vector<std::string> splitArgs(const std::string& line, std::string* err){
+    std::vector<std::string> out;
+    std::string cur;
+    bool have = false;                     // distinguishes "" (empty arg) from no arg
+    char quote = 0;
+    for (size_t i = 0; i < line.size(); i++){
+        char c = line[i];
+        if (quote == '\''){
+            if (c == '\'') quote = 0; else cur += c;
+        } else if (quote == '"'){
+            if (c == '"') quote = 0;
+            else if (c == '\\' && i + 1 < line.size() && (line[i+1] == '"' || line[i+1] == '\\')) cur += line[++i];
+            else cur += c;
+        } else if (c == '\'' || c == '"'){
+            quote = c; have = true;
+        } else if (c == '\\' && i + 1 < line.size() && std::strchr("'\"\\ \t", line[i+1])){
+            cur += line[++i]; have = true;         // other backslashes stay (Windows paths)
+        } else if (c == ' ' || c == '\t'){
+            if (have){ out.push_back(cur); cur.clear(); have = false; }
+        } else { cur += c; have = true; }
+    }
+    if (quote && err) *err = "unterminated quote";
+    if (have) out.push_back(cur);
+    return out;
+}
+
+std::string joinArgs(const std::vector<std::string>& args){
+    std::string s;
+    for (auto& a : args){
+        if (!s.empty()) s += ' ';
+        bool plain = !a.empty() && a.find_first_of(" \t'\"\\") == std::string::npos;
+        if (plain){ s += a; continue; }
+        s += '\'';                         // single quotes: everything literal except '
+        for (char c : a){ if (c == '\'') s += "'\\''"; else s += c; }
+        s += '\'';
+    }
+    return s;
 }
 
 std::string userConfigDir(){

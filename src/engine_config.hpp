@@ -42,6 +42,13 @@ private:
     std::vector<EngineConfig> list_;
 };
 
+// Command-line arguments as one editable line. Splitting follows POSIX shell
+// rules for quotes: '...' is literal, "..." allows \" and \\. Outside quotes a
+// backslash escapes only a quote, a backslash or a space, so Windows paths like
+// C:\nets\big.nnue can be typed as they are.
+std::vector<std::string> splitArgs(const std::string& line, std::string* err = nullptr);
+std::string joinArgs(const std::vector<std::string>& args);   // inverse of splitArgs
+
 // Per-user configuration directory (created on demand):
 //   Windows %APPDATA%\ChessGUIforUCI, macOS ~/Library/Application Support/ChessGUIforUCI,
 //   Linux $XDG_CONFIG_HOME/chess-gui-for-uci (default ~/.config/chess-gui-for-uci).

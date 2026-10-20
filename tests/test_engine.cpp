@@ -234,3 +234,20 @@ TEST_CASE("engine/registry-discover"){
     CHECK_EQ(r.discover(d.u8string()), 0);       // no duplicates
     for (auto& c : r.engines()) CHECK(c.discovered);
 }
+
+TEST_CASE("engine/args-split-join"){
+    std::string err;
+    auto v = splitArgs("--threads 2   'a b' \"c \\\"d\\\"\" e\\ f C:\\nets\\x.nnue \"\"", &err);
+    REQUIRE(v.size() == 7);
+    CHECK_EQ(v[0], std::string("--threads")); CHECK_EQ(v[1], std::string("2"));
+    CHECK_EQ(v[2], std::string("a b"));
+    CHECK_EQ(v[3], std::string("c \"d\""));
+    CHECK_EQ(v[4], std::string("e f"));
+    CHECK_EQ(v[5], std::string("C:\\nets\\x.nnue"));
+    CHECK_EQ(v[6], std::string(""));
+    CHECK(err.empty());
+    std::vector<std::string> odd = {"plain", "with space", "it's", "", "back\\slash", "q\"uote"};
+    CHECK(splitArgs(joinArgs(odd)) == odd);
+    splitArgs("'open", &err);
+    CHECK(!err.empty());
+}

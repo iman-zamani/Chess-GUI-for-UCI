@@ -66,6 +66,23 @@ if(CHESSGUI_BUILD_GUI)
         endif()
     endif()
     set(SFML_LIBS SFML::Graphics SFML::Window SFML::System)
+
+    # Dear ImGui + ImGui-SFML (both MIT) for the panels and tool windows.
+    # ImGui 1.91.x: ImGui-SFML 3.0 predates the 1.92 font/texture backend API.
+    include(FetchContent)
+    FetchContent_Declare(imgui
+        URL      https://github.com/ocornut/imgui/archive/refs/tags/v1.91.9b.tar.gz
+        URL_HASH SHA256=8e1bbc76c71d74fef2fb85db7e7ca8eba13d6a86623c54992b60162db554ffdb
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+    FetchContent_MakeAvailable(imgui)
+    set(IMGUI_DIR ${imgui_SOURCE_DIR})
+    set(IMGUI_SFML_FIND_SFML OFF CACHE BOOL "" FORCE)
+    FetchContent_Declare(imgui-sfml
+        URL      https://github.com/SFML/imgui-sfml/archive/refs/tags/v3.0.tar.gz
+        URL_HASH SHA256=561a04407dcc913b8f1c25a164ad4907852b51fb4f11907d1ab9db6351af911b
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+    FetchContent_MakeAvailable(imgui-sfml)
+    list(APPEND SFML_LIBS ImGui-SFML::ImGui-SFML)
 endif()
 
 find_package(Threads REQUIRED)
@@ -94,6 +111,8 @@ if(CHESSGUI_BUILD_GUI)
 set(CHESS_SOURCES
     src/main.cpp
     src/gui.cpp
+    src/ui/engine_manager.cpp
+    ${imgui_SOURCE_DIR}/misc/cpp/imgui_stdlib.cpp
 )
 
 add_executable(chess-gui ${CHESS_SOURCES})

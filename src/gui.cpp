@@ -1,5 +1,7 @@
 /* Chess-GUI-for-UCI — SFML GUI. GPL-2.0 */
 #include "gui.hpp"
+#include <imgui.h>
+#include <imgui-SFML.h>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -44,9 +46,7 @@ static long long nowMsSteady(){
 }
 
 // Normalize SFML events into the small UiEvent the app (and --script) uses.
-static bool pollUiEvent(sf::RenderWindow& w, UiEvent& out){
-    const std::optional ev = w.pollEvent();
-    if (!ev) return false;
+static void toUiEvent(const std::optional<sf::Event>& ev, UiEvent& out){
     out = UiEvent{};
     if (ev->is<sf::Event::Closed>()) out.kind = UiEvent::Closed;
     else if (const auto* r = ev->getIf<sf::Event::Resized>()){
@@ -61,7 +61,6 @@ static bool pollUiEvent(sf::RenderWindow& w, UiEvent& out){
     } else if (const auto* m = ev->getIf<sf::Event::MouseButtonReleased>()){
         out.kind = UiEvent::MouseReleased; out.button = m->button;
     } else if (ev->is<sf::Event::MouseMoved>()) out.kind = UiEvent::MouseMoved;
-    return true;                       // drain the queue even for unmapped events
 }
 
 // =============================================================== AnalysisController
@@ -142,6 +141,12 @@ bool App::init(){
     }
     window.setView(sf::View(sf::FloatRect({0,0},{WW,WH})));   // draw in logical units
     window.setFramerateLimit(60);
+    imguiOk = ImGui::SFML::Init(window, false);
+    if (imguiOk){
+        ImGui::GetIO().IniFilename = nullptr;        // no imgui.ini next to the binary
+        ImGui::StyleColorsDark();
+        setupImGuiFonts();
+    }
     const char* fontPaths[] = {
         "Resources/Cantarell-Regular.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
@@ -185,10 +190,28 @@ void App::run(){
     while (window.isOpen()){
         bool hadEvent = false;
         UiEvent e;
-        while (pollUiEvent(window, e)){ handleEvent(e); hadEvent = true; }
+        while (const std::optional ev = window.pollEvent()){
+            if (imguiOk) ImGui::SFML::ProcessEvent(window, *ev);
+            toUiEvent(ev, e);
+            hadEvent = true;
+            // ImGui screens take the input; the legacy UI only sees window events
+            if (imguiScreen() && e.kind != UiEvent::Closed && e.kind != UiEvent::Resized) continue;
+            handleEvent(e);
+        }
         if (scriptPos < script.size()){ stepScript(); hadEvent = true; }
         if (!window.isOpen()) break;
         update();
+        if (imguiOk && imguiScreen()){         // immediate-mode: draw every frame
+            sf::Vector2u ws = window.getSize();
+            if (scriptMouse)
+                ImGui::SFML::Update(sf::Vector2i(int(scriptMouse->x * ws.x / WW), int(scriptMouse->y * ws.y / WH)),
+                                    sf::Vector2f(ws), imguiClock.restart());
+            else ImGui::SFML::Update(window, imguiClock.restart());
+            drawImGui();
+            render();
+            forceRedraw = false;
+            continue;
+        }
         int act = activityLevel();
         if (act==2 || hadEvent || forceRedraw){
             render(); forceRedraw = false; bgClock.restart();
@@ -200,6 +223,7 @@ void App::run(){
         }
     }
     stopOpponent(); stopAnalysis();
+    if (imguiOk) ImGui::SFML::Shutdown();
     if (judgeCtl){ judgeCtl->shutdown(); judgeCtl.reset(); }
     runner.abort();
     testAbort = true;
@@ -511,7 +535,8 @@ void App::layout(){
         buttons.push_back(mk(cx-w/2,y,w,h,"Analysis Board",104)); y+=52;
         buttons.push_back(mk(cx-w/2,y,w,h,"Load PGN  (analyse a game)",108)); y+=52;
         buttons.push_back(mk(cx-w/2,y,w,h,"Board Editor / Set Position",106)); y+=52;
-        buttons.push_back(mk(cx-w/2,y,w,h,"Engine Testing Tools",105));
+        buttons.push_back(mk(cx-w/2,y,w-128,h,"Engine Testing Tools",105));
+        buttons.push_back(mk(cx-w/2+w-120,y,120,h,"Engines...",109));
         y+=44+64;                                   // clear gap before the TC block
         float bw=66;
         for (int i=0;i<7;i++)
@@ -1235,6 +1260,7 @@ void App::handleEvent(const UiEvent& e){
         WW  = e.width  / UIS;
         WH  = e.height / UIS;
         window.setView(sf::View(sf::FloatRect({0,0},{WW,WH})));
+        if (imguiOk) setupImGuiFonts();
         layout();
         forceRedraw = true;
         return;
@@ -1396,6 +1422,7 @@ void App::onButton(int id){
         mode=GameMode::HUMAN_VS_ENGINE; pickPurpose=1; oneShotStart.reset();
         screen=Screen::PICK_ENGINE; scanEngines(); layout(); break;
     case 107: menuPlayWhite=!menuPlayWhite; layout(); break;
+    case 109: scanEngines(); screen=Screen::ENGINE_MANAGER; layout(); break;
     case 103: matchSelection.clear(); screen=Screen::MATCH_SETUP; scanEngines(); layout(); break;
     case 104: mode=GameMode::ANALYSIS; pickPurpose=2; oneShotStart.reset();
               screen=Screen::PICK_ENGINE; scanEngines(); layout(); break;
@@ -2063,6 +2090,11 @@ void App::render(){
             text(toast, WW/2, WH-27, 14, sf::Color::White, true);
         }
     }
+    if (imguiOk && ImGui::GetCurrentContext() && ImGui::GetFrameCount() > 0 && imguiScreen()){
+        window.setView(window.getDefaultView());
+        ImGui::SFML::Render(window);
+        window.setView(sf::View(sf::FloatRect({0,0},{WW,WH})));
+    }
     if (!pendingShot.empty()){
         sf::Texture shot;
         if (shot.resize(window.getSize())){
@@ -2112,6 +2144,10 @@ void App::stepScript(){
     if (nowMsSteady() < scriptWaitUntil) return;
     const UiScriptStep& s = script[scriptPos++];
     UiEvent e;
+    // ImGui screens get the input through ImGui's IO queue instead
+    auto handleEvent = [this](const UiEvent& ev){
+        if (imguiOk && imguiScreen()) injectImGui(ev); else App::handleEvent(ev);
+    };
     auto at = [&](float x, float y){ scriptMouse = sf::Vector2f(x, y); };
     if (s.op=="wait") scriptWaitUntil = nowMsSteady() + (long long)s.nums[0];
     else if (s.op=="move"){ at(s.nums[0], s.nums[1]); e.kind = UiEvent::MouseMoved; handleEvent(e); }
@@ -2139,4 +2175,63 @@ void App::stepScript(){
     }
     else if (s.op=="quit") window.close();
     forceRedraw = true;
+}
+
+// =============================================================== Dear ImGui
+// ImGui draws in physical pixels; the font is rasterized at the real pixel
+// size so text stays sharp on HiDPI screens.
+void App::setupImGuiFonts(){
+    float px = window.getSize().x / WW;              // physical pixels per logical unit
+    if (px <= 0) px = 1;
+    if (std::abs(px - imguiScale) < 0.01f) return;
+    imguiScale = px;
+    ImGuiIO& io = ImGui::GetIO();
+    io.Fonts->Clear();
+    ImFontConfig fc; fc.OversampleH = 2;
+    if (!io.Fonts->AddFontFromFileTTF("Resources/Cantarell-Regular.ttf", 15.f * px, &fc))
+        io.Fonts->AddFontDefault();
+    if (!ImGui::SFML::UpdateFontTexture()) fprintf(stderr, "[imgui] font texture failed\n");
+    ImGuiStyle st;
+    ImGui::StyleColorsDark(&st);
+    st.FrameRounding = 3; st.WindowRounding = 0; st.ChildRounding = 3; st.GrabRounding = 3;
+    st.ScaleAllSizes(px);
+    ImGui::GetStyle() = st;
+}
+
+void App::drawImGui(){
+    if (screen == Screen::ENGINE_MANAGER){
+        EngineManagerWindow::Callbacks cb;
+        cb.save = [this](){ saveEngines(); };
+        cb.close = [this](){ screen = Screen::MENU; layout(); };
+        engineManager.draw(registry, cb);
+    }
+}
+
+void App::injectImGui(const UiEvent& e){
+    ImGuiIO& io = ImGui::GetIO();
+    auto key = [](sf::Keyboard::Key k) -> ImGuiKey {
+        using K = sf::Keyboard::Key;
+        switch (k){
+        case K::Enter: return ImGuiKey_Enter;   case K::Escape: return ImGuiKey_Escape;
+        case K::Tab: return ImGuiKey_Tab;       case K::Backspace: return ImGuiKey_Backspace;
+        case K::Delete: return ImGuiKey_Delete; case K::Left: return ImGuiKey_LeftArrow;
+        case K::Right: return ImGuiKey_RightArrow; case K::Up: return ImGuiKey_UpArrow;
+        case K::Down: return ImGuiKey_DownArrow; case K::Home: return ImGuiKey_Home;
+        case K::End: return ImGuiKey_End;       case K::A: return ImGuiKey_A;
+        default: return ImGuiKey_None;
+        }
+    };
+    switch (e.kind){
+    case UiEvent::MousePressed:  io.AddMouseButtonEvent(0, true); break;
+    case UiEvent::MouseReleased: io.AddMouseButtonEvent(0, false); break;
+    case UiEvent::KeyPressed:
+        if (key(e.key) != ImGuiKey_None){
+            if (e.ctrl) io.AddKeyEvent(ImGuiMod_Ctrl, true);
+            io.AddKeyEvent(key(e.key), true); io.AddKeyEvent(key(e.key), false);
+            if (e.ctrl) io.AddKeyEvent(ImGuiMod_Ctrl, false);
+        }
+        break;
+    case UiEvent::TextEntered: io.AddInputCharacter((unsigned)e.unicode); break;
+    default: break;
+    }
 }

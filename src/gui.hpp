@@ -9,6 +9,7 @@
 #include "tournament.hpp"
 #include "testing.hpp"
 #include "ui_script.hpp"
+#include "ui/engine_manager.hpp"
 
 // Input event as the app sees it (from SFML or from a --script step).
 struct UiEvent {
@@ -23,7 +24,7 @@ struct UiEvent {
 
 enum class Screen { MENU, GAME, PICK_ENGINE, MATCH_SETUP, MATCH_VIEW,
                     TESTS, TEST_RUN, EDITOR, ENGINE_OPTIONS,
-                    ACC_SETUP, PGN_LOAD, PGN_LIST };
+                    ACC_SETUP, PGN_LOAD, PGN_LIST, ENGINE_MANAGER };
 
 enum class GameMode { HUMAN_VS_HUMAN, HUMAN_VS_ENGINE, ANALYSIS };
 
@@ -76,6 +77,16 @@ private:
     bool scriptFailed_ = false;
     void stepScript();
     sf::Vector2f mouseLogical();
+
+    // ---- Dear ImGui (screens being migrated to it) ----
+    bool imguiOk = false;
+    float imguiScale = 0;                // physical pixels per logical unit the fonts were built for
+    sf::Clock imguiClock;
+    bool imguiScreen() const { return screen == Screen::ENGINE_MANAGER; }
+    void setupImGuiFonts();
+    void drawImGui();
+    void injectImGui(const UiEvent& e);  // --script input for ImGui screens
+    EngineManagerWindow engineManager;
 
     // ---- framework ----
     sf::RenderWindow window;
