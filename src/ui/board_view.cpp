@@ -88,22 +88,24 @@ BoardInput BoardView::draw(const char* id, float size, const BoardSpec& spec, co
     flipped_ = spec.flipped;
     ImGui::InvisibleButton(id, ImVec2(size_, size_),
                            ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight);
-    bool hovered = ImGui::IsItemHovered(), active = ImGui::IsItemActive();
+    bool hovered = ImGui::IsItemHovered();
     ImVec2 mouse = ImGui::GetIO().MousePos;
     if (spec.interactive){
         if (hovered) in.hovered = squareAt(mouse);
         if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left)){
             in.pressed = squareAt(mouse);
-            pressPos_ = mouse; dragMoved_ = false;
+            pressPos_ = mouse; dragMoved_ = false; holding_ = true;
             dragSq_ = (in.pressed >= 0 && spec.draggable.size() == 64 && spec.draggable[in.pressed]) ? in.pressed : -1;
         }
         if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) in.rightPressed = squareAt(mouse);
-        if (active && ImGui::IsMouseDown(ImGuiMouseButton_Left)){
+        if (holding_ && ImGui::IsMouseDown(ImGuiMouseButton_Left)){
             in.paintOver = squareAt(mouse);
             float mx = mouse.x - pressPos_.x, my = mouse.y - pressPos_.y;
             if (mx*mx + my*my > 16) dragMoved_ = true;
         }
-        if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && (active || dragSq_ >= 0)){
+        // (on the release frame ImGui has already cleared the active item)
+        if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && holding_){
+            holding_ = false;
             in.released = true;
             in.releasedOn = squareAt(mouse);
             if (dragSq_ >= 0 && in.releasedOn >= 0 && in.releasedOn != dragSq_){

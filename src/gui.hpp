@@ -13,6 +13,7 @@
 #include "ui/engine_manager.hpp"
 #include "ui/board_view.hpp"
 #include "ui/tools_screen.hpp"
+#include "ui/editor_screen.hpp"
 
 // Input event as the app sees it (from SFML or from a --script step).
 struct UiEvent {
@@ -28,6 +29,8 @@ struct UiEvent {
 enum class Screen { MENU, GAME, PICK_ENGINE, MATCH_SETUP, MATCH_VIEW,
                     TESTS, TEST_RUN, EDITOR, ENGINE_OPTIONS,
                     PGN_LOAD, PGN_LIST, ENGINE_MANAGER };
+
+enum class EditorAction { PlayHuman, PlayEngine, Analyse, AddToMatch, Cancel };
 
 enum class GameMode { HUMAN_VS_HUMAN, HUMAN_VS_ENGINE, ANALYSIS };
 
@@ -79,6 +82,7 @@ public:
     void toast(const std::string& s){ showToast(s); }
     void go(Screen s);
     const PieceSet& pieces() const { return pieceSet; }
+    void editorDone(EditorAction a, const Position& p);   // the editor's "use it" buttons
 private:
     Settings settings_;
     PieceSet pieceSet;
@@ -88,6 +92,7 @@ private:
     long long scriptWaitUntil = 0;
     long long scriptItemDeadline = 0;    // wait-item timeout
     std::optional<sf::Vector2f> scriptMouse;
+    bool scriptButtonDown = false;       // scripted left button state for ImGui screens
     std::string pendingShot;
     bool scriptFailed_ = false;
     void stepScript();
@@ -98,7 +103,8 @@ private:
     float imguiScale = 0;                // physical pixels per logical unit the fonts were built for
     sf::Clock imguiClock;
     bool imguiFrameActive = false;       // Update() called, Render()/EndFrame() pending
-    bool imguiScreen() const { return screen == Screen::ENGINE_MANAGER || screen == Screen::TESTS; }
+    bool imguiScreen() const { return screen == Screen::ENGINE_MANAGER || screen == Screen::TESTS
+                                   || screen == Screen::EDITOR; }
     void setupImGuiFonts();
     void drawImGui();
     void drawMenuBar();
@@ -106,6 +112,7 @@ private:
     void injectImGui(const UiEvent& e);  // --script input for ImGui screens
     EngineManagerWindow engineManager;
     ToolsScreen tools{*this};
+    EditorScreen editor{*this};
 
     // ---- framework ----
     sf::RenderWindow window;
@@ -224,18 +231,6 @@ private:
     void commitMove(Move m);
     void savePGN();
     void copyFEN(); void pasteFEN();
-
-    // ---- board editor ----
-    static const int BRUSH_HAND = 99;
-    Position editPos;
-    int editorBrush = WHITE_PAWN;        // 0 = eraser, BRUSH_HAND = hand tool
-    bool editorPainting = false;
-    int handFrom = -1, handPiece = 0;    // hand-tool carry state
-    bool editorPlayWhite = true;
-    Screen editorReturn = Screen::MENU;  // MATCH_SETUP => show "Done" button
-    std::vector<sf::FloatRect> paletteRects;
-    std::string editorFEN() const;
-    std::string editorProblem() const;
 
     // ---- match / tournament ----
     MatchRunner runner;

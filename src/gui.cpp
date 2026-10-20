@@ -177,7 +177,6 @@ bool App::init(){
     }
     scanEngines();
     game.reset(Position::startpos());
-    editPos = Position::startpos();
     tc = TimeControl{settings_.tcBaseMs, settings_.tcIncMs};
     arrowsN = std::max(1, std::min(5, settings_.analysisMultiPV));
     layout();
@@ -185,7 +184,7 @@ bool App::init(){
 }
 
 int App::activityLevel(){
-    if (dragging || editorPainting || handFrom>=0) return 2;
+    if (dragging) return 2;
     bool bg = false;
     if (!toastText.empty() && toastClock.getElapsedTime().asSeconds() < 3.2f) bg = true;
     if (screen==Screen::GAME &&
@@ -215,9 +214,16 @@ void App::run(){
             sf::Vector2u ws = window.getSize();
             uiitems::beginFrame();
             imguiFrameActive = true;
-            if (scriptMouse)
-                ImGui::SFML::Update(sf::Vector2i(int(scriptMouse->x * ws.x / WW), int(scriptMouse->y * ws.y / WH)),
-                                    sf::Vector2f(ws), imguiClock.restart());
+            if (!script.empty()){
+                // scripted run: drive ImGui's IO directly, so a scripted button
+                // hold isn't overwritten by the real (idle) mouse every frame
+                ImGuiIO& io = ImGui::GetIO();
+                io.DisplaySize = ImVec2((float)ws.x, (float)ws.y);
+                io.DeltaTime = std::max(1e-4f, imguiClock.restart().asSeconds());
+                if (scriptMouse) io.MousePos = ImVec2(scriptMouse->x * ws.x / WW, scriptMouse->y * ws.y / WH);
+                io.MouseDown[0] = scriptButtonDown;
+                ImGui::NewFrame();
+            }
             else ImGui::SFML::Update(window, imguiClock.restart());
             drawImGui();
             render();
@@ -529,12 +535,9 @@ static Button mk(float x,float y,float w,float h,const std::string& s,int id,boo
 static const char* TC_LABELS[7] = {"1+0","3+0","3+2","5+0","10+0","15+10","30+0"};
 static const int   TC_BASE[7]   = {60000,180000,180000,300000,600000,900000,1800000};
 static const int   TC_INC[7]    = {0,0,2000,0,0,10000,0};
-static const int   PALETTE[12]  = { WHITE_KING,WHITE_QUEEN,WHITE_BISHOP,WHITE_KNIGHT,WHITE_ROOK,WHITE_PAWN,
-                                    BLACK_KING,BLACK_QUEEN,BLACK_BISHOP,BLACK_KNIGHT,BLACK_ROOK,BLACK_PAWN };
 
 void App::layout(){
     buttons.clear();
-    paletteRects.clear();
     float cx = WW/2;
     forceRedraw = true;
     switch (screen){
@@ -652,41 +655,6 @@ void App::layout(){
         buttons.push_back(mk(WW-170, 16, 150, 32, testRunning? "Abort" : "Back", 700));
         buttons.push_back(mk(WW-170, 56, 150, 32, "Copy log", 701));
         buttons.push_back(mk(WW-170, 96, 150, 32, "Save log", 702));
-        break; }
-    case Screen::EDITOR: {
-        float side = WH-110;
-        float rx = side + 40;
-        float pw = WW - rx - 20;
-        float cell = std::min(pw/6.f, 54.f);
-        float py = 56;
-        for (int i=0;i<12;i++){
-            float x = rx + (i%6)*cell, yy = py + (i/6)*cell;
-            buttons.push_back(mk(x, yy, cell-2, cell-2, "", 800+i, editorBrush==PALETTE[i]));
-            paletteRects.push_back(sf::FloatRect({x, yy}, {cell-2, cell-2}));
-        }
-        float y = py + 2*cell + 10;
-        buttons.push_back(mk(rx, y, 110, 32, "Hand", 813, editorBrush==BRUSH_HAND));
-        buttons.push_back(mk(rx+118, y, 110, 32, "Eraser", 812, editorBrush==0));
-        buttons.push_back(mk(rx+236, y, 110, 32, "Clear board", 825));
-        buttons.push_back(mk(rx+354, y, 96, 32, "Start pos", 826)); y+=44;
-        buttons.push_back(mk(rx, y, 180, 32, editPos.whiteToMove? "White to move":"Black to move", 820)); y+=40;
-        buttons.push_back(mk(rx, y, 88, 30, "W O-O", 821, editPos.castleWK));
-        buttons.push_back(mk(rx+94, y, 88, 30, "W O-O-O", 822, editPos.castleWQ));
-        buttons.push_back(mk(rx+188, y, 88, 30, "B O-O", 823, editPos.castleBK));
-        buttons.push_back(mk(rx+282, y, 88, 30, "B O-O-O", 824, editPos.castleBQ)); y+=44;
-        buttons.push_back(mk(rx, y, 150, 32, "Copy FEN", 827));
-        buttons.push_back(mk(rx+158, y, 150, 32, "Paste FEN", 828)); y+=54;
-        if (editorReturn == Screen::MATCH_SETUP){
-            buttons.push_back(mk(rx, y, 310, 38, "Done - add position to the match", 835)); y+=46;
-            buttons.push_back(mk(rx, y, 150, 34, "Cancel", 899));
-        } else {
-            buttons.push_back(mk(rx, y, 230, 34, "Play from here (HvH)", 830));
-            buttons.push_back(mk(rx+238, y, 150, 34, editorPlayWhite? "You: White":"You: Black", 834, !editorPlayWhite)); y+=42;
-            buttons.push_back(mk(rx, y, 230, 34, "Play vs engine from here", 831)); y+=42;
-            buttons.push_back(mk(rx, y, 230, 34, "Analyse from here", 832)); y+=42;
-            buttons.push_back(mk(rx, y, 230, 34, "Use in engine match", 833)); y+=48;
-            buttons.push_back(mk(rx, y, 120, 34, "Back", 899));
-        }
         break; }
     case Screen::ENGINE_OPTIONS: {
         float y = 96;
@@ -953,21 +921,6 @@ void App::saveTournamentPGNs(){
     std::ofstream f(name);
     for (auto& p : pgns) f << p << "\n";
     showToast(std::string("Saved ")+name+" ("+std::to_string(pgns.size())+" games)");
-}
-
-// =============================================================== board editor
-std::string App::editorFEN() const{
-    Position p = editPos;
-    p.castleWK = p.castleWK && p.board[60]==WHITE_KING && p.board[63]==WHITE_ROOK;
-    p.castleWQ = p.castleWQ && p.board[60]==WHITE_KING && p.board[56]==WHITE_ROOK;
-    p.castleBK = p.castleBK && p.board[4]==BLACK_KING && p.board[7]==BLACK_ROOK;
-    p.castleBQ = p.castleBQ && p.board[4]==BLACK_KING && p.board[0]==BLACK_ROOK;
-    p.halfmoveClock = 0; p.fullmoveNumber = 1;
-    return p.toFEN();
-}
-std::string App::editorProblem() const{
-    // same limits UCI engines assume (piece counts, kings, pawn ranks, checks)
-    return enginePositionProblem(editPos);
 }
 
 // =============================================================== PGN analysis
@@ -1237,49 +1190,16 @@ void App::handleEvent(const UiEvent& e){
                 }
             }
         }
-        if (screen==Screen::EDITOR){
-            float side = WH-110;
-            int sq = boardSquareAt(m, 20, 56, side, false);
-            if (sq>=0){
-                if (editorBrush==BRUSH_HAND){
-                    if (editPos.board[sq]){ handFrom=sq; handPiece=editPos.board[sq];
-                                            editPos.board[sq]=0; }
-                } else {
-                    editPos.board[sq] = editorBrush;
-                    editorPainting = true;
-                }
-                forceRedraw = true;
-            }
-        }
     }
     if (e.kind == UiEvent::MousePressed && e.button==sf::Mouse::Button::Right){
-        if (screen==Screen::EDITOR){
-            float side = WH-110;
-            int sq = boardSquareAt(m, 20, 56, side, false);
-            if (sq>=0){ editPos.board[sq]=0; forceRedraw=true; }
-        }
         if (screen==Screen::GAME && (premoveFrom>=0 || premoveTo>=0)){
             premoveFrom=premoveTo=-1; forceRedraw=true;    // right-click cancels premove
         }
     }
     if (e.kind == UiEvent::MouseMoved){
         if (dragging) dragPos = m;
-        if (handFrom>=0) forceRedraw=true;                  // ghost piece follows cursor
-        if (editorPainting && screen==Screen::EDITOR){
-            float side = WH-110;
-            int sq = boardSquareAt(m, 20, 56, side, false);
-            if (sq>=0){ editPos.board[sq]=editorBrush; forceRedraw=true; }
-        }
     }
     if (e.kind == UiEvent::MouseReleased && e.button==sf::Mouse::Button::Left){
-        editorPainting = false;
-        if (screen==Screen::EDITOR && handFrom>=0){
-            float side = WH-110;
-            int sq = boardSquareAt(m, 20, 56, side, false);
-            editPos.board[sq>=0? sq : handFrom] = handPiece;   // drop, or snap back
-            handFrom=-1; handPiece=0;
-            forceRedraw=true;
-        }
         if (dragging){
             bool premoveDrag = (dragFromSq==-2);
             dragging=false;
@@ -1318,7 +1238,7 @@ void App::onButton(int id){
     case 104: mode=GameMode::ANALYSIS; pickPurpose=2; oneShotStart.reset();
               screen=Screen::PICK_ENGINE; scanEngines(); layout(); break;
     case 105: go(Screen::TESTS); break;
-    case 106: editorReturn=Screen::MENU; screen=Screen::EDITOR; layout(); break;
+    case 106: editor.open(false); go(Screen::EDITOR); break;
     case 108: filePurpose=2; filePathInput.clear(); screen=Screen::PGN_LOAD; layout(); break;
     case 120: window.close(); break;
     // ---- game ----
@@ -1388,7 +1308,7 @@ void App::onButton(int id){
                 else { matchFens.push_back(c);
                        showToast("Position added ("+std::to_string(matchFens.size())+" total)"); }
                 layout(); break; }
-    case 455: editorReturn=Screen::MATCH_SETUP; screen=Screen::EDITOR; layout(); break;
+    case 455: editor.open(true); go(Screen::EDITOR); break;
     case 456: pickPurpose=7; screen=Screen::PICK_ENGINE; scanEngines(); layout(); break;
     case 457: judgePath.clear(); showToast("No judge engine"); layout(); break;
     case 458: textFocus=TextTarget::FILE_PATH; filePurpose=1; layout(); break;
@@ -1442,52 +1362,6 @@ void App::onButton(int id){
                 std::strftime(name,64,"logs/test_%Y%m%d_%H%M%S.txt",std::localtime(&t));
                 std::ofstream f(name); f << copyAllTestLines();
                 showToast(std::string("Saved ")+name); break; }
-    // ---- editor ----
-    case 800: case 801: case 802: case 803: case 804: case 805:
-    case 806: case 807: case 808: case 809: case 810: case 811:
-        editorBrush = PALETTE[id-800]; layout(); break;
-    case 812: editorBrush=0; layout(); break;
-    case 813: editorBrush=BRUSH_HAND; layout(); break;
-    case 820: editPos.whiteToMove=!editPos.whiteToMove; layout(); break;
-    case 821: editPos.castleWK=!editPos.castleWK; layout(); break;
-    case 822: editPos.castleWQ=!editPos.castleWQ; layout(); break;
-    case 823: editPos.castleBK=!editPos.castleBK; layout(); break;
-    case 824: editPos.castleBQ=!editPos.castleBQ; layout(); break;
-    case 825: { Position p; p.whiteToMove=true; editPos=p;
-                editPos.castleWK=editPos.castleWQ=editPos.castleBK=editPos.castleBQ=false;
-                layout(); break; }
-    case 826: editPos = Position::startpos(); layout(); break;
-    case 827: { std::string pr = editorProblem();
-                if (!pr.empty()){ showToast(pr); break; }
-                sf::Clipboard::setString(editorFEN());
-                showToast("FEN copied: "+editorFEN()); break; }
-    case 828: { std::string c = sf::Clipboard::getString();
-                bool ok=false; Position p = Position::fromFEN(c,&ok);
-                if (ok){ editPos=p; showToast("Position loaded from FEN"); }
-                else showToast("Clipboard does not contain a valid FEN");
-                layout(); break; }
-    case 830: case 831: case 832: case 833: case 835: {
-        std::string pr = editorProblem();
-        if (!pr.empty()){ showToast(pr); break; }
-        bool ok=false;
-        Position p = Position::fromFEN(editorFEN(), &ok);
-        if (!ok){ showToast("Position is not valid"); break; }
-        if (id==830){ mode=GameMode::HUMAN_VS_HUMAN; stopOpponent();
-                      newGame(p); screen=Screen::GAME; }
-        else if (id==831){ humanIsWhite=editorPlayWhite; boardFlipped=!humanIsWhite;
-                           mode=GameMode::HUMAN_VS_ENGINE; pickPurpose=1;
-                           oneShotStart=p;                       // consumed by the pick, once
-                           screen=Screen::PICK_ENGINE; scanEngines(); }
-        else if (id==832){ mode=GameMode::ANALYSIS; pickPurpose=2;
-                           oneShotStart=p;
-                           screen=Screen::PICK_ENGINE; scanEngines(); }
-        else { matchFens.push_back(p.toFEN());
-               screen=Screen::MATCH_SETUP; editorReturn=Screen::MENU;
-               showToast("Position added to the match ("+std::to_string(matchFens.size())+" total)"); }
-        layout(); break; }
-    case 834: editorPlayWhite=!editorPlayWhite; layout(); break;
-    case 899: screen = (editorReturn==Screen::MATCH_SETUP)? Screen::MATCH_SETUP : Screen::MENU;
-              editorReturn=Screen::MENU; layout(); break;
     // ---- options editor ----
     case 950: optScroll=std::max(0,optScroll-5); layout(); break;
     case 951: optScroll=std::min(std::max(0,(int)optsList.size()-5), optScroll+5); layout(); break;
@@ -1856,25 +1730,6 @@ void App::render(){
         }
         if (testRunning) text("running...", WW-160, 140, 14, COL_WARN);
         break; }
-    case Screen::EDITOR: {
-        float side = WH-110;
-        text("Board Editor", 20, 14, 24, COL_ACCENT);
-        text("Left-click paints (drag to paint), right-click erases. Hand tool drags pieces.",
-             20, WH-44, 14, COL_DIM);
-        drawBoard(20, 56, side, editPos, -1, nullptr, -1, -1, false, handFrom, dragPos);
-        // hand-tool ghost follows the cursor
-        if (handFrom>=0 && handPiece){
-            sf::Vector2f mp = mouseLogical();
-            drawPiece(handPiece, mp.x-(side/8)/2, mp.y-(side/8)/2, side/8, 230);
-        }
-        float rx = side + 40;
-        text("Piece palette:", rx, 34, 15, COL_DIM);
-        std::string pr = editorProblem();
-        float cell = std::min((WW-rx-20)/6.f,54.f);
-        float probY = 56 + 2*cell + 10 + 44 + 40 + 44 + 54 - 20;
-        if (!pr.empty()) text("Cannot use yet: "+pr, rx, probY, 14, COL_WARN);
-        else text("Position OK - FEN: "+editorFEN().substr(0,50)+"...", rx, probY, 13, COL_GOOD);
-        break; }
     case Screen::ENGINE_OPTIONS: {
         text("UCI options - "+fs::path(optsPath).filename().string(), WW/2, 34, 23, COL_ACCENT, true);
         text("Saved automatically and applied every time this engine starts (play, analysis, matches, tests).",
@@ -1919,12 +1774,6 @@ void App::render(){
     default: break;
     }
     drawButtons();
-    if (screen==Screen::EDITOR && !paletteRects.empty()){
-        for (int i=0;i<12 && i<(int)paletteRects.size();i++){
-            auto& r = paletteRects[i];
-            drawPiece(PALETTE[i], r.position.x+2, r.position.y+2, r.size.x-4);
-        }
-    }
     if (!toastText.empty() && !imguiScreen()){
         if (toastClock.getElapsedTime().asSeconds()>3) toastText.clear();
         else {
@@ -2009,10 +1858,16 @@ void App::stepScript(){
         script.insert(script.begin() + (long)scriptPos, {press, release});
     }
     else if (s.op=="_press"){ e.kind = UiEvent::MousePressed; handleEvent(e); }
-    else if (s.op=="_release"){ e.kind = UiEvent::MouseReleased; handleEvent(e); } else if (s.op=="drag"){
-        at(s.nums[0], s.nums[1]); e.kind = UiEvent::MousePressed; handleEvent(e);
-        at(s.nums[2], s.nums[3]); e.kind = UiEvent::MouseMoved; handleEvent(e);
-        e.kind = UiEvent::MouseReleased; handleEvent(e);
+    else if (s.op=="_release"){ e.kind = UiEvent::MouseReleased; handleEvent(e); }
+    else if (s.op=="drag"){
+        // hover, press, move halfway, move to the target, release: one frame each
+        at(s.nums[0], s.nums[1]); e.kind = UiEvent::MouseMoved; handleEvent(e);
+        UiScriptStep press; press.op = "_press";
+        UiScriptStep mid; mid.op = "move";
+        mid.nums = {(s.nums[0] + s.nums[2]) / 2, (s.nums[1] + s.nums[3]) / 2};
+        UiScriptStep end; end.op = "move"; end.nums = {s.nums[2], s.nums[3]};
+        UiScriptStep release; release.op = "_release";
+        script.insert(script.begin() + (long)scriptPos, {press, mid, end, release});
     } else if (s.op=="key"){
         if (keyFromName(s.arg, e.key)){
             e.kind = UiEvent::KeyPressed; e.ctrl = s.ctrl; e.sys = s.ctrl; handleEvent(e);
@@ -2085,7 +1940,8 @@ void App::drawImGui(){
     ImGui::Begin("##screen", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
                  ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
     const char* title = screen == Screen::ENGINE_MANAGER ? "Engines"
-                      : screen == Screen::TESTS ? "Engine testing tools" : "";
+                      : screen == Screen::TESTS ? "Engine testing tools"
+                      : screen == Screen::EDITOR ? "Board editor" : "";
     if (ImGui::Button("< Home")) go(Screen::MENU);
     ImGui::SameLine();
     ImGui::PushFont(ui::fonts().large);
@@ -2105,6 +1961,8 @@ void App::drawImGui(){
         engineManager.draw(registry_, cb);
     } else if (screen == Screen::TESTS){
         tools.draw();
+    } else if (screen == Screen::EDITOR){
+        editor.draw();
     }
     ImGui::End();
     drawToast();
@@ -2156,6 +2014,27 @@ void App::go(Screen s){
     forceRedraw = true;
 }
 
+void App::editorDone(EditorAction a, const Position& p){
+    switch (a){
+    case EditorAction::PlayHuman:
+        mode = GameMode::HUMAN_VS_HUMAN; stopOpponent();
+        newGame(p); go(Screen::GAME); break;
+    case EditorAction::PlayEngine:                    // the human plays the side to move
+        humanIsWhite = p.whiteToMove; boardFlipped = !humanIsWhite;
+        mode = GameMode::HUMAN_VS_ENGINE; pickPurpose = 1; oneShotStart = p;
+        scanEngines(); go(Screen::PICK_ENGINE); break;
+    case EditorAction::Analyse:
+        mode = GameMode::ANALYSIS; pickPurpose = 2; oneShotStart = p;
+        scanEngines(); go(Screen::PICK_ENGINE); break;
+    case EditorAction::AddToMatch:
+        matchFens.push_back(p.toFEN());
+        showToast("Position added to the match (" + std::to_string(matchFens.size()) + " total)");
+        scanEngines(); go(Screen::MATCH_SETUP); break;
+    case EditorAction::Cancel:
+        go(Screen::MATCH_SETUP); break;
+    }
+}
+
 void App::saveSettings(){
     std::string err;
     if (!settings_.save((fs::u8path(userConfigDir()) / "settings.json").u8string(), &err))
@@ -2177,8 +2056,8 @@ void App::injectImGui(const UiEvent& e){
         }
     };
     switch (e.kind){
-    case UiEvent::MousePressed:  io.AddMouseButtonEvent(0, true); break;
-    case UiEvent::MouseReleased: io.AddMouseButtonEvent(0, false); break;
+    case UiEvent::MousePressed:  scriptButtonDown = true; break;
+    case UiEvent::MouseReleased: scriptButtonDown = false; break;
     case UiEvent::KeyPressed:
         if (key(e.key) != ImGuiKey_None){
             if (e.ctrl) io.AddKeyEvent(ImGuiMod_Ctrl, true);

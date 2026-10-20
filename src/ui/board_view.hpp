@@ -70,6 +70,7 @@ private:
     bool flipped_ = false;
     int dragSq_ = -1;
     bool dragMoved_ = false;
+    bool holding_ = false;               // left button went down on the board and is held
     ImVec2 pressPos_{0, 0};
 };
 

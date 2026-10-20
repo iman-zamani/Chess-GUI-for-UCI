@@ -123,6 +123,7 @@ set(CHESS_SOURCES
     src/main.cpp
     src/gui.cpp
     src/ui/board_view.cpp
+    src/ui/editor_screen.cpp
     src/ui/engine_manager.cpp
     src/ui/file_dialog.cpp
     src/ui/tools_screen.cpp
