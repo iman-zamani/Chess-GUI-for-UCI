@@ -54,7 +54,7 @@ static std::string pvToSan(const Position& start, const std::string& pv, int max
 void GameScreen::resetBoardState(){
     oppStats_.clear();
     selectedSq_ = -1; legalForSelected_.clear();
-    pendingPromotion_.reset(); viewPly_ = -1;
+    pendingPromotion_.reset(); cur_ = tree_.mainLineEnd();
     premoveFrom_ = premoveTo_ = -1;
     scrollMoves_ = true;
 }
@@ -64,6 +64,7 @@ void GameScreen::newHumanGame(const Position& p){
     mode_ = GameMode::HUMAN_VS_HUMAN;
     game_.reset(p);
     game_.whiteName = "White"; game_.blackName = "Black";
+    tree_.reset(p); tree_.white = game_.whiteName; tree_.black = game_.blackName; tree_.tags.clear();
     resetBoardState();
     tc_ = TimeControl{app_.settings().tcBaseMs, app_.settings().tcIncMs};
     wClockMs_ = bClockMs_ = tc_.baseMs;
@@ -89,6 +90,7 @@ bool GameScreen::newEngineGame(const EngineConfig& cfg, const Position& p, bool 
     game_.reset(p);
     game_.whiteName = humanWhite ? "Human" : opp_->name();
     game_.blackName = humanWhite ? opp_->name() : "Human";
+    tree_.reset(p); tree_.white = game_.whiteName; tree_.black = game_.blackName; tree_.tags.clear();
     resetBoardState();
     tc_ = TimeControl{app_.settings().tcBaseMs, app_.settings().tcIncMs};
     wClockMs_ = bClockMs_ = tc_.baseMs;
@@ -102,16 +104,18 @@ void GameScreen::openAnalysis(const Position& p){
     mode_ = GameMode::ANALYSIS;
     game_.reset(p);
     game_.whiteName = "White"; game_.blackName = "Black";
+    tree_.reset(p); tree_.white = game_.whiteName; tree_.black = game_.blackName; tree_.tags.clear();
     resetBoardState();
     clocksRunning_ = false;
 }
 
-void GameScreen::openGame(const Game& g){
+void GameScreen::openGame(const GameTree& t){
     stopOpponent();
     mode_ = GameMode::ANALYSIS;
-    game_ = g;
+    tree_ = t;
+    game_ = tree_.lineGame(tree_.mainLineEnd());
     resetBoardState();
-    viewPly_ = game_.moves.empty() ? -1 : 0;       // open at the start; step through with ->
+    cur_ = 0;                                      // open at the start; step through with ->
     clocksRunning_ = false;
     flipped_ = false;
 }
@@ -142,10 +146,26 @@ bool GameScreen::animating() const{
 
 // =============================================================== game flow
 Position GameScreen::shownPosition() const{
-    if (viewPly_ < 0) return game_.pos;
-    Position p = game_.start;
-    for (int i = 0; i < viewPly_ && i < (int)game_.moves.size(); i++) p.makeMove(game_.moves[i]);
-    return p;
+    return atLiveEnd() ? game_.pos : tree_.at(cur_).pos;
+}
+
+bool GameScreen::canBranch() const{
+    return mode_ == GameMode::ANALYSIS || game_.result != GameResult::ONGOING;
+}
+
+void GameScreen::goTo(int node){
+    if (node < 0 || node >= tree_.size() || !tree_.at(node).alive) return;
+    cur_ = node;
+    selectedSq_ = -1; legalForSelected_.clear();
+    scrollMoves_ = true;
+}
+
+void GameScreen::branchMove(Move m){
+    int n = tree_.add(cur_, m);
+    if (tree_.onMainLine(n) && n == tree_.mainLineEnd() && game_.result == GameResult::ONGOING){
+        game_.tryMove(m);                          // extends the main line (analysis)
+    }
+    goTo(n);
 }
 
 bool GameScreen::humanToMove() const{
@@ -153,16 +173,20 @@ bool GameScreen::humanToMove() const{
 }
 
 void GameScreen::commitMove(Move m){
+    int end = tree_.mainLineEnd();
     if (!game_.tryMove(m)) return;
+    int n = tree_.add(end, m);
     if (clocksRunning_){
         if (!game_.pos.whiteToMove) wClockMs_ += tc_.incMs; else bClockMs_ += tc_.incMs;
+        tree_.at(n).clockMs = game_.pos.whiteToMove ? bClockMs_ : wClockMs_;   // the mover's clock
     }
-    selectedSq_ = -1; legalForSelected_.clear(); viewPly_ = -1;
+    selectedSq_ = -1; legalForSelected_.clear(); cur_ = n;
     if (game_.result != GameResult::ONGOING) clocksRunning_ = false;
     scrollMoves_ = true;
 }
 
 void GameScreen::humanCommitMove(Move m){
+    if (!atLiveEnd()){ branchMove(m); return; }
     // pondering: tell the engine whether the human played its predicted move
     if (mode_ == GameMode::HUMAN_VS_ENGINE && oppState_ == 2 && opp_ && opp_->alive()){
         if (game_.pos.moveToUCI(m) == oppPonderMove_){
@@ -178,11 +202,14 @@ void GameScreen::humanCommitMove(Move m){
 
 // A press on a square: select a piece, or move the selected piece there.
 void GameScreen::squarePressed(int sq){
-    if (sq < 0 || game_.result != GameResult::ONGOING || viewPly_ >= 0) return;
-    if (!humanToMove() || pendingPromotion_) return;
+    if (sq < 0 || pendingPromotion_) return;
+    bool live = atLiveEnd();
+    if (live && (game_.result != GameResult::ONGOING || !humanToMove())) return;
+    if (!live && !canBranch()) return;             // a game in progress: history is view-only
+    Position pos = shownPosition();
     // castling: onto the rook (Chess960 style) or the king's target square
     for (const Move& m : legalForSelected_)
-        if (m.isCastle && m.to != sq && game_.pos.castleKingTarget(m) == sq && sq != m.from){
+        if (m.isCastle && m.to != sq && pos.castleKingTarget(m) == sq && sq != m.from){
             bool plain = false;
             for (const Move& o : legalForSelected_) if (!o.isCastle && o.to == sq) plain = true;
             if (!plain){ humanCommitMove(m); return; }
@@ -194,10 +221,10 @@ void GameScreen::squarePressed(int sq){
             return;
         }
     }
-    int v = game_.pos.board[sq];
-    if (v && (v > 0) == game_.pos.whiteToMove){
+    int v = pos.board[sq];
+    if (v && (v > 0) == pos.whiteToMove){
         selectedSq_ = sq;
-        std::vector<Move> all; game_.pos.generateLegal(all);
+        std::vector<Move> all; pos.generateLegal(all);
         legalForSelected_.clear();
         for (auto& m : all) if (m.from == sq) legalForSelected_.push_back(m);
     } else { selectedSq_ = -1; legalForSelected_.clear(); }
@@ -207,7 +234,7 @@ void GameScreen::tryExecutePremove(){
     if (premoveFrom_ < 0 || premoveTo_ < 0){ premoveFrom_ = premoveTo_ = -1; return; }
     int from = premoveFrom_, to = premoveTo_;
     premoveFrom_ = premoveTo_ = -1;
-    if (game_.result != GameResult::ONGOING || viewPly_ >= 0 || !humanToMove()) return;
+    if (game_.result != GameResult::ONGOING || !atLiveEnd() || !humanToMove()) return;
     std::string u = squareName(from) + squareName(to);
     Move m;
     bool ok = game_.pos.uciToMove(u, m);
@@ -406,12 +433,11 @@ void GameScreen::startReview(){
 void GameScreen::handleKeys(){
     ImGuiIO& io = ImGui::GetIO();
     if (io.WantTextInput || ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId)) return;
-    int n = (int)game_.moves.size();
     if (ImGui::IsKeyPressed(ImGuiKey_F, false)) flipped_ = !flipped_;
-    if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow)){ int cur = viewPly_ < 0 ? n : viewPly_; viewPly_ = std::max(0, cur - 1); }
-    if (ImGui::IsKeyPressed(ImGuiKey_RightArrow) && viewPly_ >= 0){ viewPly_++; if (viewPly_ >= n) viewPly_ = -1; }
-    if (ImGui::IsKeyPressed(ImGuiKey_UpArrow, false)) viewPly_ = n ? 0 : -1;
-    if (ImGui::IsKeyPressed(ImGuiKey_DownArrow, false)) viewPly_ = -1;
+    if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow) && cur_ > 0) goTo(tree_.at(cur_).parent);
+    if (ImGui::IsKeyPressed(ImGuiKey_RightArrow) && !tree_.at(cur_).children.empty()) goTo(tree_.at(cur_).children[0]);
+    if (ImGui::IsKeyPressed(ImGuiKey_UpArrow, false)) goTo(0);
+    if (ImGui::IsKeyPressed(ImGuiKey_DownArrow, false)) goTo(tree_.lineEnd(cur_));
 }
 
 void GameScreen::draw(){
@@ -441,17 +467,17 @@ void GameScreen::draw(){
     spec.flipped = flipped_;
     spec.theme = st.boardTheme;
     spec.showCoords = st.showCoordinates;
-    if (viewPly_ > 0){ spec.lastFrom = game_.moves[viewPly_ - 1].from; spec.lastTo = game_.moves[viewPly_ - 1].to; }
-    else if (viewPly_ < 0 && !game_.moves.empty()){ spec.lastFrom = game_.moves.back().from; spec.lastTo = game_.moves.back().to; }
-    bool live = viewPly_ < 0 && game_.result == GameResult::ONGOING;
-    if (viewPly_ < 0){ spec.selected = selectedSq_; spec.targets = legalForSelected_; }
+    if (cur_ > 0){ spec.lastFrom = tree_.at(cur_).move.from; spec.lastTo = tree_.at(cur_).move.to; }
+    bool live = atLiveEnd() && game_.result == GameResult::ONGOING;
+    bool editable = live || (!atLiveEnd() && canBranch()) || (atLiveEnd() && mode_ == GameMode::ANALYSIS);
+    if (editable){ spec.selected = selectedSq_; spec.targets = legalForSelected_; }
     if (premoveFrom_ >= 0) spec.tints.push_back({premoveFrom_, IM_COL32(220,60,60,70)});
     if (premoveTo_ >= 0) spec.tints.push_back({premoveTo_, IM_COL32(220,60,60,150)});
     spec.draggable.assign(64, false);
-    if (live && !pendingPromotion_){
-        bool mine = mode_ == GameMode::HUMAN_VS_ENGINE ? humanIsWhite_ : game_.pos.whiteToMove;
+    if (editable && !pendingPromotion_){
+        bool mine = live && mode_ == GameMode::HUMAN_VS_ENGINE ? humanIsWhite_ : shown.whiteToMove;
         for (int sq = 0; sq < 64; sq++){
-            int v = game_.pos.board[sq];
+            int v = shown.board[sq];
             spec.draggable[sq] = v && (v > 0) == mine;
         }
     }
@@ -506,11 +532,12 @@ void GameScreen::draw(){
     drawMoveList(std::max(em * 6, ImGui::GetContentRegionAvail().y - reserve));
     // status line
     std::string status;
-    if (game_.result != GameResult::ONGOING){
+    if (game_.result != GameResult::ONGOING && atLiveEnd()){
         status = game_.resultString();
         if (game_.reason != ResultReason::NONE) status += "  (" + resultReasonText(game_.reason) + ")";
-    } else if (viewPly_ >= 0)
-        status = "Viewing move " + std::to_string(viewPly_) + "/" + std::to_string(game_.moves.size()) + "  (Down arrow: back to live)";
+    } else if (!atLiveEnd())
+        status = (tree_.onMainLine(cur_) ? "Viewing move " : "Variation, move ") + std::to_string(tree_.depth(cur_))
+               + (canBranch() ? "" : "  (Down arrow: back to the game)");
     else if (mode_ == GameMode::HUMAN_VS_ENGINE && !humanToMove())
         status = premoveTo_ >= 0 ? "Engine is thinking... (premove set)" : "Engine is thinking...";
     else status = game_.pos.whiteToMove ? "White to move" : "Black to move";
@@ -555,51 +582,147 @@ void GameScreen::drawPlayers(bool top){
     ImGui::PopFont();
 }
 
+static const char* nagSymbol(int n){
+    switch (n){ case 1: return "!"; case 2: return "?"; case 3: return "!!"; case 4: return "??"; case 5: return "!?"; case 6: return "?!"; }
+    return nullptr;
+}
+static ImVec4 nagColour(const std::vector<int>& nags){
+    for (int n : nags){
+        if (n == 4) return ui::kBad;
+        if (n == 2) return ImVec4(0.95f, 0.60f, 0.35f, 1);
+        if (n == 6) return ui::kWarn;
+        if (n == 1 || n == 3) return ui::kGood;
+    }
+    return ImVec4(0, 0, 0, 0);
+}
+
+// Places the next item of a wrapped line of moves.
+static void flowNext(float width){
+    float right = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
+    float x = ImGui::GetItemRectMax().x + ImGui::GetStyle().ItemSpacing.x;
+    if (x + width <= right) ImGui::SameLine();
+}
+
+void GameScreen::moveToken(int node, bool numbered){
+    const GameNode& n = tree_.at(node);
+    const Position& before = tree_.at(n.parent).pos;
+    std::string label;
+    if (before.whiteToMove) label = std::to_string(before.fullmoveNumber) + ". ";
+    else if (numbered) label = std::to_string(before.fullmoveNumber) + "... ";
+    label += n.san;
+    for (int g : n.nags){ const char* sym = nagSymbol(g); if (sym) label += sym; }
+    ImGui::PushID(node);
+    ImVec2 sz = ImGui::CalcTextSize(label.c_str());
+    flowNext(sz.x + ImGui::GetStyle().FramePadding.x * 2);
+    ImVec4 col = nagColour(n.nags);
+    bool main = tree_.onMainLine(node);
+    if (col.w > 0) ImGui::PushStyleColor(ImGuiCol_Text, col);
+    else if (!main) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.75f, 0.78f, 0.85f, 1));
+    if (ImGui::Selectable(label.c_str(), node == cur_, 0, sz)) goTo(node);
+    if (col.w > 0 || !main) ImGui::PopStyleColor();
+    if (node == cur_ && scrollMoves_){ ImGui::SetScrollHereY(0.7f); scrollMoves_ = false; }
+    if (n.hasEval && ImGui::IsItemHovered())
+        ImGui::SetTooltip("%s", formatScore(n.evalCp, n.evalMate, n.mateIn).c_str());
+    if (ImGui::BeginPopupContextItem("move-menu")){
+        bool liveGame = mode_ != GameMode::ANALYSIS && game_.result == GameResult::ONGOING;
+        ImGui::BeginDisabled(main || liveGame);
+        if (ImGui::MenuItem("Make this the main line")){
+            tree_.promote(node);
+            Game g = tree_.lineGame(tree_.mainLineEnd());
+            g.whiteName = game_.whiteName; g.blackName = game_.blackName;
+            game_ = g;
+        }
+        ImGui::EndDisabled();
+        ImGui::BeginDisabled(liveGame && main);
+        if (ImGui::MenuItem("Delete from here")){
+            int parent = n.parent;
+            bool wasMain = main;
+            tree_.remove(node);
+            if (wasMain){
+                Game g = tree_.lineGame(tree_.mainLineEnd());
+                g.whiteName = game_.whiteName; g.blackName = game_.blackName;
+                game_ = g;
+            }
+            if (!tree_.at(cur_).alive || tree_.depth(cur_) > tree_.depth(parent)) goTo(parent);
+        }
+        ImGui::EndDisabled();
+        if (ImGui::MenuItem("Edit comment...")){ commentNode_ = node; commentBuf_ = n.comment; openComment_ = true; }
+        ImGui::EndPopup();
+    }
+    ImGui::PopID();
+    if (!n.comment.empty()){
+        std::string c = "{" + n.comment + "}";
+        flowNext(ImGui::CalcTextSize(c.c_str()).x);
+        ImGui::PushTextWrapPos(0);
+        ImGui::TextDisabled("%s", c.c_str());
+        ImGui::PopTextWrapPos();
+    }
+}
+
+void GameScreen::drawVariation(int first, int nesting){
+    float em = ImGui::GetFontSize();
+    ImGui::Indent(em * 1.2f);
+    ImGui::TextDisabled("(");
+    moveToken(first, true);
+    int q = first;
+    bool numbered = !tree_.at(first).comment.empty();
+    while (!tree_.at(q).children.empty()){
+        const auto& kids = tree_.at(q).children;
+        moveToken(kids[0], numbered);
+        numbered = !tree_.at(kids[0]).comment.empty();
+        for (size_t i = 1; i < kids.size(); i++){ drawVariation(kids[i], nesting + 1); numbered = true; }
+        if (kids.size() > 1) ImGui::Dummy(ImVec2(0, 0));
+        q = kids[0];
+    }
+    flowNext(em);
+    ImGui::TextDisabled(")");
+    ImGui::Unindent(em * 1.2f);
+}
+
 void GameScreen::drawMoveList(float height){
     ImGui::BeginChild("moves", ImVec2(0, height), ImGuiChildFlags_Borders);
-    int shownPly = viewPly_ < 0 ? (int)game_.moves.size() : viewPly_;
-    if (ImGui::BeginTable("movetable", 3, ImGuiTableFlags_SizingStretchProp)){
-        ImGui::TableSetupColumn("no", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFontSize() * 2.5f);
-        ImGui::TableSetupColumn("w", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableSetupColumn("b", ImGuiTableColumnFlags_WidthStretch);
-        int num = game_.start.fullmoveNumber;
-        size_t i = 0;
-        auto cell = [&](size_t ply){
-            ImGui::TableNextColumn();
-            if (ply >= game_.sans.size()) return;
-            bool cur = (int)ply == shownPly - 1;
-            ImGui::PushID((int)ply);
-            if (ImGui::Selectable(game_.sans[ply].c_str(), cur)){
-                viewPly_ = (int)ply + 1 >= (int)game_.moves.size() ? -1 : (int)ply + 1;
-            }
-            if (cur && scrollMoves_){ ImGui::SetScrollHereY(0.8f); scrollMoves_ = false; }
-            ImGui::PopID();
-        };
-        if (!game_.start.whiteToMove && !game_.sans.empty()){
-            ImGui::TableNextRow(); ImGui::TableNextColumn(); ImGui::TextDisabled("%d.", num);
-            ImGui::TableNextColumn(); ImGui::TextDisabled("...");
-            cell(0); i = 1; num++;
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetFontSize() * 0.3f, ImGui::GetStyle().ItemSpacing.y));
+    if (!tree_.at(0).comment.empty()){ ImGui::PushTextWrapPos(0); ImGui::TextDisabled("{%s}", tree_.at(0).comment.c_str()); ImGui::PopTextWrapPos(); }
+    if (tree_.at(0).children.empty()) ImGui::TextDisabled("No moves yet.");
+    else {
+        ImGui::Dummy(ImVec2(0, 0));
+        int p = 0;
+        bool numbered = true;
+        while (!tree_.at(p).children.empty()){
+            const auto& kids = tree_.at(p).children;
+            moveToken(kids[0], numbered);
+            numbered = !tree_.at(kids[0]).comment.empty();
+            for (size_t i = 1; i < kids.size(); i++){ drawVariation(kids[i], 1); numbered = true; }
+            if (kids.size() > 1) ImGui::Dummy(ImVec2(0, 0));   // the main line goes on below the variations
+            p = kids[0];
         }
-        for (; i < game_.sans.size(); i += 2){
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn(); ImGui::TextDisabled("%d.", num++);
-            cell(i); cell(i + 1);
-        }
-        ImGui::EndTable();
+        if (game_.result != GameResult::ONGOING){ flowNext(ImGui::GetFontSize() * 3); ImGui::TextDisabled("%s", game_.resultString().c_str()); }
     }
-    if (game_.sans.empty()) ImGui::TextDisabled("No moves yet.");
+    ImGui::PopStyleVar();
     ImGui::EndChild();
     // navigation
-    int n = (int)game_.moves.size();
-    if (ImGui::Button("|<")) viewPly_ = n ? 0 : -1;
+    if (ImGui::Button("|<")) goTo(0);
     ImGui::SameLine();
-    if (ImGui::Button(" < ")){ int cur = viewPly_ < 0 ? n : viewPly_; viewPly_ = std::max(0, cur - 1); }
+    if (ImGui::Button(" < ") && cur_ > 0) goTo(tree_.at(cur_).parent);
     ImGui::SameLine();
-    if (ImGui::Button(" > ") && viewPly_ >= 0){ viewPly_++; if (viewPly_ >= n) viewPly_ = -1; }
+    if (ImGui::Button(" > ") && !tree_.at(cur_).children.empty()) goTo(tree_.at(cur_).children[0]);
     ImGui::SameLine();
-    if (ImGui::Button(">|")) viewPly_ = -1;
+    if (ImGui::Button(">|")) goTo(tree_.lineEnd(cur_));
     ImGui::SameLine();
     if (ImGui::Button("Flip")) flipped_ = !flipped_;
+    // comment editor
+    if (openComment_){ ImGui::OpenPopup("Comment"); openComment_ = false; }
+    if (ImGui::BeginPopupModal("Comment", nullptr, ImGuiWindowFlags_AlwaysAutoResize)){
+        float em = ImGui::GetFontSize();
+        ImGui::InputTextMultiline("##comment", &commentBuf_, ImVec2(em * 24, em * 5));
+        if (ImGui::Button("OK")){
+            if (commentNode_ >= 0 && commentNode_ < tree_.size()) tree_.at(commentNode_).comment = commentBuf_;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel")) ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
+    }
 }
 
 void GameScreen::drawControls(){
@@ -608,8 +731,8 @@ void GameScreen::drawControls(){
     ImGui::BeginDisabled(game_.moves.empty());
     if (ImGui::Button("Takeback")){
         stopOpponent();
-        game_.undo();
-        if (mode_ == GameMode::HUMAN_VS_ENGINE && !humanToMove()) game_.undo();
+        game_.undo(); tree_.remove(tree_.mainLineEnd());
+        if (mode_ == GameMode::HUMAN_VS_ENGINE && !humanToMove()){ game_.undo(); tree_.remove(tree_.mainLineEnd()); }
         auto keep = oppStats_;
         resetBoardState();
         for (auto& s : keep) if (s.ply < (int)game_.moves.size()) oppStats_.push_back(s);
@@ -816,11 +939,11 @@ bool GameScreen::loadPgnText(const std::string& text, const std::string& source)
     auto games = parsePGN(text);
     if (games.empty()){ app_.toast("No games found in " + source); return false; }
     if (games.size() == 1){
-        Game g; std::string err;
-        bool ok = gameFromPGN(games[0], g, &err);
-        if (!ok && g.moves.empty()){ app_.toast("Cannot load the game: " + err); return false; }
-        openGame(g);
-        app_.toast(ok ? "Loaded " + g.whiteName + " vs " + g.blackName : "Loaded partially: " + err);
+        GameTree t; std::string err;
+        bool ok = gameTreeFromPGN(games[0], t, &err);
+        if (!ok && t.mainLine().empty()){ app_.toast("Cannot load the game: " + err); return false; }
+        openGame(t);
+        app_.toast(ok ? "Loaded " + t.white + " vs " + t.black : "Loaded partially: " + err);
         return true;
     }
     pgnGames_ = games;
@@ -888,10 +1011,10 @@ void GameScreen::drawPgnDialogs(){
                 ImGui::TableNextRow(); ImGui::TableNextColumn();
                 char id[16]; std::snprintf(id, sizeof id, "%d", i + 1);
                 if (ImGui::Selectable(id, false, ImGuiSelectableFlags_SpanAllColumns)){
-                    Game gm; std::string err;
-                    bool ok = gameFromPGN(g, gm, &err);
-                    if (!ok && gm.moves.empty()) app_.toast("Cannot load the game: " + err);
-                    else { openGame(gm); if (!ok) app_.toast("Loaded partially: " + err); ImGui::CloseCurrentPopup(); }
+                    GameTree gt; std::string err;
+                    bool ok = gameTreeFromPGN(g, gt, &err);
+                    if (!ok && gt.mainLine().empty()) app_.toast("Cannot load the game: " + err);
+                    else { openGame(gt); if (!ok) app_.toast("Loaded partially: " + err); ImGui::CloseCurrentPopup(); }
                 }
                 ImGui::TableNextColumn(); ImGui::TextUnformatted(g.white.c_str());
                 ImGui::TableNextColumn(); ImGui::TextUnformatted(g.black.c_str());
@@ -914,7 +1037,9 @@ void GameScreen::savePgn(){
         std::error_code ec; fs::create_directories("games", ec);
         path = "games/game_" + ui::timeStamp() + ".pgn";
     } else { st.lastSaveDir = fs::u8path(path).parent_path().u8string(); app_.saveSettings(); }
+    tree_.white = game_.whiteName; tree_.black = game_.blackName;
+    if (game_.result != GameResult::ONGOING) tree_.result = game_.resultString();
     std::ofstream f(fs::u8path(path));
-    f << game_.toPGN();
+    f << tree_.toPGN();
     app_.toast(f ? "Saved " + path : "Could not write " + path);
 }

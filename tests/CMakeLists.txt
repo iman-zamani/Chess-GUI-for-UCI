@@ -34,6 +34,9 @@ if(CHESSGUI_GUI_TESTS AND TARGET chess-gui)
     add_test(NAME gui_smoke COMMAND chess-gui --script ${CMAKE_CURRENT_SOURCE_DIR}/gui_smoke.txt
              WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
     set_tests_properties(gui_smoke PROPERTIES TIMEOUT 60)
+    add_test(NAME gui_variations COMMAND chess-gui --script ${CMAKE_CURRENT_SOURCE_DIR}/gui_variations.txt
+             WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+    set_tests_properties(gui_variations PROPERTIES TIMEOUT 60)
 endif()
 
 # chess-cli against the mock engine: exit codes and output.
