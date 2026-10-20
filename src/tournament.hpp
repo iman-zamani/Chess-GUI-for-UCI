@@ -15,6 +15,22 @@ struct TimeControl {
     std::string label() const;
 };
 
+// What the engine reported for one of its moves (for search statistics).
+struct MoveStat {
+    int ply = 0;                 // 0-based ply in the game
+    bool white = true;
+    int depth = 0, seldepth = 0, hashfull = -1;
+    long long nodes = 0, nps = 0, timeMs = 0;   // timeMs: wall-clock time the move took
+    int scoreCp = 0, mate = 0;   // mover's point of view
+    bool isMate = false;
+    static MoveStat from(const EngineInfo& i, int ply, bool white, long long timeMs){
+        MoveStat s; s.ply = ply; s.white = white; s.depth = i.depth; s.seldepth = i.seldepth;
+        s.hashfull = i.hashfull; s.nodes = i.nodes; s.nps = i.nps; s.timeMs = timeMs;
+        s.scoreCp = i.scoreCp; s.mate = i.mateIn; s.isMate = i.isMate;
+        return s;
+    }
+};
+
 struct Standing {
     std::string name;
     int wins=0, losses=0, draws=0;
@@ -38,6 +54,7 @@ public:
         std::string status;                 // human readable
         int gameIndex=0, totalGames=0;
         std::vector<Standing> standings;    // tournaments only
+        std::vector<MoveStat> stats;        // per move of the current game
         bool finished=false;
         std::vector<std::string> log;       // recent messages
     };

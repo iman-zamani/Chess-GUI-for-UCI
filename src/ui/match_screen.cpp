@@ -258,6 +258,12 @@ void MatchScreen::drawLive(){
         }
         ImGui::EndTable();
     }
+    if (ImGui::CollapsingHeader("Search stats (this game)")){
+        ImGui::TextUnformatted(s.whiteName.c_str());
+        ui::searchStats("w", s.stats, true);
+        ImGui::TextUnformatted(s.blackName.c_str());
+        ui::searchStats("b", s.stats, false);
+    }
     if (s.finished) ImGui::TextColored(ui::kGood, "Finished.");
     else if (s.result != GameResult::ONGOING) ImGui::Text("Last result: %s", resultReasonText(s.reason).c_str());
     ImGui::SeparatorText("Log");

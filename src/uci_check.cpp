@@ -381,7 +381,8 @@ void timeManagementGame(Check& c, UciEngine& e, int baseMs, int incMs, int moves
 }
 
 CheckResult checkTimeManagement(const EngineConfig& cfg, bool quick){
-    Check c("time-management", "time management: self-play games at 1s+0.01s and 10s+0.1s");
+    Check c("time-management", quick ? "time management: self-play game at 1s+0.01s (quick)"
+                                     : "time management: self-play games at 1s+0.01s and 10s+0.1s");
     UciEngine e;
     if (!started(c, e, cfg)) return c.done(&e);
     e.logSince(c.cursor);

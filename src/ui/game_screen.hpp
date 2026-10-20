@@ -97,6 +97,9 @@ private:
     bool oppPonderEnabled_ = false;
     std::mutex oppMx_;
     std::string oppMoveReady_;
+    MoveStat oppMoveStat_;                         // stats for oppMoveReady_
+    std::vector<MoveStat> oppStats_;               // one per engine move of this game
+    bool statsOpen_ = false;                       // stats panel expanded (last frame)
 
     // analysis engine
     std::unique_ptr<AnalysisController> ana_;

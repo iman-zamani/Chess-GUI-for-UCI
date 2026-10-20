@@ -52,6 +52,7 @@ static std::string pvToSan(const Position& start, const std::string& pv, int max
 
 // =============================================================== entry points
 void GameScreen::resetBoardState(){
+    oppStats_.clear();
     selectedSq_ = -1; legalForSelected_.clear();
     pendingPromotion_.reset(); viewPly_ = -1;
     premoveFrom_ = premoveTo_ = -1;
@@ -233,10 +234,16 @@ void GameScreen::startEngineThinkIfNeeded(){
     std::string startFen = game_.start.toFEN();
     auto moves = uciMoves(game_);
     long long wc = wClockMs_, bc = bClockMs_; int inc = tc_.incMs;
-    oppThread_ = std::thread([this, startFen, moves, wc, bc, inc](){
+    int ply = (int)game_.moves.size();
+    bool white = game_.pos.whiteToMove;
+    oppThread_ = std::thread([this, startFen, moves, wc, bc, inc, ply, white](){
         opp_->setPosition(startFen, moves);
+        auto t0 = std::chrono::steady_clock::now();
         std::string bm = opp_->goClock((int)wc, (int)bc, inc, inc);
-        { std::lock_guard<std::mutex> lk(oppMx_); oppMoveReady_ = bm.empty() ? "(none)" : bm; }
+        long long ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
+        { std::lock_guard<std::mutex> lk(oppMx_);
+          oppMoveReady_ = bm.empty() ? "(none)" : bm;
+          oppMoveStat_ = MoveStat::from(opp_->lastInfo(), ply, white, ms); }
         oppState_ = 0;
     });
 }
@@ -256,21 +263,30 @@ void GameScreen::startPonderIfPossible(){
     auto moves = uciMoves(game_);
     moves.push_back(hint);                                // think about the reply to its guess
     long long wc = wClockMs_, bc = bClockMs_; int inc = tc_.incMs;
-    oppThread_ = std::thread([this, startFen, moves, wc, bc, inc](){
+    int ply = (int)game_.moves.size() + 1;                // the reply to the predicted move
+    bool white = !game_.pos.whiteToMove;
+    oppThread_ = std::thread([this, startFen, moves, wc, bc, inc, ply, white](){
         opp_->setPosition(startFen, moves);
+        auto t0 = std::chrono::steady_clock::now();
         std::string bm = opp_->goPonderWait((int)wc, (int)bc, inc, inc);
         if (oppDiscard_){ oppState_ = 0; return; }        // ponder miss: the result is garbage
-        { std::lock_guard<std::mutex> lk(oppMx_); oppMoveReady_ = bm.empty() ? "(none)" : bm; }
+        long long ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
+        { std::lock_guard<std::mutex> lk(oppMx_);
+          oppMoveReady_ = bm.empty() ? "(none)" : bm;
+          oppMoveStat_ = MoveStat::from(opp_->lastInfo(), ply, white, ms); }   // includes pondering time
         oppState_ = 0;
     });
 }
 
 void GameScreen::applyEngineMoveIfReady(){
     std::string bm;
-    { std::lock_guard<std::mutex> lk(oppMx_); bm = oppMoveReady_; oppMoveReady_.clear(); }
+    MoveStat stat;
+    { std::lock_guard<std::mutex> lk(oppMx_); bm = oppMoveReady_; oppMoveReady_.clear(); stat = oppMoveStat_; }
     if (bm.empty()) return;
     Move m;
     if (bm != "(none)" && game_.pos.uciToMove(bm, m)){
+        stat.ply = (int)game_.moves.size();
+        oppStats_.push_back(stat);
         commitMove(m);
         startPonderIfPossible();                          // think on the human's time
         tryExecutePremove();                              // may answer at once (ponderhit-aware)
@@ -477,7 +493,9 @@ void GameScreen::draw(){
     float rowH = ImGui::GetFrameHeightWithSpacing();
     float lineH = ImGui::GetTextLineHeightWithSpacing();
     float reserve = rowH * 8.5f + ui::fonts().large->FontSize * 1.3f
-                  + (ana_ ? lineH * (std::max(1, st.analysisMultiPV) + 2) : 0);
+                  + (ana_ ? lineH * (std::max(1, st.analysisMultiPV) + 2) : 0)
+                  + (mode_ == GameMode::HUMAN_VS_ENGINE ? rowH : 0)
+                  + (statsOpen_ ? lineH * 2 + em * 7 + rowH : 0);
     drawMoveList(std::max(em * 6, ImGui::GetContentRegionAvail().y - reserve));
     // status line
     std::string status;
@@ -493,6 +511,11 @@ void GameScreen::draw(){
     drawPlayers(false);
     drawControls();
     drawAnalysis();
+    statsOpen_ = false;
+    if (mode_ == GameMode::HUMAN_VS_ENGINE && ImGui::CollapsingHeader("Engine search stats")){
+        statsOpen_ = true;
+        ui::searchStats("opp", oppStats_, !humanIsWhite_);
+    }
     if (!review_.empty()){
         ImGui::SeparatorText("Game review");
         ImGui::BeginChild("review", ImVec2(0, std::max(em * 8, ImGui::GetContentRegionAvail().y)));
@@ -580,7 +603,9 @@ void GameScreen::drawControls(){
         stopOpponent();
         game_.undo();
         if (mode_ == GameMode::HUMAN_VS_ENGINE && !humanToMove()) game_.undo();
+        auto keep = oppStats_;
         resetBoardState();
+        for (auto& s : keep) if (s.ply < (int)game_.moves.size()) oppStats_.push_back(s);
         clocksRunning_ = game_.result == GameResult::ONGOING && mode_ != GameMode::ANALYSIS;
     }
     ImGui::EndDisabled();

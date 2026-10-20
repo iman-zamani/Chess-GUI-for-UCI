@@ -59,6 +59,7 @@ void MatchRunner::playOneGame(UciEngine& we, UciEngine& be, TimeControl tc, Game
         s.result=GameResult::ONGOING; s.reason=ResultReason::NONE;
         s.scoreCpWhitePOV=0; s.scoreIsMate=false;
         s.lastFrom=-1; s.lastTo=-1;
+        s.stats.clear();
     });
     while (g.result == GameResult::ONGOING && !abort_){
         bool whiteMoves = g.pos.whiteToMove;
@@ -90,6 +91,7 @@ void MatchRunner::playOneGame(UciEngine& we, UciEngine& be, TimeControl tc, Game
             break;
         }
         EngineInfo inf = e.lastInfo();
+        MoveStat ms = MoveStat::from(inf, (int)g.moves.size(), whiteMoves, spent);
         g.tryMove(m);
         uciMoves.push_back(bm);
         post([&](Snapshot& s){
@@ -100,6 +102,7 @@ void MatchRunner::playOneGame(UciEngine& we, UciEngine& be, TimeControl tc, Game
             s.scoreCpWhitePOV = whiteMoves ? cp : -cp;   // engine reports for mover
             s.scoreIsMate = inf.isMate; s.mateIn = inf.mateIn;
             s.result = g.result; s.reason = g.reason;
+            s.stats.push_back(ms);
         });
         if (g.moves.size() > 500 && g.result == GameResult::ONGOING){   // max-length adjudication
             g.result=GameResult::DRAW; g.reason=ResultReason::ADJUDICATION;
