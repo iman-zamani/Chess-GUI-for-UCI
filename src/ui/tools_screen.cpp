@@ -4,6 +4,7 @@
 #include "testing.hpp"
 #include "ui/file_dialog.hpp"
 #include <misc/cpp/imgui_stdlib.h>
+#include <cmath>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
@@ -26,6 +27,10 @@ void ToolsScreen::draw(){
         selectBisectTab_ = false;
         if (ImGui::BeginTabItem("UCI compliance")){ drawUciCheckTab(); ImGui::EndTabItem(); }
         if (ImGui::BeginTabItem("Accuracy")){ drawAccuracyTab(); ImGui::EndTabItem(); }
+        if (ImGui::BeginTabItem("Elo estimate", nullptr, selectEloTab_ ? ImGuiTabItemFlags_SetSelected : 0)){
+            drawEloTab(); ImGui::EndTabItem();
+        }
+        selectEloTab_ = false;
         ImGui::EndTabBar();
     }
     ImGui::EndChild();
@@ -33,6 +38,7 @@ void ToolsScreen::draw(){
     ImGui::BeginChild("tools-out", ImVec2(0, 0), ImGuiChildFlags_Borders);
     if (view_ == View::Bisect) drawBisectResult();
     else if (view_ == View::UciCheck) drawUciCheckResult();
+    else if (view_ == View::Elo) drawEloResult();
     ui::jobPanel(job_, [&](){ return saveDialog("test"); }, [&](const std::string& m){ app_.toast(m); });
     ImGui::EndChild();
 }
@@ -414,4 +420,153 @@ void ToolsScreen::runAccuracy(const EngineConfig& tee, const EngineConfig& ree){
         j.log(b);
         te.quit(); re.quit();
     });
+}
+
+// =============================================================== Elo estimate
+bool ToolsScreen::loadEloModel(){
+    if (modelTried_) return modelError_.empty();
+    modelTried_ = true;
+    modelPath_ = findResource("elo/model.json");
+    if (modelPath_.empty()){ modelError_ = "The Elo model (Resources/elo/model.json) is not installed."; return false; }
+    if (!model_.load(modelPath_, &modelError_)) return false;
+    modelError_.clear();
+    return true;
+}
+
+void ToolsScreen::drawEloTab(){
+    Settings& st = app_.settings();
+    ImGui::TextWrapped("Estimates an engine's CCRL-Blitz-equivalent Elo from how it plays test positions. "
+                       "It is an estimate from positions, not a rating from games: time management and "
+                       "other game skills are not measured.");
+    if (!loadEloModel()){ ImGui::TextColored(ui::kBad, "%s", modelError_.c_str()); return; }
+    ImGui::TextDisabled("%d positions, model v%d.", (int)model_.items.size(), model_.version);
+    if (!model_.validationText.empty()) ImGui::TextWrapped("Accuracy: %s.", model_.validationText.c_str());
+    ImGui::SetNextItemWidth(-1);
+    if (ui::engineCombo("##eloEngine", app_.registry(), st.eloEngine)) app_.saveSettings();
+    int mode = eloFull_ ? 1 : 0;
+    ImGui::RadioButton("Quick (adaptive: stops once the estimate is precise enough)", &mode, 0);
+    ImGui::RadioButton("Full (every position)", &mode, 1);
+    eloFull_ = mode == 1;
+    double minutes = (eloFull_ ? model_.items.size() : (size_t)model_.maxItems) * (model_.baseMovetimeMs + 60) / 60000.0;
+    ImGui::PushStyleColor(ImGuiCol_Text, ui::kDim);
+    ImGui::TextWrapped("At most %.1f minutes at the calibration machine's speed; the move time per position is "
+                       "scaled to this computer's speed.", minutes);
+    ImGui::PopStyleColor();
+    const EngineConfig* eng = ui::findEngine(app_.registry(), st.eloEngine);
+    ImGui::BeginDisabled(busy() || !eng);
+    if (ImGui::Button("Estimate Elo") && eng) runElo(*eng, eloFull_);
+    ImGui::EndDisabled();
+    ImGui::TextDisabled("The engine runs with Threads=1 and Hash=%d MB.", model_.hashMb);
+}
+
+void ToolsScreen::runElo(const EngineConfig& cfg, bool full){
+    view_ = View::Elo;
+    { std::lock_guard<std::mutex> lk(resMx_); elo_ = EloResult{}; eloProgress_ = EloProgress{}; eloRunning_ = true; }
+    EloModel model = model_;
+    job_.start("Elo estimate: " + cfg.name + (full ? " (full)" : " (quick)"), [this, cfg, full, model](ui::Job& j){
+        EloOptions o;
+        o.adaptive = !full;
+        o.abort = &j.abortFlag();
+        j.log("Measuring this computer's speed...");
+        o.progress = [&](const EloProgress& p){
+            { std::lock_guard<std::mutex> lk(resMx_); eloProgress_ = p; }
+            if (p.answered % 10 == 0)
+                j.log(std::to_string(p.answered) + " positions: " + std::to_string((int)std::lround(p.elo))
+                      + " +/- " + std::to_string((int)std::lround(1.96 * p.se)) + " (measurement only)");
+        };
+        EloResult r = runEloEstimate(cfg, model, o);
+        if (r.ok) j.log(">>> Estimated Elo " + std::to_string((int)std::lround(r.elo)) + " +/- "
+                        + std::to_string((int)std::lround(r.ci95)) + " (95%), " + std::to_string(r.answered)
+                        + " positions, " + std::to_string(r.movetimeMs) + " ms each");
+        else j.log("FAIL: " + r.error);
+        std::lock_guard<std::mutex> lk(resMx_);
+        elo_ = r;
+        eloRunning_ = false;
+    });
+}
+
+void ToolsScreen::drawEloResult(){
+    EloResult r; EloProgress p; bool running;
+    { std::lock_guard<std::mutex> lk(resMx_); r = elo_; p = eloProgress_; running = eloRunning_; }
+    float em = ImGui::GetFontSize();
+    double shownElo = r.ok ? r.elo : p.elo, shownCi = r.ok ? r.ci95 : 1.96 * p.se;
+    ImGui::PushFont(ui::fonts().large);
+    if (r.ok) ImGui::Text("Estimated Elo: %ld +/- %ld (95%%), CCRL-Blitz-equivalent", std::lround(r.elo), std::lround(r.ci95));
+    else if (running && p.answered) ImGui::Text("%d / %d positions: %ld +/- %ld", p.answered, p.planned,
+                                                std::lround(p.elo), std::lround(1.96 * p.se));
+    else if (running) ImGui::Text("Starting...");
+    else ImGui::TextColored(ui::kBad, "%s", r.error.empty() ? "No result" : r.error.c_str());
+    ImGui::PopFont();
+    if (running && p.planned) ImGui::ProgressBar((float)p.answered / p.planned, ImVec2(-1, em * 0.4f), "");
+    if (r.ok){
+        ImGui::TextDisabled("%s: %d of %d positions solved, %d ms per position (hardware factor %.2f). "
+                            "The interval includes the model's measured error.", r.engineName.c_str(), r.solved,
+                            r.answered, r.movetimeMs, r.factor);
+        ImGui::TextColored(ui::kWarn, "An estimate from positions, not from games: time management is not measured.");
+    }
+    // where the engine sits among the calibration engines
+    if ((r.ok || p.answered) && !model_.calibration.empty()){
+        ImGui::SeparatorText("Among the calibration engines");
+        double lo = 1e9, hi = -1e9;
+        for (auto& c : model_.calibration){ lo = std::min(lo, c.second); hi = std::max(hi, c.second); }
+        lo = std::min(lo, shownElo - shownCi) - 50; hi = std::max(hi, shownElo + shownCi) + 50;
+        ImVec2 p0 = ImGui::GetCursorScreenPos();
+        float w = ImGui::GetContentRegionAvail().x, h = em * 4;
+        ImGui::InvisibleButton("elo-chart", ImVec2(w, h));
+        ImDrawList* dl = ImGui::GetWindowDrawList();
+        auto x = [&](double e){ return p0.x + (float)((e - lo) / (hi - lo)) * w; };
+        float axis = p0.y + h * 0.6f;
+        dl->AddLine(ImVec2(p0.x, axis), ImVec2(p0.x + w, axis), ImGui::GetColorU32(ui::kDim));
+        for (int t = (int)std::ceil(lo / 500) * 500; t <= hi; t += 500){
+            dl->AddLine(ImVec2(x(t), axis - 3), ImVec2(x(t), axis + 3), ImGui::GetColorU32(ui::kDim));
+            char b[16]; std::snprintf(b, sizeof b, "%d", t);
+            dl->AddText(ImVec2(x(t) - em, axis + 4), ImGui::GetColorU32(ui::kDim), b);
+        }
+        std::string hover;
+        ImVec2 mouse = ImGui::GetIO().MousePos;
+        for (auto& c : model_.calibration){
+            float cx = x(c.second);
+            dl->AddCircleFilled(ImVec2(cx, axis - em * 0.6f), em * 0.22f, ImGui::GetColorU32(ui::kDim));
+            if (ImGui::IsItemHovered() && std::fabs(mouse.x - cx) < em * 0.3f)
+                hover = c.first + ": " + std::to_string((int)std::lround(c.second));
+        }
+        ImU32 col = ImGui::GetColorU32(ui::kAccent);
+        dl->AddRectFilled(ImVec2(x(shownElo - shownCi), axis - em * 1.5f), ImVec2(x(shownElo + shownCi), axis - em * 1.1f),
+                          (col & 0x00FFFFFF) | 0x60000000);
+        dl->AddLine(ImVec2(x(shownElo), axis - em * 1.8f), ImVec2(x(shownElo), axis), col, 3);
+        if (!hover.empty()) ImGui::SetTooltip("%s", hover.c_str());
+        ImGui::TextDisabled("Dots: the %d calibration engines (hover for names). Bar: this engine with its 95%% interval.",
+                            (int)model_.calibration.size());
+    }
+    if (r.ok){
+        ImGui::SeparatorText("By category");
+        if (ImGui::BeginTable("elo-groups", 3, ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit)){
+            ImGui::TableSetupColumn("Category", ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableSetupColumn("Elo"); ImGui::TableSetupColumn("Positions");
+            ImGui::TableHeadersRow();
+            for (auto& [g, v] : r.groups){
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn(); ImGui::TextUnformatted(g.c_str());
+                ImGui::TableNextColumn(); ImGui::Text("%ld", std::lround(v.first));
+                ImGui::TableNextColumn(); ImGui::Text("%d", v.second);
+            }
+            ImGui::EndTable();
+        }
+        ImGui::TextDisabled("Category values come from fewer positions and are less certain than the total.");
+        auto save = [&](const char* ext, const std::string& text){
+            std::string path = filedialog::saveFile("Save the Elo estimate",
+                app_.settings().lastSaveDir + "/elo_" + ui::timeStamp() + ext, {ext[1] == 'j' ? "JSON" : "Markdown", std::string("*") + ext});
+            if (path.empty()){
+                if (filedialog::available()) return;
+                std::error_code ec; fs::create_directories("games", ec);
+                path = "games/elo_" + ui::timeStamp() + ext;
+            }
+            std::ofstream f(fs::u8path(path)); f << text;
+            app_.toast(f ? "Saved " + path : "Could not write " + path);
+        };
+        if (ImGui::Button("Export JSON...")) save(".json", eloResultJson(r, model_));
+        ImGui::SameLine();
+        if (ImGui::Button("Export Markdown...")) save(".md", eloResultMarkdown(r, model_));
+    }
+    ImGui::Separator();
 }

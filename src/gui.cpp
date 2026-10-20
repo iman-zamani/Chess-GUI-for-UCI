@@ -289,6 +289,7 @@ void App::drawMenuBar(){
     }
     if (ImGui::BeginMenu("Tools")){
         if (ImGui::MenuItem("Engine testing tools")) go(Screen::TOOLS);
+        if (ImGui::MenuItem("Estimate engine Elo")){ go(Screen::TOOLS); tools_.openEloTab(); }
         ImGui::MenuItem("UCI console", "Ctrl+U", &showConsole_);
         ImGui::EndMenu();
     }

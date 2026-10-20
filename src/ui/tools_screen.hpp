@@ -1,5 +1,6 @@
 /* Chess-GUI-for-UCI — engine testing tools screen. GPL-2.0 */
 #pragma once
+#include "elo_estimator.hpp"
 #include "perft_bisect.hpp"
 #include "uci_check.hpp"
 #include "ui/widgets.hpp"
@@ -16,13 +17,18 @@ public:
     explicit ToolsScreen(App& app) : app_(app) {}
     void draw();
     bool busy() const { return job_.running(); }
+    void openEloTab(){ selectEloTab_ = true; }
     ui::Job& job(){ return job_; }
 private:
-    enum class View { Log, Bisect, UciCheck };
+    enum class View { Log, Bisect, UciCheck, Elo };
     void drawPerftTab();
     void drawBisectTab();
     void drawUciCheckTab();
     void drawAccuracyTab();
+    void drawEloTab();
+    void drawEloResult();
+    void runElo(const EngineConfig& cfg, bool full);
+    bool loadEloModel();
     void drawBisectResult();
     void drawUciCheckResult();
     void runSelfTest();
@@ -49,4 +55,13 @@ private:
     bool quickCheck_ = false;
     std::string checkEngine_;
     std::vector<CheckResult> checks_;
+    // Elo estimate
+    bool selectEloTab_ = false;
+    bool eloFull_ = false;
+    bool modelTried_ = false;
+    std::string modelPath_, modelError_;
+    EloModel model_;
+    EloResult elo_;
+    EloProgress eloProgress_;
+    bool eloRunning_ = false;
 };
