@@ -3,7 +3,7 @@
 
 A complete SFML chess GUI for playing, running engine matches and tournaments, analysing positions, and — most importantly — **testing your own UCI chess engine** while you develop it.
 
-License: GPL-2.0 · C++17 · SFML 2.5+ · Windows / macOS / Linux
+License: GPL-2.0 · C++17 · SFML 3 · Windows / macOS / Linux
 
 ## Features
 
@@ -67,10 +67,14 @@ cmake --build build -j
 ./build/chess-gui
 ```
 
-- **Linux:** `sudo apt install libsfml-dev cmake g++`
-- **macOS:** `brew install sfml@2 cmake` (CMakeLists already points at the sfml@2 prefix)
-- **Windows:** install SFML 2.6 (e.g. via vcpkg: `vcpkg install sfml`) and build with
-  Visual Studio or MinGW via CMake.
+CMake (3.24+) downloads and builds a pinned SFML 3 statically, so no SFML install is needed.
+To use an installed SFML 3 instead, configure with `-DCHESSGUI_USE_SYSTEM_SFML=ON`.
+
+- **Linux:** `sudo apt install cmake g++ libx11-dev libxrandr-dev libxcursor-dev libxi-dev libudev-dev libgl1-mesa-dev`
+- **macOS:** Xcode command line tools and `brew install cmake`
+- **Windows:** Visual Studio 2022 (C++ workload) and CMake
+
+Run the tests with `ctest --test-dir build --output-on-failure`.
 
 Put UCI engine executables in `Resources/engines/` (e.g. download Stockfish and drop it
 in) and they appear automatically in every engine-selection screen. You can also type an

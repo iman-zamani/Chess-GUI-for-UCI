@@ -1,6 +1,7 @@
 /* Chess-GUI-for-UCI — SFML GUI. GPL-2.0 */
 #pragma once
-#include "sfml_compat.hpp"
+#include <SFML/Graphics.hpp>
+#include <cstdint>
 #include <optional>
 #include <map>
 #include "chess.hpp"
@@ -8,6 +9,17 @@
 #include "tournament.hpp"
 #include "testing.hpp"
 #include "ui_script.hpp"
+
+// Input event as the app sees it (from SFML or from a --script step).
+struct UiEvent {
+    enum Kind { None, Closed, Resized, KeyPressed, TextEntered,
+                MousePressed, MouseReleased, MouseMoved } kind = None;
+    unsigned width = 0, height = 0;                       // Resized
+    sf::Keyboard::Key key = sf::Keyboard::Key::Unknown;   // KeyPressed
+    bool ctrl = false, sys = false;
+    char32_t unicode = 0;                                 // TextEntered
+    sf::Mouse::Button button = sf::Mouse::Button::Left;   // Mouse*
+};
 
 enum class Screen { MENU, GAME, PICK_ENGINE, MATCH_SETUP, MATCH_VIEW,
                     TESTS, TEST_RUN, EDITOR, ENGINE_OPTIONS,
