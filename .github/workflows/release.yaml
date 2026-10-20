@@ -1,12 +1,28 @@
 name: Build and Release Multi-Platform
 
+# A `v*` tag builds every package and publishes a GitHub release.
+# Any other trigger is a dry run: the packages are built and uploaded as
+# workflow artifacts, and no release is created. Pushes that touch the
+# packaging inputs run the dry run automatically.
 on:
   push:
     tags:
       - "v*"
+    branches:
+      - "**"
+    paths:
+      - ".github/workflows/release.yaml"
+      - "CMakeLists.txt"
+      - "BundleInfo.plist.in"
+      - "Info.plist"
+  workflow_dispatch:
 
 permissions:
   contents: write
+
+env:
+  # Package version: the tag name for releases, "dev-<sha>" for dry runs.
+  VERSION: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('dev-{0}', github.sha) }}
 
 jobs:
   # ==========================================================
@@ -15,71 +31,30 @@ jobs:
   build-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - name: Download and Extract SFML 2.6.2
-        shell: pwsh
+      - name: Configure & Build
         run: |
-          $Url = "https://github.com/SFML/SFML/releases/download/2.6.2/SFML-2.6.2-windows-vc17-64-bit.zip"
-          Invoke-WebRequest -Uri $Url -OutFile "sfml.zip"
-          Expand-Archive -Path "sfml.zip" -DestinationPath "${{ github.workspace }}\sfml"
-
-      - name: Configure CMake
-        shell: pwsh
-        run: |
-          # 1. Grab the root folder of the extracted SFML archive
-          $SfmlRoot = Get-ChildItem -Path "${{ github.workspace }}\sfml" -Directory | Select-Object -First 1
-
-          # 2. Convert backslashes to forward slashes to prevent CMake escape character mangling
-          $CleanPath = $SfmlRoot.FullName.Replace('\', '/')
-          Write-Host "Using SFML path: $CleanPath"
-
-          # 3. Use CMAKE_PREFIX_PATH (much safer than SFML_DIR) so CMake finds SFMLConfig.cmake naturally.
-          # 4. Inject the lib directory directly into the linker so MSVC can find 'sfml-graphics.lib'.
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$CleanPath" -DCMAKE_EXE_LINKER_FLAGS="/LIBPATH:`"$CleanPath/lib`""
-
-      - name: Build
-        shell: pwsh
-        run: cmake --build build --config Release
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+          cmake --build build --config Release --parallel
 
       - name: Prepare Package
         shell: bash
         run: |
-          VERSION="${GITHUB_REF#refs/tags/}"
-          DIST_NAME="chess-gui-${VERSION}-windows-x64"
+          DIST_NAME="chess-gui-${VERSION:0:16}-windows-x64"
           mkdir "$DIST_NAME"
-
-          # 1. Copy Executable
-          if [ -f "build/Release/chess-gui.exe" ]; then
-            cp "build/Release/chess-gui.exe" "$DIST_NAME/"
-          else
-            cp "build/chess-gui.exe" "$DIST_NAME/"
-          fi
-
-          # 2. Copy SFML DLLs (including openal32.dll)
-          # Use 'find' to recursively grab all DLLs regardless of what the exact folder is named
-          find sfml -name "*.dll" -exec cp {} "$DIST_NAME/" \;
-
-          # 3. Copy Resources (Including Icon)
-          mkdir -p "$DIST_NAME/Resources"
-
-          if [ -d "build/Resources" ]; then
-             cp -r "build/Resources/"* "$DIST_NAME/Resources/"
-          elif [ -d "Resources" ]; then
-             cp -r "Resources/"* "$DIST_NAME/Resources/"
-          fi
-
-          if [ -f "build/Resources/icon.png" ]; then
-             cp "build/Resources/icon.png" "$DIST_NAME/Resources/icon.png"
-          fi
-
+          # SFML and the C++ runtime are linked statically: no DLLs to ship.
+          cp build/Release/chess-gui.exe "$DIST_NAME/"
+          cp -r Resources "$DIST_NAME/Resources"
+          cp LICENSE "$DIST_NAME/"
           7z a "${DIST_NAME}.zip" "$DIST_NAME"
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: windows-x64
           path: "*.zip"
+
   # ==========================================================
   # 2. MACOS BUILD (Intel & Apple Silicon)
   # ==========================================================
@@ -94,66 +69,29 @@ jobs:
           - target_arch: arm64
             runs_on: macos-14
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Tools
-        run: brew install sfml@2 create-dmg
+      - uses: actions/checkout@v6
 
       - name: Configure & Build
         run: |
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-          cmake --build build --config Release
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+          cmake --build build --config Release --parallel
 
       - name: Create DMG
         run: |
-          VERSION="${GITHUB_REF#refs/tags/}"
-          VOL_NAME="ChessGUI"
-          DMG_NAME="chess-gui-${VERSION}-macos-${{ matrix.target_arch }}.dmg"
+          DMG_NAME="chess-gui-${VERSION:0:16}-macos-${{ matrix.target_arch }}.dmg"
           STAGING="dist"
-
           mkdir -p "$STAGING"
-
-          # 1. Copy Binary
-          BIN="build/chess-gui"
-          if [ ! -f "$BIN" ] && [ -f "build/Release/chess-gui" ]; then BIN="build/Release/chess-gui"; fi
-          cp "$BIN" "$STAGING/chess-gui"
-          chmod +x "$STAGING/chess-gui"
-
-          # 2. Copy Resources
-          mkdir -p "$STAGING/Resources"
-          if [ -d "build/Resources" ]; then
-             cp -r "build/Resources/"* "$STAGING/Resources/"
-          elif [ -d "Resources" ]; then
-             cp -r "Resources/"* "$STAGING/Resources/"
-          fi
-
-          # 3. Handle Icon for DMG
-          ICON_PATH="$STAGING/Resources/icon.png"
-
-          # Force copy from build folder if missing in staging
-          if [ ! -f "$ICON_PATH" ] && [ -f "build/Resources/icon.png" ]; then
-             cp "build/Resources/icon.png" "$ICON_PATH"
-          fi
-
-          # Note: create-dmg expects an .icns or can use a raw file,
-          # but usually requires an App Bundle (.app) for full icon support.
-          # Since this is a raw binary, we just ensure the file is inside the folder.
-
-          create-dmg \
-            --volname "$VOL_NAME" \
-            --window-pos 200 120 \
-            --window-size 800 400 \
-            --hide-extension "chess-gui" \
-            "$DMG_NAME" \
-            "$STAGING"
-
-          zip "${DMG_NAME}.zip" "$DMG_NAME"
+          # The .app bundle carries Info.plist (Retina) and its own Resources.
+          cp -R "build/Chess GUI for UCI.app" "$STAGING/"
+          cp LICENSE "$STAGING/"
+          ln -s /Applications "$STAGING/Applications"
+          hdiutil create -volname "ChessGUI" -srcfolder "$STAGING" -ov -format UDZO "$DMG_NAME"
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: macos-${{ matrix.target_arch }}
-          path: "*.dmg.zip"
+          path: "*.dmg"
 
   # ==========================================================
   # 3. LINUX BUILD (AppImage, Deb, Rpm)
@@ -161,41 +99,34 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install System Deps
         run: |
           sudo apt-get update
-          # Added 'imagemagick' to fix 'convert: command not found'
-          sudo apt-get install -y build-essential cmake libsfml-dev ruby ruby-dev rpm libfuse2 imagemagick
+          sudo apt-get install -y build-essential cmake libx11-dev libxrandr-dev libxcursor-dev \
+            libxi-dev libudev-dev libgl1-mesa-dev libfreetype-dev ruby ruby-dev rpm libfuse2
           sudo gem install --no-document fpm
 
-          wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
           chmod +x linuxdeploy-x86_64.AppImage
           sudo mv linuxdeploy-x86_64.AppImage /usr/local/bin/linuxdeploy
 
       - name: Configure & Build
         run: |
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
-          cmake --build build --config Release
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=/usr
+          cmake --build build --config Release --parallel
 
       - name: Prepare Staging
         run: |
           mkdir -p AppDir/usr/bin
-
-          BIN="build/chess-gui"
-          if [ ! -f "$BIN" ] && [ -f "build/Release/chess-gui" ]; then BIN="build/Release/chess-gui"; fi
-          cp "$BIN" AppDir/usr/bin/chess-gui
-
-          # Copy resources to be next to binary
-          if [ -d "build/Resources" ]; then cp -r "build/Resources" AppDir/usr/bin/;
-          elif [ -d "Resources" ]; then cp -r "Resources" AppDir/usr/bin/; fi
+          cp build/chess-gui AppDir/usr/bin/chess-gui
+          # Resources live next to the binary (the app chdirs to its own directory)
+          cp -r Resources AppDir/usr/bin/
 
       - name: Create AppImage
         run: |
-          VERSION="${GITHUB_REF#refs/tags/}"
-
-          # 1. Create Desktop File
+          V="${VERSION:0:16}"
           cat > chess-gui.desktop <<EOF
           [Desktop Entry]
           Type=Application
@@ -205,43 +136,28 @@ jobs:
           Categories=Game;
           EOF
 
-          # 2. Prepare Icon
           mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
           ICON_DEST="AppDir/usr/share/icons/hicolor/256x256/apps/chess-gui.png"
-
-          # Look for the icon in build/Resources first
-          if [ -f "build/Resources/icon.png" ]; then
-            echo "Using icon from build/Resources/icon.png"
-            cp "build/Resources/icon.png" "$ICON_DEST"
-          elif [ -f "Resources/icon.png" ]; then
-            echo "Using icon from Resources/icon.png"
-            cp "Resources/icon.png" "$ICON_DEST"
-          else
-            echo "Icon not found, generating fallback red square"
-            convert -size 256x256 xc:red "$ICON_DEST"
-          fi
-
-          # Copy icon to .DirIcon so the AppImage file itself looks right in file explorer
+          cp Resources/icon.png "$ICON_DEST"
           cp "$ICON_DEST" "AppDir/.DirIcon"
 
-          # 3. Build AppImage
           linuxdeploy --appdir AppDir --desktop-file chess-gui.desktop --output appimage
-          mv Chess_GUI-*.AppImage "chess-gui-${VERSION}-linux-x86_64.AppImage"
+          mv Chess_GUI-*.AppImage "chess-gui-${V}-linux-x86_64.AppImage"
 
       - name: Create DEB & RPM
         run: |
-          VERSION="${GITHUB_REF#refs/tags/}"
-          CLEAN_VERSION="${VERSION#v}"
+          V="${VERSION:0:16}"
+          CLEAN_VERSION="${V#v}"
+          # deb/rpm versions must start with a digit
+          case "$CLEAN_VERSION" in [0-9]*) ;; *) CLEAN_VERSION="0.0.0~${CLEAN_VERSION}" ;; esac
 
           PKG_ROOT="pkg-root"
           mkdir -p "$PKG_ROOT/opt/chess-gui"
           cp -r AppDir/usr/bin/* "$PKG_ROOT/opt/chess-gui/"
 
-          # Copy Icon for system integration
           mkdir -p "$PKG_ROOT/usr/share/icons/hicolor/256x256/apps"
           cp "AppDir/usr/share/icons/hicolor/256x256/apps/chess-gui.png" "$PKG_ROOT/usr/share/icons/hicolor/256x256/apps/chess-gui.png"
 
-          # Copy Desktop file
           mkdir -p "$PKG_ROOT/usr/share/applications"
           cp chess-gui.desktop "$PKG_ROOT/usr/share/applications/"
 
@@ -263,11 +179,11 @@ jobs:
             --after-install post-install.sh --after-remove post-uninstall.sh \
             --description "Chess GUI" -C "$PKG_ROOT" .
 
-          mv chess-gui_*.deb "chess-gui-${VERSION}-linux-amd64.deb"
-          mv chess-gui-*.x86_64.rpm "chess-gui-${VERSION}-linux-x86_64.rpm"
+          mv chess-gui_*.deb "chess-gui-${V}-linux-amd64.deb"
+          mv chess-gui-*.rpm "chess-gui-${V}-linux-x86_64.rpm"
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: linux-packages
           path: |
@@ -276,14 +192,15 @@ jobs:
             *.rpm
 
   # ==========================================================
-  # 4. RELEASE
+  # 4. RELEASE (tags only)
   # ==========================================================
   release:
+    if: startsWith(github.ref, 'refs/tags/v')
     needs: [build-windows, build-macos, build-linux]
     runs-on: ubuntu-latest
     steps:
       - name: Download All Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: artifacts
           pattern: "*"

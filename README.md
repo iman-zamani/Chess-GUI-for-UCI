@@ -3,7 +3,7 @@
 
 A complete SFML chess GUI for playing, running engine matches and tournaments, analysing positions, and — most importantly — **testing your own UCI chess engine** while you develop it.
 
-License: GPL-2.0 · C++17 · SFML 2.5+ · Windows / macOS / Linux
+License: GPL-2.0 · C++17 · SFML 3 · Windows / macOS / Linux
 
 ## Features
 
@@ -67,10 +67,14 @@ cmake --build build -j
 ./build/chess-gui
 ```
 
-- **Linux:** `sudo apt install libsfml-dev cmake g++`
-- **macOS:** `brew install sfml@2 cmake` (CMakeLists already points at the sfml@2 prefix)
-- **Windows:** install SFML 2.6 (e.g. via vcpkg: `vcpkg install sfml`) and build with
-  Visual Studio or MinGW via CMake.
+CMake (3.24+) downloads and builds a pinned SFML 3 statically, so no SFML install is needed.
+To use an installed SFML 3 instead, configure with `-DCHESSGUI_USE_SYSTEM_SFML=ON`.
+
+- **Linux:** `sudo apt install cmake g++ libx11-dev libxrandr-dev libxcursor-dev libxi-dev libudev-dev libgl1-mesa-dev libfreetype-dev`
+- **macOS:** Xcode command line tools and `brew install cmake`
+- **Windows:** Visual Studio 2022 (C++ workload) and CMake
+
+Run the tests with `ctest --test-dir build --output-on-failure`.
 
 Put UCI engine executables in `Resources/engines/` (e.g. download Stockfish and drop it
 in) and they appear automatically in every engine-selection screen. You can also type an
@@ -79,7 +83,7 @@ absolute path in the picker.
 ## Resources folder
 - `pieceTexture.png` — 6×2 sprite sheet of 150 px sprites (K Q B N R P; white row, black row).
   If missing, the GUI falls back to letter pieces so it still runs.
-- `arial.ttf` — UI font (falls back to system fonts if absent)
+- `Cantarell-Regular.ttf` — UI font (Cantarell, SIL OFL 1.1, see `Cantarell-OFL.txt`; falls back to system fonts if absent)
 - `engines/` — your UCI engines
 - `perftsuite.epd` — the 100-position move-generator test suite
 
@@ -92,9 +96,6 @@ absolute path in the picker.
 | `src/testing.{hpp,cpp}` | Perft suites, engine perft tester, accuracy tester |
 | `src/gui.{hpp,cpp}` | All SFML screens, board rendering, input |
 | `src/main.cpp` | Entry point |
-
-The old `board.*` / `piece.*` files from earlier versions are superseded by this
-architecture and should be removed from the build.
 
 ## Verification
 - The internal generator passes the six canonical perft positions (startpos d5 = 4,865,609;

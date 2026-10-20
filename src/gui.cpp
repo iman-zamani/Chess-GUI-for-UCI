@@ -43,6 +43,27 @@ static long long nowMsSteady(){
         std::chrono::steady_clock::now().time_since_epoch()).count();
 }
 
+// Normalize SFML events into the small UiEvent the app (and --script) uses.
+static bool pollUiEvent(sf::RenderWindow& w, UiEvent& out){
+    const std::optional ev = w.pollEvent();
+    if (!ev) return false;
+    out = UiEvent{};
+    if (ev->is<sf::Event::Closed>()) out.kind = UiEvent::Closed;
+    else if (const auto* r = ev->getIf<sf::Event::Resized>()){
+        out.kind = UiEvent::Resized; out.width = r->size.x; out.height = r->size.y;
+    } else if (const auto* k = ev->getIf<sf::Event::KeyPressed>()){
+        out.kind = UiEvent::KeyPressed; out.key = k->code;
+        out.ctrl = k->control; out.sys = k->system;
+    } else if (const auto* t = ev->getIf<sf::Event::TextEntered>()){
+        out.kind = UiEvent::TextEntered; out.unicode = t->unicode;
+    } else if (const auto* m = ev->getIf<sf::Event::MouseButtonPressed>()){
+        out.kind = UiEvent::MousePressed; out.button = m->button;
+    } else if (const auto* m = ev->getIf<sf::Event::MouseButtonReleased>()){
+        out.kind = UiEvent::MouseReleased; out.button = m->button;
+    } else if (ev->is<sf::Event::MouseMoved>()) out.kind = UiEvent::MouseMoved;
+    return true;                       // drain the queue even for unmapped events
+}
+
 // =============================================================== AnalysisController
 bool AnalysisController::start(const std::string& path,
         const std::vector<std::pair<std::string,std::string>>& opts){
@@ -96,7 +117,7 @@ bool App::init(){
     // renders); we do our own scaling below.
     SetProcessDPIAware();
 #endif
-    sf::Vector2u desk = desktopSize();
+    sf::Vector2u desk = sf::VideoMode::getDesktopMode().size;
     // UI scale: fit a 1280x800 logical canvas to the screen. 1080p -> 1x,
     // 4K -> 2x, 5K+ -> 3x. Override with the CHESSGUI_SCALE env var (e.g. 1.5).
     float fit = std::min(desk.x/1280.f, desk.y/800.f);
@@ -107,7 +128,7 @@ bool App::init(){
     }
     WW = std::min(1280.f, desk.x / UIS);
     WH = std::min(800.f,  desk.y / UIS);
-    window.create(VM((unsigned)(WW*UIS),(unsigned)(WH*UIS)),
+    window.create(sf::VideoMode({(unsigned)(WW*UIS),(unsigned)(WH*UIS)}),
                   "Chess GUI for UCI", sf::Style::Default);
     // --- Retina self-check ---------------------------------------------------
     // On macOS, VideoMode sizes are in points. If Retina backing was granted,
@@ -121,17 +142,17 @@ bool App::init(){
             fprintf(stderr, "[hidpi] NO Retina backing! Check SFML version and Info.plist.\n");
     #endif
     }
-    window.setView(sf::View(FR(0,0,WW,WH)));   // draw in logical units
+    window.setView(sf::View(sf::FloatRect({0,0},{WW,WH})));   // draw in logical units
     window.setFramerateLimit(60);
     const char* fontPaths[] = {
-        "Resources/arial.ttf",
+        "Resources/Cantarell-Regular.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
         "/System/Library/Fonts/Supplemental/Arial.ttf",
         "C:\\Windows\\Fonts\\arial.ttf"
     };
     bool fontOk=false;
-    for (auto p : fontPaths) if (loadFont(font, p)){ fontOk=true; break; }
-    if (!fontOk){ fprintf(stderr,"No font found (put arial.ttf in Resources/)\n"); return false; }
+    for (auto p : fontPaths) if (font.openFromFile(p)){ fontOk=true; break; }
+    if (!fontOk){ fprintf(stderr,"No font found (put Cantarell-Regular.ttf in Resources/)\n"); return false; }
     // Prefer the high-resolution sheet: bitmaps only stay sharp when they are
     // DOWNscaled. 150px pieces upscaled to ~190px on HiDPI screens is exactly
     // the "blurry pieces" effect.
@@ -168,6 +189,8 @@ void App::run(){
         bool hadEvent = false;
         UiEvent e;
         while (pollUiEvent(window, e)){ handleEvent(e); hadEvent = true; }
+        if (scriptPos < script.size()){ stepScript(); hadEvent = true; }
+        if (!window.isOpen()) break;
         update();
         int act = activityLevel();
         if (act==2 || hadEvent || forceRedraw){
@@ -192,13 +215,13 @@ void App::text(const std::string& s, float x, float y, unsigned size, sf::Color 
     // k >= UIS means the texture never gets upscaled on screen -> crisp text
     // at every UI scale; on 1x displays it supersamples.
     int k = std::max(2, (int)std::lround(UIS));
-    sf::Text t = makeText(font, s, size*(unsigned)k);
+    sf::Text t(font, sf::String::fromUtf8(s.begin(), s.end()), size*(unsigned)k);
     t.setScale({1.f/k, 1.f/k});
     t.setFillColor(c);
     if (center){
         auto b = t.getLocalBounds();
-        t.setOrigin({std::round(rectL(b) + rectW(b)/2.f),
-                     std::round(rectT(b) + rectH(b)/2.f)});
+        t.setOrigin({std::round(b.position.x + b.size.x/2.f),
+                     std::round(b.position.y + b.size.y/2.f)});
     }
     t.setPosition({snapPx(x), snapPx(y)});
     window.draw(t);
@@ -206,17 +229,17 @@ void App::text(const std::string& s, float x, float y, unsigned size, sf::Color 
 static bool hit(const sf::FloatRect& r, sf::Vector2f p){ return r.contains(p); }
 
 void App::drawButtons(){
-    sf::Vector2f m = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+    sf::Vector2f m = mouseLogical();
     for (auto& b : buttons){
-        sf::RectangleShape r(sf::Vector2f(rectW(b.rect), rectH(b.rect)));
-        r.setPosition({std::round(rectL(b.rect)), std::round(rectT(b.rect))});
+        sf::RectangleShape r(sf::Vector2f(b.rect.size.x, b.rect.size.y));
+        r.setPosition({std::round(b.rect.position.x), std::round(b.rect.position.y)});
         sf::Color c = b.toggled? COL_BTN_TOG : (hit(b.rect,m)&&b.enabled ? COL_BTN_HOT : COL_BTN);
         if (!b.enabled) c = sf::Color(45,45,50);
         r.setFillColor(c);
         r.setOutlineThickness(1); r.setOutlineColor(sf::Color(90,90,110));
         window.draw(r);
-        text(b.label, rectL(b.rect)+rectW(b.rect)/2, rectT(b.rect)+rectH(b.rect)/2,
-             (unsigned)std::min(17.f, rectH(b.rect)*0.45f),
+        text(b.label, b.rect.position.x+b.rect.size.x/2, b.rect.position.y+b.rect.size.y/2,
+             (unsigned)std::min(17.f, b.rect.size.y*0.45f),
              b.enabled? sf::Color::White : sf::Color(140,140,140), true);
     }
 }
@@ -228,7 +251,7 @@ void App::drawPiece(int piece, float x, float y, float size, std::uint8_t alpha)
         switch (std::abs(piece)){case 20:col=0;break;case 9:col=1;break;case 4:col=2;break;
                                   case 3:col=3;break;case 5:col=4;break;case 1:col=5;break;}
         int row = piece>0 ? 0 : 1;
-        sf::Sprite sp(pieceTexture, IR(col*pieceCell,row*pieceCell,pieceCell,pieceCell));
+        sf::Sprite sp(pieceTexture, sf::IntRect({col*pieceCell,row*pieceCell},{pieceCell,pieceCell}));
         sp.setScale({size/(float)pieceCell, size/(float)pieceCell});
         sp.setColor(sf::Color(255,255,255,alpha));
         sp.setPosition({snapPx(x), snapPx(y)});
@@ -335,7 +358,7 @@ void App::drawArrow(float bx, float by, float side, int from, int to,
     float ang = std::atan2(d.y, d.x) * 180.f / 3.14159265f;
     sf::RectangleShape shaft(sf::Vector2f(len-headLen, shaftW));
     shaft.setOrigin({0, shaftW/2});
-    shaft.setPosition(a); setRotDeg(shaft, ang);
+    shaft.setPosition(a); shaft.setRotation(sf::degrees(ang));
     shaft.setFillColor(c);
     window.draw(shaft);
     sf::Vector2f tipBase = b - u*headLen;
@@ -457,7 +480,7 @@ std::string App::overrideOrDefault(const std::string& path, const UciOption& o){
 
 // =============================================================== layout
 static Button mk(float x,float y,float w,float h,const std::string& s,int id,bool tog=false){
-    Button b; b.rect=FR(x,y,w,h); b.label=s; b.id=id; b.toggled=tog; return b;
+    Button b; b.rect=sf::FloatRect({x,y},{w,h}); b.label=s; b.id=id; b.toggled=tog; return b;
 }
 static const char* TC_LABELS[7] = {"1+0","3+0","3+2","5+0","10+0","15+10","30+0"};
 static const int   TC_BASE[7]   = {60000,180000,180000,300000,600000,900000,1800000};
@@ -622,7 +645,7 @@ void App::layout(){
         for (int i=0;i<12;i++){
             float x = rx + (i%6)*cell, yy = py + (i/6)*cell;
             buttons.push_back(mk(x, yy, cell-2, cell-2, "", 800+i, editorBrush==PALETTE[i]));
-            paletteRects.push_back(FR(x, yy, cell-2, cell-2));
+            paletteRects.push_back(sf::FloatRect({x, yy}, {cell-2, cell-2}));
         }
         float y = py + 2*cell + 10;
         buttons.push_back(mk(rx, y, 110, 32, "Hand", 813, editorBrush==BRUSH_HAND));
@@ -1206,7 +1229,7 @@ void App::handleEvent(const UiEvent& e){
         UIS = std::max(0.75f, std::min(e.width / 1280.f, e.height / 800.f));
         WW  = e.width  / UIS;
         WH  = e.height / UIS;
-        window.setView(sf::View(FR(0,0,WW,WH)));
+        window.setView(sf::View(sf::FloatRect({0,0},{WW,WH})));
         layout();
         forceRedraw = true;
         return;
@@ -1255,7 +1278,7 @@ void App::handleEvent(const UiEvent& e){
         }
         return;
     }
-    sf::Vector2f m = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+    sf::Vector2f m = mouseLogical();
     if (e.kind == UiEvent::MousePressed && e.button==sf::Mouse::Button::Left){
         for (auto& b : buttons)
             if (b.enabled && hit(b.rect, m)){ onButton(b.id); return; }
@@ -1979,7 +2002,7 @@ void App::render(){
         drawBoard(20, 56, side, editPos, -1, nullptr, -1, -1, false, handFrom, dragPos);
         // hand-tool ghost follows the cursor
         if (handFrom>=0 && handPiece){
-            sf::Vector2f mp = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+            sf::Vector2f mp = mouseLogical();
             drawPiece(handPiece, mp.x-(side/8)/2, mp.y-(side/8)/2, side/8, 230);
         }
         float rx = side + 40;
@@ -2038,7 +2061,7 @@ void App::render(){
     if (screen==Screen::EDITOR && !paletteRects.empty()){
         for (int i=0;i<12 && i<(int)paletteRects.size();i++){
             auto& r = paletteRects[i];
-            drawPiece(PALETTE[i], rectL(r)+2, rectT(r)+2, rectW(r)-4);
+            drawPiece(PALETTE[i], r.position.x+2, r.position.y+2, r.size.x-4);
         }
     }
     if (!toast.empty()){
@@ -2052,5 +2075,80 @@ void App::render(){
             text(toast, WW/2, WH-27, 14, sf::Color::White, true);
         }
     }
+    if (!pendingShot.empty()){
+        sf::Texture shot;
+        if (shot.resize(window.getSize())){
+            shot.update(window);
+            if (!shot.copyToImage().saveToFile(pendingShot))
+                fprintf(stderr, "[script] could not save %s\n", pendingShot.c_str());
+        }
+        pendingShot.clear();
+    }
     window.display();
+}
+
+// =============================================================== scripted input
+sf::Vector2f App::mouseLogical(){
+    if (scriptMouse) return *scriptMouse;
+    return window.mapPixelToCoords(sf::Mouse::getPosition(window));
+}
+
+bool App::loadScript(const std::string& path){
+    std::string err;
+    script.clear(); scriptPos = 0;
+    if (!loadUiScript(path, script, &err)){ fprintf(stderr, "[script] %s\n", err.c_str()); return false; }
+    return true;
+}
+
+static bool keyFromName(const std::string& n, sf::Keyboard::Key& k){
+    using K = sf::Keyboard::Key;
+    static const std::pair<const char*, K> named[] = {
+        {"Left",K::Left},{"Right",K::Right},{"Up",K::Up},{"Down",K::Down},
+        {"Escape",K::Escape},{"Enter",K::Enter},{"Space",K::Space},{"Tab",K::Tab},
+        {"Backspace",K::Backspace},{"Delete",K::Delete},{"Home",K::Home},{"End",K::End},
+        {"PageUp",K::PageUp},{"PageDown",K::PageDown},
+    };
+    for (auto& p : named) if (n == p.first){ k = p.second; return true; }
+    if (n.size()==1 && n[0]>='A' && n[0]<='Z'){ k = (K)((int)K::A + (n[0]-'A')); return true; }
+    if (n.size()==1 && n[0]>='0' && n[0]<='9'){ k = (K)((int)K::Num0 + (n[0]-'0')); return true; }
+    if (n.size()>=2 && n[0]=='F' && n.size()<=3){
+        int f = std::atoi(n.c_str()+1);
+        if (f>=1 && f<=12){ k = (K)((int)K::F1 + f-1); return true; }
+    }
+    return false;
+}
+
+// Executes the next due step; at most one step per frame so the UI gets a
+// render/update pass between inputs, like a real user.
+void App::stepScript(){
+    if (nowMsSteady() < scriptWaitUntil) return;
+    const UiScriptStep& s = script[scriptPos++];
+    UiEvent e;
+    auto at = [&](float x, float y){ scriptMouse = sf::Vector2f(x, y); };
+    if (s.op=="wait") scriptWaitUntil = nowMsSteady() + (long long)s.nums[0];
+    else if (s.op=="move"){ at(s.nums[0], s.nums[1]); e.kind = UiEvent::MouseMoved; handleEvent(e); }
+    else if (s.op=="click"){
+        at(s.nums[0], s.nums[1]);
+        e.kind = UiEvent::MousePressed; handleEvent(e);
+        e.kind = UiEvent::MouseReleased; handleEvent(e);
+    } else if (s.op=="drag"){
+        at(s.nums[0], s.nums[1]); e.kind = UiEvent::MousePressed; handleEvent(e);
+        at(s.nums[2], s.nums[3]); e.kind = UiEvent::MouseMoved; handleEvent(e);
+        e.kind = UiEvent::MouseReleased; handleEvent(e);
+    } else if (s.op=="key"){
+        if (keyFromName(s.arg, e.key)){
+            e.kind = UiEvent::KeyPressed; e.ctrl = s.ctrl; e.sys = s.ctrl; handleEvent(e);
+        } else fprintf(stderr, "[script] unknown key %s\n", s.arg.c_str());
+    } else if (s.op=="text"){
+        for (unsigned char c : s.arg){ e.kind = UiEvent::TextEntered; e.unicode = c; handleEvent(e); }
+    } else if (s.op=="shot") pendingShot = s.arg;
+    else if (s.op=="expect"){
+        std::string fen = game.pos.toFEN();
+        if (fen.compare(0, s.arg.size(), s.arg) != 0){
+            fprintf(stderr, "[script] expected position '%s' but have '%s'\n", s.arg.c_str(), fen.c_str());
+            scriptFailed_ = true;
+        }
+    }
+    else if (s.op=="quit") window.close();
+    forceRedraw = true;
 }

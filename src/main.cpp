@@ -1,6 +1,7 @@
 /* Chess-GUI-for-UCI — entry point. GPL-2.0, (C) 2025 Iman Zamani */
 #include "gui.hpp"
 #include <cstdio>
+#include <string>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -43,13 +44,24 @@ static void chdirToExeDir(){
 #endif
 }
 
-int main(){
-    chdirToExeDir();
+int main(int argc, char** argv){
+    // Command line: [--script FILE] (see ui_script.hpp).
+    std::string scriptPath;
+    for (int i=1; i<argc; i++){
+        std::string a = argv[i];
+        if (a=="--script" && i+1<argc) scriptPath = argv[++i];
+        else if (a.rfind("-psn", 0)==0) continue;       // old macOS Finder launch arg
+        else { fprintf(stderr, "usage: %s [--script FILE]\n", argv[0]); return 2; }
+    }
+    // Load the script before leaving the caller's directory, so relative paths
+    // in it (and the script path itself) mean what the caller expects.
     App app;
+    if (!scriptPath.empty() && !app.loadScript(scriptPath)) return 2;
+    chdirToExeDir();
     if (!app.init()){
         fprintf(stderr, "Initialization failed. Ensure the Resources folder is next to the executable.\n");
         return 1;
     }
     app.run();
-    return 0;
+    return app.scriptFailed() ? 1 : 0;
 }

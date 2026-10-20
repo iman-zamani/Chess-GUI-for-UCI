@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.24)
 project(ChessGUIForUCI LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -8,77 +8,87 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # =============================================================================
-# --- SFML ---
-# SFML 3's macOS backend hard-codes highDpi:NO for windowed windows
+# --- SFML 3 ---
+# Default: build a pinned SFML statically from source on every platform, so the
+# binaries are self-contained and every OS runs the same SFML.
+#
+# macOS: SFML 3's backend hard-codes highDpi:NO for windowed windows
 # (SFWindowController.mm), so windowed GL surfaces are 1x and Retina Macs get
 # a blurry compositor upscale no matter what Info.plist says. Until that's
-# fixed upstream (SFML issue #353), we build SFML from source on macOS with
-# the flag flipped. SFML's point-based public API is preserved, so app code
-# is unaffected.
+# fixed upstream (SFML issue #353), the macOS build flips the flag. SFML's
+# point-based public API is preserved, so app code is unaffected.
+#
+# -DCHESSGUI_USE_SYSTEM_SFML=ON uses an installed SFML 3 instead (no Retina
+# patch on macOS).
 # =============================================================================
-option(CHESSGUI_VENDOR_SFML "Build a Retina-patched SFML from source (macOS)" ${APPLE})
+option(CHESSGUI_USE_SYSTEM_SFML "Use an installed SFML 3 instead of building one" OFF)
+option(CHESSGUI_BUILD_GUI "Build the SFML GUI (OFF = core, CLI and tests only)" ON)
+set(CHESSGUI_SFML_TAG 3.0.2)
 
-if(CHESSGUI_VENDOR_SFML)
-    include(FetchContent)
-    # Build static libs so the macOS .app bundle is fully self-contained
-    set(BUILD_SHARED_LIBS OFF)
-    set(SFML_BUILD_AUDIO    OFF CACHE BOOL "" FORCE)
-    set(SFML_BUILD_NETWORK  OFF CACHE BOOL "" FORCE)
-    set(SFML_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-    set(SFML_BUILD_DOC      OFF CACHE BOOL "" FORCE)
+if(MSVC)
+    # Static C++ runtime: the Windows build then needs no redistributable.
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
 
-    FetchContent_Declare(SFML
-        GIT_REPOSITORY https://github.com/SFML/SFML.git
-        GIT_TAG        3.0.1
-        GIT_SHALLOW    TRUE
-        PATCH_COMMAND  sed -i.orig
-            -e "/m_highDpi *= *NO/s/NO/YES/"
-            -e "s/highDpi:NO/highDpi:YES/"
-            src/SFML/Window/macOS/SFWindowController.mm
-        UPDATE_DISCONNECTED TRUE)
-
-    FetchContent_MakeAvailable(SFML)
-    set(SFML_LIBS SFML::Graphics SFML::Window SFML::System)
-    message(STATUS "Using vendored SFML 3.0.1 with windowed-Retina patch")
-else()
-    # Fallback for Linux/Windows: use system-installed SFML
-    find_package(SFML 3 CONFIG COMPONENTS Graphics Window System QUIET)
-    if(SFML_FOUND)
-        message(STATUS "SFML 3 found")
-        set(SFML_LIBS SFML::Graphics SFML::Window SFML::System)
+if(CHESSGUI_BUILD_GUI)
+    if(CHESSGUI_USE_SYSTEM_SFML)
+        find_package(SFML 3 CONFIG REQUIRED COMPONENTS Graphics Window System)
+        message(STATUS "Using system SFML ${SFML_VERSION}")
     else()
-        if(APPLE)
-            list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/sfml@2" "/usr/local/opt/sfml@2")
+        include(FetchContent)
+        set(BUILD_SHARED_LIBS OFF)
+        set(SFML_BUILD_AUDIO    OFF CACHE BOOL "" FORCE)
+        set(SFML_BUILD_NETWORK  OFF CACHE BOOL "" FORCE)
+        set(SFML_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+        set(SFML_BUILD_DOC      OFF CACHE BOOL "" FORCE)
+        set(SFML_BUILD_TEST_SUITE OFF CACHE BOOL "" FORCE)
+        if(MSVC)
+            set(SFML_USE_STATIC_STD_LIBS ON CACHE BOOL "" FORCE)
         endif()
-        find_package(SFML 2.5 COMPONENTS graphics window system REQUIRED)
-        set(SFML_LIBS sfml-graphics sfml-window sfml-system)
+        set(SFML_PATCH)
         if(APPLE)
-            message(WARNING "Building with SFML 2: output WILL be blurry on Retina "
-                            "displays (SFML 2 limitation).")
+            set(SFML_PATCH PATCH_COMMAND sed -i.orig
+                -e "/m_highDpi *= *NO/s/NO/YES/"
+                -e "s/highDpi:NO/highDpi:YES/"
+                src/SFML/Window/macOS/SFWindowController.mm)
+        endif()
+        FetchContent_Declare(SFML
+            GIT_REPOSITORY https://github.com/SFML/SFML.git
+            GIT_TAG        ${CHESSGUI_SFML_TAG}
+            GIT_SHALLOW    TRUE
+            ${SFML_PATCH}
+            UPDATE_DISCONNECTED TRUE)
+        FetchContent_MakeAvailable(SFML)
+        if(APPLE)
+            message(STATUS "Using vendored SFML ${CHESSGUI_SFML_TAG} with windowed-Retina patch")
         else()
-            message(STATUS "SFML 2 found (fine on Linux/Windows; SFML 3 also supported)")
+            message(STATUS "Using vendored SFML ${CHESSGUI_SFML_TAG}")
         endif()
     endif()
+    set(SFML_LIBS SFML::Graphics SFML::Window SFML::System)
 endif()
 
 find_package(Threads REQUIRED)
 
-set(CHESS_SOURCES
-    src/main.cpp
+# Core logic: rules, UCI process wrapper, matches, test tools. No SFML here;
+# it is shared by the GUI, the tests and the headless CLI.
+add_library(chesscore STATIC
     src/chess.cpp
     src/uci_engine.cpp
     src/testing.cpp
     src/tournament.cpp
+)
+target_include_directories(chesscore PUBLIC src)
+target_link_libraries(chesscore PUBLIC Threads::Threads)
+
+if(CHESSGUI_BUILD_GUI)
+set(CHESS_SOURCES
+    src/main.cpp
     src/gui.cpp
 )
 
 add_executable(chess-gui ${CHESS_SOURCES})
-target_include_directories(chess-gui PRIVATE src)
-target_link_libraries(chess-gui PRIVATE ${SFML_LIBS} Threads::Threads)
-
-if(WIN32)
-    target_link_libraries(chess-gui PRIVATE ws2_32)
-endif()
+target_link_libraries(chess-gui PRIVATE chesscore ${SFML_LIBS})
 
 # Copy Resources next to the binary so ./chess-gui finds fonts, pieces,
 # engines and the perft suite.
@@ -101,8 +111,7 @@ if(APPLE)
 
     # Path B (guaranteed): a real bundle -> "Chess GUI for UCI.app".
     add_executable(chess-gui-app MACOSX_BUNDLE ${CHESS_SOURCES})
-    target_include_directories(chess-gui-app PRIVATE src)
-    target_link_libraries(chess-gui-app PRIVATE ${SFML_LIBS} Threads::Threads)
+    target_link_libraries(chess-gui-app PRIVATE chesscore ${SFML_LIBS})
     set_target_properties(chess-gui-app PROPERTIES
         OUTPUT_NAME "Chess GUI for UCI"
         MACOSX_BUNDLE_BUNDLE_NAME "Chess GUI for UCI"
@@ -116,4 +125,14 @@ if(APPLE)
             ${CMAKE_SOURCE_DIR}/Resources
             "$<TARGET_FILE_DIR:chess-gui-app>/Resources"
         COMMENT "Copying Resources into the app bundle...")
+endif()
+endif() # CHESSGUI_BUILD_GUI
+
+# =============================================================================
+# Tests (ctest --test-dir build). No network and no real engine needed: UCI
+# behaviour is exercised against tests/mock_engine.cpp.
+# =============================================================================
+include(CTest)
+if(BUILD_TESTING)
+    add_subdirectory(tests)
 endif()
