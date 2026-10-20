@@ -46,7 +46,7 @@ std::string MatchSettings::fingerprint() const{
     std::ostringstream o;
     o << tournamentModeName(mode) << "|" << gauntletSeeds << "|" << tc.baseMs << "+" << tc.incMs << "|"
       << ((gamesPerPairing + 1) / 2 * 2) << "|" << bookPath << "|" << (int)bookFormat << "|" << bookPlies << "|"
-      << bookRandom << "|" << seed << "|" << startFens.size();
+      << bookRandom << "|" << seed << "|" << startFens.size() << (chess960 ? "|960" : "");
     for (auto& e : engines){
         o << "|" << e.name << "=" << e.path;
         for (auto& a : e.args) o << " " << a;
@@ -135,7 +135,8 @@ std::string matchGamePgn(const Game& g, const MatchSettings& s, int round, int g
     tag("Black", g.blackName);
     tag("Result", g.resultString());
     std::string startFen = g.start.toFEN();
-    if (startFen != Position::startpos().toFEN()){ tag("SetUp", "1"); tag("FEN", startFen); }
+    if (g.start.chess960) tag("Variant", "Chess960");
+    if (startFen != Position::startpos().toFEN() || g.start.chess960){ tag("SetUp", "1"); tag("FEN", startFen); }
     tag("TimeControl", s.tc.pgnTag());
     tag("Termination", termination);
     tag("PlyCount", std::to_string(g.sans.size()));
@@ -212,6 +213,9 @@ bool MatchRunner::start(const MatchSettings& settings, std::string* err){
         BookLoadResult r = loadOpeningBook(s_.bookPath, s_.bookFormat, s_.bookPlies);
         if (!r.error.empty()) return fail("opening book: " + r.error);
         book_ = r.openings;
+    } else if (s_.startFens.empty() && s_.chess960){
+        for (int n = 0; n < 960; n++)                        // order: s_.bookRandom / seed, like a book
+            book_.push_back({Position::chess960Start(n).toFEN(), {}, "Chess960 #" + std::to_string(n)});
     } else {
         for (auto& f : s_.startFens){
             bool ok = false;

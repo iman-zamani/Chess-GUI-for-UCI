@@ -66,6 +66,7 @@ struct MatchSettings {
     bool bookRandom = false;
     uint64_t seed = 1;
     std::vector<std::string> startFens;            // used when bookPath is empty
+    bool chess960 = false;       // no book or FENs: the 960 Chess960 start positions (order as for a book)
     AdjudicationConfig adj;
     bool sprtEnabled = false;    // Match mode only: stop when H0 or H1 is accepted
     SprtConfig sprt;

@@ -180,6 +180,13 @@ void GameScreen::humanCommitMove(Move m){
 void GameScreen::squarePressed(int sq){
     if (sq < 0 || game_.result != GameResult::ONGOING || viewPly_ >= 0) return;
     if (!humanToMove() || pendingPromotion_) return;
+    // castling: onto the rook (Chess960 style) or the king's target square
+    for (const Move& m : legalForSelected_)
+        if (m.isCastle && m.to != sq && game_.pos.castleKingTarget(m) == sq && sq != m.from){
+            bool plain = false;
+            for (const Move& o : legalForSelected_) if (!o.isCastle && o.to == sq) plain = true;
+            if (!plain){ humanCommitMove(m); return; }
+        }
     for (const Move& m : legalForSelected_){
         if (m.to == sq){
             if (m.promo){ Move base = m; base.promo = 0; pendingPromotion_ = base; return; }
@@ -761,12 +768,22 @@ void GameScreen::drawNewGameDialog(){
     ImGui::SeparatorText("Start position");
     ImGui::RadioButton("Standard", &dlgStart_, 0); ImGui::SameLine();
     ImGui::RadioButton(dlgPreset_ ? "From the editor" : "Current position", &dlgStart_, 1); ImGui::SameLine();
-    ImGui::RadioButton("FEN", &dlgStart_, 2);
-    if (dlgStart_ == 2){ ImGui::SetNextItemWidth(em * 30); ImGui::InputTextWithHint("##dlgfen", "paste a FEN", &dlgFen_); }
+    ImGui::RadioButton("FEN", &dlgStart_, 2); ImGui::SameLine();
+    ImGui::RadioButton("Chess960", &dlgStart_, 3);
+    if (dlgStart_ == 2){ ImGui::SetNextItemWidth(em * 30); ImGui::InputTextWithHint("##dlgfen", "paste a FEN (X-FEN / Shredder-FEN for Chess960)", &dlgFen_); }
+    if (dlgStart_ == 3){
+        ImGui::SetNextItemWidth(em * 8);
+        if (ImGui::InputInt("position number (0-959)", &dlg960_)) dlg960_ = std::clamp(dlg960_, 0, 959);
+        ImGui::SameLine();
+        if (ImGui::Button("Random")) dlg960_ = (int)(std::random_device{}() % 960);
+        ImGui::SameLine(); ImGui::TextDisabled("%s", Position::chess960Start(dlg960_).toFEN().substr(0, 8).c_str());
+        ImGui::TextDisabled("Castle by moving the king onto its rook or to its target square.");
+    }
     Position start = Position::startpos();
     bool ok = true;
     if (dlgStart_ == 1) start = dlgPreset_ ? *dlgPreset_ : shownPosition();
     if (dlgStart_ == 2){ start = Position::fromFEN(dlgFen_, &ok); if (!ok) ImGui::TextColored(ui::kBad, "Invalid FEN"); }
+    if (dlgStart_ == 3) start = Position::chess960Start(dlg960_);
     std::string prob = ok && dlgMode_ != GameMode::HUMAN_VS_HUMAN ? enginePositionProblem(start) : "";
     if (!prob.empty()) ImGui::TextColored(ui::kWarn, "Engines can't use this position: %s", prob.c_str());
     ImGui::Separator();

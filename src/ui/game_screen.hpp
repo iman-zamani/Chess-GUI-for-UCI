@@ -111,7 +111,8 @@ private:
     bool openNewGame_ = false;
     GameMode dlgMode_ = GameMode::HUMAN_VS_ENGINE;
     int dlgColor_ = 0;                             // 0 white, 1 black, 2 random
-    int dlgStart_ = 0;                             // 0 standard, 1 current position, 2 FEN
+    int dlgStart_ = 0;                             // 0 standard, 1 current position, 2 FEN, 3 Chess960
+    int dlg960_ = 518;                             // Chess960 start position number
     std::string dlgFen_;
     std::optional<Position> dlgPreset_;
     bool openPgn_ = false, openPgnList_ = false;

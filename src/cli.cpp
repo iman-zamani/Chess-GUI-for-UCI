@@ -66,6 +66,7 @@ Games:
   --book-plies N                moves used from each PGN game (8)
   --random [--seed S]           shuffle the book reproducibly
   --fen FEN                     a start position (repeatable; used without --book)
+  --chess960                    Chess960: the 960 start positions (with --random --seed S: shuffled)
   --resign CP:MOVES             resign adjudication, e.g. 600:3
   --draw MOVE:CP:MOVES          draw adjudication, e.g. 40:10:8
   --max-moves N                 draw after N full moves
@@ -195,6 +196,7 @@ static int parseMatchArgs(const std::vector<std::string>& a, CliOptions& o){
             if (!end || *end) return fail("bad --seed");
         }
         else if (k == "--fen"){ if (!need(i, v)) return fail("--fen needs a FEN"); o.s.startFens.push_back(v); }
+        else if (k == "--chess960") o.s.chess960 = true;
         else if (k == "--resign"){
             auto p = splitOn(need(i, v) ? v : "", ':');
             if (p.size() != 2 || !parseInt(p[0], o.s.adj.resignCp) || !parseInt(p[1], o.s.adj.resignMoves)) return fail("bad --resign (CP:MOVES)");

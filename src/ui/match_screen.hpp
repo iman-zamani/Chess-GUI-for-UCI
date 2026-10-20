@@ -24,6 +24,7 @@ struct MatchSetup {
     int bookPlies = 8;
     bool bookRandom = true;
     int seed = 1;
+    bool chess960 = false;                   // no book: Chess960 start positions
     AdjudicationConfig adj;
     bool sprt = false;
     SprtConfig sprtCfg;

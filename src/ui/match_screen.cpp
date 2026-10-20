@@ -28,7 +28,7 @@ static json toJson(const MatchSetup& m){
     return {{"name", m.name}, {"mode", (int)m.mode}, {"engines", m.engines}, {"gauntletSeeds", m.gauntletSeeds},
             {"baseSec", m.baseSec}, {"incSec", m.incSec}, {"timeMarginMs", m.timeMarginMs},
             {"gamesPerPairing", m.gamesPerPairing}, {"concurrency", m.concurrency},
-            {"bookPath", m.bookPath}, {"bookPlies", m.bookPlies}, {"bookRandom", m.bookRandom}, {"seed", m.seed},
+            {"bookPath", m.bookPath}, {"bookPlies", m.bookPlies}, {"bookRandom", m.bookRandom}, {"seed", m.seed}, {"chess960", m.chess960},
             {"adj", {{"resign", m.adj.resign}, {"resignCp", m.adj.resignCp}, {"resignMoves", m.adj.resignMoves},
                      {"draw", m.adj.draw}, {"drawAfterMove", m.adj.drawAfterMove}, {"drawCp", m.adj.drawCp},
                      {"drawMoves", m.adj.drawMoves}, {"maxMoves", m.adj.maxMoves},
@@ -51,6 +51,7 @@ static MatchSetup fromJson(const json& j){
     m.concurrency = j.value("concurrency", 0);
     m.bookPath = j.value("bookPath", ""); m.bookPlies = j.value("bookPlies", 8);
     m.bookRandom = j.value("bookRandom", true); m.seed = j.value("seed", 1);
+    m.chess960 = j.value("chess960", false);
     if (j.contains("adj") && j["adj"].is_object()){
         const json& a = j["adj"];
         m.adj.resign = a.value("resign", false); m.adj.resignCp = a.value("resignCp", 600);
@@ -230,6 +231,13 @@ void MatchScreen::drawOpeningsBlock(){
         ImGui::TextColored(bookPreviewOk_ ? ui::kGood : ui::kBad, "%s", bookPreview_.c_str());
         return;
     }
+    ImGui::Checkbox("Chess960 start positions", &setup_.chess960);
+    if (setup_.chess960){
+        ImGui::SameLine(); ImGui::Checkbox("random order##960", &setup_.bookRandom);
+        if (setup_.bookRandom){ ImGui::SameLine(); ImGui::SetNextItemWidth(em * 6); ImGui::InputInt("seed##960", &setup_.seed); }
+        ImGui::TextDisabled("Each game pair gets one of the 960 positions; engines get UCI_Chess960.");
+        return;
+    }
     ImGui::Text("%s", openings_.empty() ? "Standard starting position" : (std::to_string(openings_.size()) + " positions").c_str());
     ImGui::SetNextItemWidth(em * 20);
     bool enter = ImGui::InputTextWithHint("##fen", "FEN to add (Enter)", &fenInput_, ImGuiInputTextFlags_EnterReturnsTrue);
@@ -384,7 +392,8 @@ void MatchScreen::start(bool resume){
     s.bookPlies = setup_.bookPlies;
     s.bookRandom = setup_.bookRandom;
     s.seed = (uint64_t)setup_.seed;
-    if (s.bookPath.empty()) s.startFens = openings_;
+    if (s.bookPath.empty() && !setup_.chess960) s.startFens = openings_;
+    s.chess960 = setup_.chess960 && s.bookPath.empty();
     s.adj = setup_.adj;
     s.sprtEnabled = setup_.sprt && setup_.mode == TournamentMode::Match;
     s.sprt = setup_.sprtCfg;
