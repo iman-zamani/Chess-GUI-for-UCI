@@ -231,6 +231,7 @@ TEST_CASE("match/game-interrupted-by-sleep-is-replayed"){
     CHECK_EQ(snap.gamesDone, 4);                 // still four games, none lost on time
     CHECK_EQ(snap.pairings[0].timeLosses, 0);
     bool noted = false;
-    for (auto& l : snap.log) if (l.find("interrupted: the computer slept for 60 s") != std::string::npos) noted = true;
+    for (auto& l : snap.log) if (l.find("Game 1 was interrupted: the computer slept for") != std::string::npos) noted = true;
     CHECK(noted);
+    if (!noted) for (auto& l : snap.log) std::fprintf(stderr, "    log: %s\n", l.c_str());
 }

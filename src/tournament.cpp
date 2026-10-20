@@ -398,7 +398,7 @@ void MatchRunner::playGame(int w, const Job& job, std::vector<std::unique_ptr<Uc
         if (long long slept = suspendedMsSince(asleep); slept > 500){
             // the clocks are meaningless across a system sleep: play the game again
             log("Game " + std::to_string(job.index + 1) + " was interrupted: the computer slept for "
-                + std::to_string(slept / 1000) + " s. It will be replayed.");
+                + std::to_string((slept + 500) / 1000) + " s. It will be replayed.");
             std::lock_guard<std::mutex> lk(mx_);
             retry_.push_back(job);
             return;
