@@ -2,8 +2,10 @@
 """Run engines on the candidate positions and record their answers.
 
 Protocol (the same as the C++ estimator uses for a user's engine): Threads=1,
-Hash=64 MB (when the engine has these options), `ucinewgame` + `isready`
-before every position, then `go movetime T` with T = base x hardware factor.
+Hash=64 MB and Move Overhead=10 ms (when the engine has these options; the
+overhead option is matched by name ignoring case and spaces), `ucinewgame` + `isready`
+before every position, then `go movetime T` with T = base x hardware factor,
+and `stop` if there is no bestmove after T + 50 ms (some engines ignore movetime).
 For calibration the factor is 1 by definition and the machine's speed is
 recorded with `chess-cli bench` (see docs/elo-estimator.md).
 
@@ -15,14 +17,16 @@ Usage:
   run_engines.py --status BUILD_STATUS.json --positions candidates.jsonl --out responses.csv
                  [--movetime 500] [--factor 1.0] [--workers 4] [--only ID ...]
 """
-import argparse, csv, json, multiprocessing as mp, os, sys, time
+import argparse, csv, json, multiprocessing as mp, os, sys, threading, time
 
 import chess
 import chess.engine
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ENGINES = os.path.join(HERE, "..", "..", "data", "elo", "engines.json")
-FIELDS = ["engine", "position", "move", "depth", "seldepth", "nodes", "time_ms", "score_cp", "score_mate",
+MOVE_OVERHEAD_MS = 10   # value for an engine's "Move Overhead" option, when it has one
+GRACE_MS = 50      # "stop" is sent this long after the move time if the engine is still thinking
+FIELDS = ["engine", "position", "move", "depth", "seldepth", "nodes", "time_ms", "wall_ms", "score_cp", "score_mate",
           "movetime_ms", "error"]
 
 
@@ -33,6 +37,10 @@ def open_engine(binary, hash_mb):
         opts["Threads"] = 1
     if "Hash" in eng.options:
         opts["Hash"] = hash_mb
+    # "Move Overhead" style safety margins (meant for laggy GUIs) would cut into the move time
+    for name, o in eng.options.items():
+        if name.lower().replace(" ", "").replace("_", "") == "moveoverhead" and o.type == "spin":
+            opts[name] = max(o.min or 0, min(MOVE_OVERHEAD_MS, o.max if o.max is not None else MOVE_OVERHEAD_MS))
     if opts:
         eng.configure(opts)
     return eng
@@ -49,20 +57,30 @@ def run_batch(job):
                 if eng is None:
                     eng = open_engine(binary, hash_mb)
                 board = chess.Board(fen)
-                # a new `game` object makes python-chess send ucinewgame, then isready
-                res = eng.play(board, chess.engine.Limit(time=movetime / 1000.0), game=object(),
-                               info=chess.engine.INFO_ALL)
-                info = res.info
+                # a new `game` object makes python-chess send ucinewgame, then isready.
+                # Engines that ignore movetime get "stop" once it has run out (+ GRACE_MS).
+                with eng.analysis(board, chess.engine.Limit(time=movetime / 1000.0), game=object(),
+                                  info=chess.engine.INFO_ALL) as an:
+                    timer = threading.Timer((movetime + GRACE_MS) / 1000.0, an.stop)
+                    t0 = time.monotonic()
+                    timer.start()
+                    try:
+                        best = an.wait()
+                        wall = int((time.monotonic() - t0) * 1000)
+                    finally:
+                        timer.cancel()
+                    info = dict(an.info)
+                move = best.move
                 sc = info.get("score")
                 pov = sc.pov(board.turn) if sc is not None else None
-                row.update(move=res.move.uci() if res.move else "",
+                row.update(move=move.uci() if move else "",
                            depth=info.get("depth", ""), seldepth=info.get("seldepth", ""),
                            nodes=info.get("nodes", ""),
-                           time_ms=int(info["time"] * 1000) if "time" in info else "",
+                           time_ms=int(info["time"] * 1000) if "time" in info else "", wall_ms=wall,
                            score_cp=pov.score() if pov is not None and not pov.is_mate() else "",
                            score_mate=pov.mate() if pov is not None and pov.is_mate() else "",
                            error="")
-                if not res.move:
+                if not move:
                     row["error"] = "no move"
                 break
             except Exception as e:                    # engine died, timed out or sent garbage

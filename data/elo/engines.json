@@ -613,63 +613,6 @@
    "idName": "Ethereal 13.00"
   },
   {
-   "id": "blunder-4.0.0",
-   "family": "Blunder",
-   "version": "4.0.0",
-   "repo": "https://github.com/algerbrex/blunder",
-   "tag": "v4.0.0",
-   "build": "go build -o blunder-bin ./blunder",
-   "binary": "blunder-bin",
-   "ccrl": {
-    "list": "CCRL Blitz",
-    "name": "Blunder 4.0.0 64-bit",
-    "rating": 1616,
-    "plus": 22,
-    "minus": 22,
-    "games": 748
-   },
-   "commit": "89f77a3c420b7b99878525b89c18fc82501b540e",
-   "idName": "Blunder 4.0.0"
-  },
-  {
-   "id": "blunder-5.0.0",
-   "family": "Blunder",
-   "version": "5.0.0",
-   "repo": "https://github.com/algerbrex/blunder",
-   "tag": "v5.0.0",
-   "build": "go build -o blunder-bin ./blunder",
-   "binary": "blunder-bin",
-   "ccrl": {
-    "list": "CCRL Blitz",
-    "name": "Blunder 5.0.0 64-bit",
-    "rating": 2018,
-    "plus": 20,
-    "minus": 20,
-    "games": 877
-   },
-   "commit": "82e4fd405194a69384df574c9ced4bc5cb55fed6",
-   "idName": "Blunder 5.0.0"
-  },
-  {
-   "id": "blunder-7.1.0",
-   "family": "Blunder",
-   "version": "7.1.0",
-   "repo": "https://github.com/algerbrex/blunder",
-   "tag": "v7.1.0",
-   "build": "go build -o blunder-bin ./blunder",
-   "binary": "blunder-bin",
-   "ccrl": {
-    "list": "CCRL Blitz",
-    "name": "Blunder 7.1.0 64-bit",
-    "rating": 2389,
-    "plus": 18,
-    "minus": 18,
-    "games": 1049
-   },
-   "commit": "4563c395ea03e12ab1679389706894aace9d4058",
-   "idName": "Blunder 7.1.0"
-  },
-  {
    "id": "blunder-8.0.0",
    "family": "Blunder",
    "version": "8.0.0",
@@ -725,6 +668,40 @@
    },
    "commit": "c3483fa9a7d7c0ffa9fcc32b467ca844cfb63790",
    "idName": "Stockfish 11 64 POPCNT"
+  }
+ ],
+ "excluded": [
+  {
+   "engine": "Stash 31.0",
+   "reason": "the v31.0 tag reports id name \"Stash v30.15\", so the build can't be matched to the CCRL entry"
+  },
+  {
+   "engine": "Bit-Genie 1.0.0",
+   "reason": "the v1.0.0 tag lacks a header that main.cpp includes; it does not build"
+  },
+  {
+   "engine": "Bit-Genie 7",
+   "reason": "the v7 tag reports id name \"Bit-Genie 6.65\""
+  },
+  {
+   "engine": "Berserk 5.0",
+   "reason": "the 5 tag reports id name \"Berserk 5.0.0-dev\", not the 5.0 release"
+  },
+  {
+   "engine": "Blunder 6.1.0",
+   "reason": "the v6.1.0 tag reports id name \"Blunder 0.9.0\""
+  },
+  {
+   "engine": "Blunder 4.0.0, 5.0.0, 7.1.0",
+   "reason": "no support for \"go movetime\" or \"stop\", which the estimator's protocol needs"
+  },
+  {
+   "engine": "Halogen (all versions)",
+   "reason": "versions 4 and 6 are Windows-only; later makefiles need GNU-ld-only options"
+  },
+  {
+   "engine": "Koivisto (all versions)",
+   "reason": "the NNUE code uses AVX2 unconditionally: no native ARM build, and emulation would make it weaker than its rating"
   }
  ]
 }
