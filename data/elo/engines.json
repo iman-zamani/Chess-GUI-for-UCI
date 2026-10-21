@@ -530,31 +530,6 @@
    }
   },
   {
-   "id": "weiss-0.8",
-   "family": "Weiss",
-   "version": "0.8",
-   "repo": "https://github.com/TerjeKir/weiss",
-   "tag": "v0.8",
-   "build": "make -C src CC=clang WARN=-Wall -j{jobs}",
-   "binary": "src/weiss",
-   "ccrl": {
-    "list": "CCRL Blitz",
-    "name": "Weiss 0.8 64-bit",
-    "rating": 2609,
-    "plus": 17,
-    "minus": 17,
-    "games": 1096
-   },
-   "commit": "c263e27dfb5cf3d2d7c586f3359226db600cd05c",
-   "idName": "weiss 0.8",
-   "builds": {
-    "Linux-x86_64": "make -C src CC=gcc CFLAGS=\"-std=gnu11 -Wall -O3 -march=native -fcommon\" -j{jobs}"
-   },
-   "patchesFor": {
-    "Linux-x86_64": []
-   }
-  },
-  {
    "id": "weiss-1.0",
    "family": "Weiss",
    "version": "1.0",
@@ -896,6 +871,10 @@
   {
    "engine": "Koivisto (all versions)",
    "reason": "the NNUE code uses AVX2 unconditionally: no native ARM build, and emulation would make it weaker than its rating"
+  },
+  {
+   "engine": "Weiss 0.8",
+   "reason": "answers about 9% of test positions with an illegal move (13 of its first 150, e.g. moves from empty squares), an engine bug with 'position fen' that has nothing to do with its playing strength"
   }
  ]
 }
