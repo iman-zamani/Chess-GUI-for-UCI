@@ -26,6 +26,9 @@ PATCHES = {
     # them sits behind #ifdefs: include them only on x86
     "guard-x86-headers": r"""grep -rlE '^#\s*include\s*<(immintrin|x86intrin|nmmintrin|xmmintrin|smmintrin)\.h>' . """
                          r"""| xargs perl -pi -e 's/^(#\s*include\s*<(immintrin|x86intrin|nmmintrin|xmmintrin|smmintrin)\.h>.*)$/#if defined(__x86_64__) || defined(_M_X64)\n$1\n#endif/'""",
+    # Bit-Genie 2's bench command calls std::max(long long, long), which only compiles where
+    # int64_t is long long; spell out the type (the benchmark only, not the search)
+    "bitgenie-bench-max": r"""sed -i.orig 's/std::max(1ll, elapsed)/std::max<long long>(1ll, elapsed)/' Bit-Genie/src/benchmark.cpp""",
 }
 ENGINES = os.path.join(HERE, "..", "..", "data", "elo", "engines.json")
 
