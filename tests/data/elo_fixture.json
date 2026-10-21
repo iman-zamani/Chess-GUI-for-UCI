@@ -1,0 +1,1684 @@
+{
+ "generator": "tools/elo/make_test_fixture.py",
+ "model": {
+  "format": "chessgui-elo-model",
+  "version": 0,
+  "threshold": 5.0,
+  "protocol": {
+   "baseMovetimeMs": 100,
+   "calibNps": 0
+  },
+  "elo": {
+   "intercept": 2500.0,
+   "slope": 400.0
+  },
+  "prior": {
+   "mean": 0.1,
+   "sd": 3.0
+  },
+  "adaptive": {
+   "seTargetElo": 60.0,
+   "maxItems": 50,
+   "minItems": 10
+  },
+  "groupShare": {
+   "tactics": 0.4,
+   "positional": 0.35,
+   "endgame": 0.25
+  },
+  "items": [
+   {
+    "id": "syn-0",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "tactics",
+    "group": "tactics",
+    "a": 0.889364,
+    "b": -0.785404,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-1",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "positional",
+    "group": "positional",
+    "a": 1.344777,
+    "b": -0.802957,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-2",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "endgame",
+    "group": "endgame",
+    "a": 0.572049,
+    "b": -0.768277,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-3",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "tactics",
+    "group": "tactics",
+    "a": 2.134663,
+    "b": -1.231103,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-4",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "positional",
+    "group": "positional",
+    "a": 1.576675,
+    "b": -0.712934,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-5",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "endgame",
+    "group": "endgame",
+    "a": 1.086738,
+    "b": 1.493266,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-6",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "tactics",
+    "group": "tactics",
+    "a": 1.078122,
+    "b": -0.393312,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-7",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "positional",
+    "group": "positional",
+    "a": 1.379242,
+    "b": 0.457108,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-8",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "endgame",
+    "group": "endgame",
+    "a": 1.097391,
+    "b": -1.016894,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-9",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "tactics",
+    "group": "tactics",
+    "a": 1.115872,
+    "b": 0.369651,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-10",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "positional",
+    "group": "positional",
+    "a": 1.629099,
+    "b": -1.540781,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-11",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "endgame",
+    "group": "endgame",
+    "a": 1.500626,
+    "b": -0.498756,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-12",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "tactics",
+    "group": "tactics",
+    "a": 1.190471,
+    "b": 2.454539,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-13",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "positional",
+    "group": "positional",
+    "a": 1.180348,
+    "b": -0.38297,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-14",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "endgame",
+    "group": "endgame",
+    "a": 1.302606,
+    "b": 1.319976,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-15",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "tactics",
+    "group": "tactics",
+    "a": 0.955417,
+    "b": 0.655054,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-16",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "positional",
+    "group": "positional",
+    "a": 1.039251,
+    "b": 0.047014,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-17",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "endgame",
+    "group": "endgame",
+    "a": 1.520903,
+    "b": -0.452107,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-18",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "tactics",
+    "group": "tactics",
+    "a": 1.159289,
+    "b": 1.486909,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-19",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "positional",
+    "group": "positional",
+    "a": 0.70485,
+    "b": 0.022617,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-20",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "endgame",
+    "group": "endgame",
+    "a": 1.00913,
+    "b": 1.727424,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-21",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "tactics",
+    "group": "tactics",
+    "a": 1.588275,
+    "b": -0.519079,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-22",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "positional",
+    "group": "positional",
+    "a": 1.113031,
+    "b": 0.257339,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-23",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "endgame",
+    "group": "endgame",
+    "a": 1.150857,
+    "b": 0.665499,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-24",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "tactics",
+    "group": "tactics",
+    "a": 1.57891,
+    "b": 0.57316,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-25",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "positional",
+    "group": "positional",
+    "a": 2.534114,
+    "b": -1.033802,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-26",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "endgame",
+    "group": "endgame",
+    "a": 0.918259,
+    "b": -0.464063,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-27",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "tactics",
+    "group": "tactics",
+    "a": 2.094433,
+    "b": 0.00402,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-28",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "positional",
+    "group": "positional",
+    "a": 0.746765,
+    "b": -0.653699,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-29",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "endgame",
+    "group": "endgame",
+    "a": 1.309953,
+    "b": 0.877325,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-30",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "tactics",
+    "group": "tactics",
+    "a": 0.765052,
+    "b": 0.788019,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-31",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "positional",
+    "group": "positional",
+    "a": 2.097158,
+    "b": -1.757084,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-32",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "endgame",
+    "group": "endgame",
+    "a": 1.705007,
+    "b": -1.605254,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-33",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "tactics",
+    "group": "tactics",
+    "a": 1.925309,
+    "b": -1.081563,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-34",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "positional",
+    "group": "positional",
+    "a": 0.857089,
+    "b": 0.31726,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-35",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "endgame",
+    "group": "endgame",
+    "a": 1.606121,
+    "b": 2.233173,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-36",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "tactics",
+    "group": "tactics",
+    "a": 0.992424,
+    "b": -0.182356,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-37",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "positional",
+    "group": "positional",
+    "a": 1.017192,
+    "b": 0.450651,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-38",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "endgame",
+    "group": "endgame",
+    "a": 1.495731,
+    "b": -0.863112,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-39",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "tactics",
+    "group": "tactics",
+    "a": 1.734445,
+    "b": -0.846836,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-40",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "positional",
+    "group": "positional",
+    "a": 1.325471,
+    "b": -1.757228,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-41",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "endgame",
+    "group": "endgame",
+    "a": 0.950094,
+    "b": 0.171656,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-42",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "tactics",
+    "group": "tactics",
+    "a": 0.877809,
+    "b": 1.147217,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-43",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "positional",
+    "group": "positional",
+    "a": 2.176519,
+    "b": -0.156714,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-44",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "endgame",
+    "group": "endgame",
+    "a": 1.548952,
+    "b": 1.596453,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-45",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "tactics",
+    "group": "tactics",
+    "a": 1.628878,
+    "b": 0.397855,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-46",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "positional",
+    "group": "positional",
+    "a": 2.925295,
+    "b": 0.163588,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-47",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "endgame",
+    "group": "endgame",
+    "a": 0.881311,
+    "b": 0.717254,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-48",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "tactics",
+    "group": "tactics",
+    "a": 3.400026,
+    "b": 0.687378,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-49",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "positional",
+    "group": "positional",
+    "a": 4.307524,
+    "b": 1.347806,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-50",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "endgame",
+    "group": "endgame",
+    "a": 2.333491,
+    "b": -0.601954,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-51",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "tactics",
+    "group": "tactics",
+    "a": 1.700364,
+    "b": -2.088049,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-52",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "positional",
+    "group": "positional",
+    "a": 0.936572,
+    "b": 0.314747,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-53",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "endgame",
+    "group": "endgame",
+    "a": 1.818104,
+    "b": -0.411675,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-54",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "tactics",
+    "group": "tactics",
+    "a": 1.023188,
+    "b": 0.172823,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-55",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "positional",
+    "group": "positional",
+    "a": 1.210871,
+    "b": 1.8643,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-56",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "endgame",
+    "group": "endgame",
+    "a": 1.08744,
+    "b": -0.902842,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-57",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "tactics",
+    "group": "tactics",
+    "a": 1.368249,
+    "b": 0.964797,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-58",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "positional",
+    "group": "positional",
+    "a": 2.044659,
+    "b": 1.145868,
+    "ok": [
+     "e2e4"
+    ]
+   },
+   {
+    "id": "syn-59",
+    "fen": "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    "category": "endgame",
+    "group": "endgame",
+    "a": 0.978012,
+    "b": 0.660736,
+    "ok": [
+     "e2e4"
+    ]
+   }
+  ]
+ },
+ "cases": [
+  {
+   "responses": [
+    [
+     0,
+     false
+    ],
+    [
+     1,
+     false
+    ],
+    [
+     4,
+     false
+    ],
+    [
+     5,
+     false
+    ],
+    [
+     7,
+     false
+    ],
+    [
+     8,
+     false
+    ],
+    [
+     10,
+     false
+    ],
+    [
+     12,
+     false
+    ],
+    [
+     14,
+     false
+    ],
+    [
+     15,
+     true
+    ],
+    [
+     16,
+     false
+    ],
+    [
+     17,
+     false
+    ],
+    [
+     18,
+     false
+    ],
+    [
+     19,
+     true
+    ],
+    [
+     23,
+     false
+    ],
+    [
+     24,
+     false
+    ],
+    [
+     25,
+     false
+    ],
+    [
+     26,
+     true
+    ],
+    [
+     28,
+     true
+    ],
+    [
+     31,
+     true
+    ],
+    [
+     32,
+     false
+    ],
+    [
+     35,
+     false
+    ],
+    [
+     36,
+     false
+    ],
+    [
+     37,
+     false
+    ],
+    [
+     38,
+     true
+    ],
+    [
+     39,
+     false
+    ],
+    [
+     40,
+     true
+    ],
+    [
+     42,
+     false
+    ],
+    [
+     43,
+     false
+    ],
+    [
+     44,
+     false
+    ],
+    [
+     45,
+     false
+    ],
+    [
+     46,
+     false
+    ],
+    [
+     50,
+     false
+    ],
+    [
+     51,
+     false
+    ],
+    [
+     52,
+     false
+    ],
+    [
+     53,
+     false
+    ],
+    [
+     56,
+     false
+    ],
+    [
+     57,
+     false
+    ],
+    [
+     58,
+     false
+    ],
+    [
+     59,
+     false
+    ]
+   ],
+   "theta": -1.806245518064148,
+   "se": 0.3391686141067271
+  },
+  {
+   "responses": [
+    [
+     0,
+     false
+    ],
+    [
+     2,
+     false
+    ],
+    [
+     4,
+     true
+    ],
+    [
+     5,
+     false
+    ],
+    [
+     6,
+     true
+    ],
+    [
+     7,
+     false
+    ],
+    [
+     8,
+     true
+    ],
+    [
+     9,
+     true
+    ],
+    [
+     10,
+     true
+    ],
+    [
+     12,
+     false
+    ],
+    [
+     13,
+     false
+    ],
+    [
+     14,
+     false
+    ],
+    [
+     15,
+     false
+    ],
+    [
+     16,
+     true
+    ],
+    [
+     17,
+     true
+    ],
+    [
+     18,
+     true
+    ],
+    [
+     19,
+     true
+    ],
+    [
+     20,
+     true
+    ],
+    [
+     22,
+     true
+    ],
+    [
+     23,
+     false
+    ],
+    [
+     26,
+     false
+    ],
+    [
+     27,
+     true
+    ],
+    [
+     28,
+     false
+    ],
+    [
+     29,
+     false
+    ],
+    [
+     30,
+     false
+    ],
+    [
+     31,
+     true
+    ],
+    [
+     33,
+     false
+    ],
+    [
+     36,
+     false
+    ],
+    [
+     37,
+     false
+    ],
+    [
+     39,
+     true
+    ],
+    [
+     41,
+     false
+    ],
+    [
+     42,
+     false
+    ],
+    [
+     43,
+     true
+    ],
+    [
+     44,
+     false
+    ],
+    [
+     45,
+     false
+    ],
+    [
+     47,
+     false
+    ],
+    [
+     55,
+     true
+    ],
+    [
+     56,
+     true
+    ],
+    [
+     58,
+     false
+    ],
+    [
+     59,
+     false
+    ]
+   ],
+   "theta": -0.018247765093269273,
+   "se": 0.292215970341818
+  },
+  {
+   "responses": [
+    [
+     1,
+     true
+    ],
+    [
+     2,
+     false
+    ],
+    [
+     3,
+     true
+    ],
+    [
+     4,
+     true
+    ],
+    [
+     5,
+     false
+    ],
+    [
+     9,
+     true
+    ],
+    [
+     10,
+     true
+    ],
+    [
+     11,
+     true
+    ],
+    [
+     12,
+     false
+    ],
+    [
+     13,
+     true
+    ],
+    [
+     15,
+     false
+    ],
+    [
+     16,
+     true
+    ],
+    [
+     20,
+     true
+    ],
+    [
+     21,
+     true
+    ],
+    [
+     22,
+     true
+    ],
+    [
+     23,
+     true
+    ],
+    [
+     24,
+     true
+    ],
+    [
+     26,
+     true
+    ],
+    [
+     27,
+     true
+    ],
+    [
+     28,
+     true
+    ],
+    [
+     29,
+     true
+    ],
+    [
+     31,
+     true
+    ],
+    [
+     32,
+     true
+    ],
+    [
+     33,
+     true
+    ],
+    [
+     35,
+     true
+    ],
+    [
+     36,
+     true
+    ],
+    [
+     37,
+     true
+    ],
+    [
+     39,
+     true
+    ],
+    [
+     40,
+     true
+    ],
+    [
+     41,
+     true
+    ],
+    [
+     42,
+     false
+    ],
+    [
+     43,
+     true
+    ],
+    [
+     44,
+     true
+    ],
+    [
+     47,
+     true
+    ],
+    [
+     50,
+     true
+    ],
+    [
+     51,
+     true
+    ],
+    [
+     52,
+     true
+    ],
+    [
+     55,
+     true
+    ],
+    [
+     56,
+     true
+    ],
+    [
+     58,
+     true
+    ]
+   ],
+   "theta": 2.3807369523606265,
+   "se": 0.4710396057904051
+  },
+  {
+   "responses": [
+    [
+     0,
+     true
+    ],
+    [
+     1,
+     true
+    ],
+    [
+     2,
+     true
+    ],
+    [
+     3,
+     true
+    ],
+    [
+     4,
+     true
+    ],
+    [
+     5,
+     true
+    ],
+    [
+     6,
+     true
+    ],
+    [
+     7,
+     true
+    ],
+    [
+     8,
+     true
+    ],
+    [
+     9,
+     true
+    ],
+    [
+     10,
+     true
+    ],
+    [
+     11,
+     true
+    ],
+    [
+     12,
+     true
+    ],
+    [
+     13,
+     true
+    ],
+    [
+     14,
+     true
+    ],
+    [
+     15,
+     true
+    ],
+    [
+     16,
+     true
+    ],
+    [
+     17,
+     true
+    ],
+    [
+     18,
+     true
+    ],
+    [
+     19,
+     true
+    ],
+    [
+     20,
+     true
+    ],
+    [
+     21,
+     true
+    ],
+    [
+     22,
+     true
+    ],
+    [
+     23,
+     true
+    ],
+    [
+     24,
+     true
+    ],
+    [
+     25,
+     true
+    ],
+    [
+     26,
+     true
+    ],
+    [
+     27,
+     true
+    ],
+    [
+     28,
+     true
+    ],
+    [
+     29,
+     true
+    ],
+    [
+     30,
+     true
+    ],
+    [
+     31,
+     true
+    ],
+    [
+     32,
+     true
+    ],
+    [
+     33,
+     true
+    ],
+    [
+     34,
+     true
+    ],
+    [
+     35,
+     true
+    ],
+    [
+     36,
+     true
+    ],
+    [
+     37,
+     true
+    ],
+    [
+     38,
+     true
+    ],
+    [
+     39,
+     true
+    ],
+    [
+     40,
+     true
+    ],
+    [
+     41,
+     true
+    ],
+    [
+     42,
+     true
+    ],
+    [
+     43,
+     true
+    ],
+    [
+     44,
+     true
+    ],
+    [
+     45,
+     true
+    ],
+    [
+     46,
+     true
+    ],
+    [
+     47,
+     true
+    ],
+    [
+     48,
+     true
+    ],
+    [
+     49,
+     true
+    ],
+    [
+     50,
+     true
+    ],
+    [
+     51,
+     true
+    ],
+    [
+     52,
+     true
+    ],
+    [
+     53,
+     true
+    ],
+    [
+     54,
+     true
+    ],
+    [
+     55,
+     true
+    ],
+    [
+     56,
+     true
+    ],
+    [
+     57,
+     true
+    ],
+    [
+     58,
+     true
+    ],
+    [
+     59,
+     true
+    ]
+   ],
+   "theta": 4.896706429736309,
+   "se": 1.2376765510445438
+  },
+  {
+   "responses": [
+    [
+     0,
+     false
+    ],
+    [
+     1,
+     false
+    ],
+    [
+     2,
+     false
+    ],
+    [
+     3,
+     false
+    ],
+    [
+     4,
+     false
+    ],
+    [
+     5,
+     false
+    ],
+    [
+     6,
+     false
+    ],
+    [
+     7,
+     false
+    ],
+    [
+     8,
+     false
+    ],
+    [
+     9,
+     false
+    ],
+    [
+     10,
+     false
+    ],
+    [
+     11,
+     false
+    ],
+    [
+     12,
+     false
+    ],
+    [
+     13,
+     false
+    ],
+    [
+     14,
+     false
+    ],
+    [
+     15,
+     false
+    ],
+    [
+     16,
+     false
+    ],
+    [
+     17,
+     false
+    ],
+    [
+     18,
+     false
+    ],
+    [
+     19,
+     false
+    ],
+    [
+     20,
+     false
+    ],
+    [
+     21,
+     false
+    ],
+    [
+     22,
+     false
+    ],
+    [
+     23,
+     false
+    ],
+    [
+     24,
+     false
+    ],
+    [
+     25,
+     false
+    ],
+    [
+     26,
+     false
+    ],
+    [
+     27,
+     false
+    ],
+    [
+     28,
+     false
+    ],
+    [
+     29,
+     false
+    ],
+    [
+     30,
+     false
+    ],
+    [
+     31,
+     false
+    ],
+    [
+     32,
+     false
+    ],
+    [
+     33,
+     false
+    ],
+    [
+     34,
+     false
+    ],
+    [
+     35,
+     false
+    ],
+    [
+     36,
+     false
+    ],
+    [
+     37,
+     false
+    ],
+    [
+     38,
+     false
+    ],
+    [
+     39,
+     false
+    ],
+    [
+     40,
+     false
+    ],
+    [
+     41,
+     false
+    ],
+    [
+     42,
+     false
+    ],
+    [
+     43,
+     false
+    ],
+    [
+     44,
+     false
+    ],
+    [
+     45,
+     false
+    ],
+    [
+     46,
+     false
+    ],
+    [
+     47,
+     false
+    ],
+    [
+     48,
+     false
+    ],
+    [
+     49,
+     false
+    ],
+    [
+     50,
+     false
+    ],
+    [
+     51,
+     false
+    ],
+    [
+     52,
+     false
+    ],
+    [
+     53,
+     false
+    ],
+    [
+     54,
+     false
+    ],
+    [
+     55,
+     false
+    ],
+    [
+     56,
+     false
+    ],
+    [
+     57,
+     false
+    ],
+    [
+     58,
+     false
+    ],
+    [
+     59,
+     false
+    ]
+   ],
+   "theta": -4.51285863804294,
+   "se": 1.248655247291582
+  }
+ ]
+}

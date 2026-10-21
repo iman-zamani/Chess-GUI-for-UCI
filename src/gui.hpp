@@ -13,6 +13,7 @@
 #include "ui/engine_manager.hpp"
 #include "ui/game_screen.hpp"
 #include "ui/match_screen.hpp"
+#include "ui/sounds.hpp"
 #include "ui/tools_screen.hpp"
 #include "ui/uci_console.hpp"
 
@@ -43,6 +44,8 @@ public:
     void toast(const std::string& s);
     void go(Screen s);
     const PieceSet& pieces() const { return pieces_; }
+    void loadPieces();
+    Sounds& sounds(){ return sounds_; }
     void openEditor(const Position& p);                 // edit a copy of `p`
     void openEditorForMatch();                          // "Done" adds the position to the match
     void editorDone(EditorAction a, const Position& p); // the editor's "use it" buttons
@@ -74,8 +77,11 @@ private:
     Settings settings_;
     EngineRegistry registry_;
     PieceSet pieces_;
+    Sounds sounds_;
     std::string toastText_;
     sf::Clock toastClock_;
+    bool showShortcuts_ = false;
+    void drawShortcuts();
     bool showAbout_ = false;
 
     GameScreen game_{*this};

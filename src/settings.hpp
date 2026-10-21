@@ -10,7 +10,11 @@ struct Settings {
     // appearance
     std::string theme = "dark";               // dark | light
     std::string boardTheme = "brown";         // see BoardTheme in ui/board_view
+    std::string pieceSet = "classic";         // see pieceSets() in ui/board_view
     bool showCoordinates = true;
+    int moveAnimationMs = 150;                // 0 = no piece sliding
+    bool moveSounds = false;
+    double boardSplit = 0.60;                 // share of the window width the game board may use
     // folders last used in file dialogs
     std::string lastPgnDir, lastEngineDir, lastOpeningsDir, lastSaveDir;
     // time control for games and matches
@@ -21,6 +25,7 @@ struct Settings {
     // engines last chosen for each purpose (engine names from engines.json)
     std::string opponentEngine, analysisEngine, perftEngine, accTestEngine, accRefEngine, judgeEngine;
     std::string uciCheckEngine;
+    std::string eloEngine;
     // accuracy test
     int accCount = 100, accTestMs = 500, accRefMs = 1000, accMultiPV = 3;
     // matches

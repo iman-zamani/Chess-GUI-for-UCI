@@ -13,6 +13,7 @@ on:
     paths:
       - ".github/workflows/release.yaml"
       - "CMakeLists.txt"
+      - "src/cli.cpp"
       - "BundleInfo.plist.in"
       - "Info.plist"
   workflow_dispatch:
@@ -44,10 +45,13 @@ jobs:
           DIST_NAME="chess-gui-${VERSION:0:16}-windows-x64"
           mkdir "$DIST_NAME"
           # SFML and the C++ runtime are linked statically: no DLLs to ship.
-          cp build/Release/chess-gui.exe "$DIST_NAME/"
+          cp build/Release/chess-gui.exe build/Release/chess-cli.exe "$DIST_NAME/"
           cp -r Resources "$DIST_NAME/Resources"
           cp LICENSE "$DIST_NAME/"
           7z a "${DIST_NAME}.zip" "$DIST_NAME"
+          # the command-line tool on its own (fixed name: the GitHub Action downloads it)
+          mkdir chess-cli && cp build/Release/chess-cli.exe LICENSE chess-cli/ && cp -r Resources chess-cli/Resources
+          7z a chess-cli-windows-x64.zip ./chess-cli/*
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v6
@@ -84,14 +88,20 @@ jobs:
           # The .app bundle carries Info.plist (Retina) and its own Resources.
           cp -R "build/Chess GUI for UCI.app" "$STAGING/"
           cp LICENSE "$STAGING/"
+          cp build/chess-cli "$STAGING/"
           ln -s /Applications "$STAGING/Applications"
           hdiutil create -volname "ChessGUI" -srcfolder "$STAGING" -ov -format UDZO "$DMG_NAME"
+          # the command-line tool on its own (fixed name: the GitHub Action downloads it)
+          mkdir chess-cli && cp build/chess-cli LICENSE chess-cli/ && cp -R Resources chess-cli/Resources
+          tar -czf "chess-cli-macos-${{ matrix.target_arch }}.tar.gz" -C chess-cli .
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v6
         with:
           name: macos-${{ matrix.target_arch }}
-          path: "*.dmg"
+          path: |
+            *.dmg
+            chess-cli-*.tar.gz
 
   # ==========================================================
   # 3. LINUX BUILD (AppImage, Deb, Rpm)
@@ -121,6 +131,7 @@ jobs:
         run: |
           mkdir -p AppDir/usr/bin
           cp build/chess-gui AppDir/usr/bin/chess-gui
+          cp build/chess-cli AppDir/usr/bin/chess-cli
           # Resources live next to the binary (the app chdirs to its own directory)
           cp -r Resources AppDir/usr/bin/
 
@@ -163,11 +174,12 @@ jobs:
 
           echo '#!/bin/bash' > post-install.sh
           echo 'ln -sf /opt/chess-gui/chess-gui /usr/bin/chess-gui' >> post-install.sh
+          echo 'ln -sf /opt/chess-gui/chess-cli /usr/bin/chess-cli' >> post-install.sh
           echo 'gtk-update-icon-cache /usr/share/icons/hicolor || true' >> post-install.sh
           echo 'update-desktop-database /usr/share/applications || true' >> post-install.sh
 
           echo '#!/bin/bash' > post-uninstall.sh
-          echo 'rm -f /usr/bin/chess-gui' >> post-uninstall.sh
+          echo 'rm -f /usr/bin/chess-gui /usr/bin/chess-cli' >> post-uninstall.sh
           echo 'gtk-update-icon-cache /usr/share/icons/hicolor || true' >> post-uninstall.sh
           echo 'update-desktop-database /usr/share/applications || true' >> post-uninstall.sh
 
@@ -182,11 +194,18 @@ jobs:
           mv chess-gui_*.deb "chess-gui-${V}-linux-amd64.deb"
           mv chess-gui-*.rpm "chess-gui-${V}-linux-x86_64.rpm"
 
+      - name: Package chess-cli
+        run: |
+          # the command-line tool on its own (fixed name: the GitHub Action downloads it)
+          mkdir chess-cli && cp build/chess-cli LICENSE chess-cli/ && cp -r Resources chess-cli/Resources
+          tar -czf chess-cli-linux-x86_64.tar.gz -C chess-cli .
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v6
         with:
           name: linux-packages
           path: |
+            chess-cli-*.tar.gz
             *.AppImage
             *.deb
             *.rpm

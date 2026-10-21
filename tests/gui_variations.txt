@@ -1,0 +1,31 @@
+# GUI test: variations on the analysis board. Play 1.e4 e5 2.Nf3, go back to
+# 1.e4, play 1...c5 2.Nf3 d6 (a variation), then walk the main line again.
+wait-item 10000 Analysis board
+click-item Analysis board
+wait-item 10000 New game...
+click-square e2
+click-square e4
+click-square e7
+click-square e5
+click-square g1
+click-square f3
+wait 100
+key Left
+key Left
+wait 100
+expect rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1
+click-square c7
+click-square c5
+click-square g1
+click-square f3
+click-square d7
+click-square d6
+wait 200
+expect rnbqkbnr/pp2pppp/3p4/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 3
+key Up
+key Right
+key Right
+key Right
+wait 100
+expect rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2
+quit

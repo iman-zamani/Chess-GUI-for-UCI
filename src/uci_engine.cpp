@@ -1,5 +1,6 @@
 /* Chess-GUI-for-UCI — UCI engine process wrapper. GPL-2.0 */
 #include "uci_engine.hpp"
+#include "chess.hpp"
 #include <algorithm>
 #include <chrono>
 #include <cctype>
@@ -526,6 +527,12 @@ void UciEngine::newGame(){
     isReady(10000);
 }
 void UciEngine::setPosition(const std::string& fen, const std::vector<std::string>& mv){
+    // Chess960 positions need UCI_Chess960 (and king-takes-rook castling), others must not have it
+    int want = Position::fromFEN(fen).chess960 ? 1 : 0;
+    if (want != chess960Mode_ && (want || chess960Mode_ == 1) && hasOption("UCI_Chess960")){
+        setOption("UCI_Chess960", want ? "true" : "false");
+        chess960Mode_ = want;
+    }
     std::string cmd = "position fen " + fen;
     if (!mv.empty()){
         cmd += " moves";
@@ -646,6 +653,23 @@ std::string UciEngine::goMovetime(int ms){
     resetSearchInfo();
     sendRaw("go movetime " + std::to_string(ms));
     return waitBestmove(ms + 8000);
+}
+std::string UciEngine::goMovetimeStrict(int ms, int graceMs, int stopWaitMs){
+    resetSearchInfo();
+    sendRaw("go movetime " + std::to_string(ms));
+    auto t0 = clk::now();
+    while (msSince(t0) < ms + graceMs && alive()){
+        std::string ln = readLine(std::max(1, (int)(ms + graceMs - msSince(t0))));
+        if (ln.empty()) continue;
+        parseInfo(ln);
+        if (ln.rfind("bestmove", 0) == 0){
+            std::istringstream ss(ln);
+            std::string a, b; ss >> a >> b;
+            return b == "(none)" ? "" : b;
+        }
+    }
+    if (!alive()) return "";
+    return stopAndWait(stopWaitMs);
 }
 std::string UciEngine::goDepth(int d){
     resetSearchInfo();

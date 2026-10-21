@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(ChessGUIForUCI LANGUAGES CXX)
+project(ChessGUIForUCI VERSION 2.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -93,6 +93,28 @@ if(CHESSGUI_BUILD_GUI)
         DOWNLOAD_EXTRACT_TIMESTAMP TRUE
         SOURCE_SUBDIR  header-only)     # only the header is used; don't add its CMake project
     FetchContent_MakeAvailable(pfd)
+
+    # nanosvg (zlib, header-only) draws the SVG piece sets. No tags: pinned to a commit.
+    FetchContent_Declare(nanosvg
+        URL      https://github.com/memononen/nanosvg/archive/239e102ec2c691f2902e20ace2ed36ee4a35cfe6.tar.gz
+        URL_HASH SHA256=2bc68bdb518d7800252042e5cad50a0ab321596f0cbf49ef2a752926329063d2
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+        SOURCE_SUBDIR  no-cmake)        # headers only; don't add its CMake project
+    FetchContent_MakeAvailable(nanosvg)
+
+    # miniaudio (public domain / MIT-0, single header) plays the move sounds.
+    FetchContent_Declare(miniaudio
+        URL      https://github.com/mackron/miniaudio/archive/refs/tags/0.11.24.tar.gz
+        URL_HASH SHA256=3fdeb62a9387a3164e901475c663f5ab5c8318de268fd2c64af937c6a65980bd
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+        SOURCE_SUBDIR  no-cmake)        # the header only
+    FetchContent_MakeAvailable(miniaudio)
+    set(AUDIO_LIBS ${CMAKE_DL_LIBS})
+    if(APPLE)
+        list(APPEND AUDIO_LIBS "-framework CoreAudio" "-framework AudioToolbox" "-framework CoreFoundation")
+    elseif(UNIX)
+        list(APPEND AUDIO_LIBS m)
+    endif()
 endif()
 
 find_package(Threads REQUIRED)
@@ -105,21 +127,51 @@ FetchContent_Declare(nlohmann_json
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
 FetchContent_MakeAvailable(nlohmann_json)
 
+# Fathom (MIT) for Syzygy tablebase adjudication. Pinned to a commit: its only
+# tag (v1.0, 2015) predates years of fixes. Compiled as C++ so MSVC needs no C11 atomics.
+FetchContent_Declare(fathom
+    URL      https://github.com/jdart1/Fathom/archive/c9c6fef0dddc05d2e242c183acf5833149ab676d.tar.gz
+    URL_HASH SHA256=ba4553045d796f0521a8554ef21bad44b20fd4a7657eb08ff85d17c9f27ff8ac
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+FetchContent_MakeAvailable(fathom)
+add_library(fathom STATIC ${fathom_SOURCE_DIR}/src/tbprobe.c)
+set_source_files_properties(${fathom_SOURCE_DIR}/src/tbprobe.c PROPERTIES LANGUAGE CXX)
+target_include_directories(fathom PUBLIC ${fathom_SOURCE_DIR}/src)
+if(MSVC)
+    target_compile_options(fathom PRIVATE /w)
+else()
+    target_compile_options(fathom PRIVATE -w)
+endif()
+
 # Core logic: rules, UCI process wrapper, matches, test tools. No SFML here;
 # it is shared by the GUI, the tests and the headless CLI.
 add_library(chesscore STATIC
     src/analysis.cpp
     src/chess.cpp
+    src/elo_estimator.cpp
     src/engine_config.cpp
+    src/game_tree.cpp
+    src/openings.cpp
     src/perft_bisect.cpp
+    src/power.cpp
     src/settings.cpp
+    src/stats.cpp
+    src/syzygy.cpp
     src/uci_check.cpp
     src/uci_engine.cpp
     src/testing.cpp
     src/tournament.cpp
 )
 target_include_directories(chesscore PUBLIC src)
-target_link_libraries(chesscore PUBLIC Threads::Threads nlohmann_json::nlohmann_json)
+target_compile_definitions(chesscore PUBLIC CHESSGUI_VERSION="${PROJECT_VERSION}")
+target_link_libraries(chesscore PUBLIC Threads::Threads nlohmann_json::nlohmann_json PRIVATE fathom)
+if(APPLE)
+    target_link_libraries(chesscore PUBLIC "-framework IOKit" "-framework CoreFoundation")   # KeepAwake
+endif()
+
+# Headless command-line tool: core only, no SFML.
+add_executable(chess-cli src/cli.cpp)
+target_link_libraries(chess-cli PRIVATE chesscore)
 
 if(CHESSGUI_BUILD_GUI)
 set(CHESS_SOURCES
@@ -131,6 +183,7 @@ set(CHESS_SOURCES
     src/ui/file_dialog.cpp
     src/ui/game_screen.cpp
     src/ui/tools_screen.cpp
+    src/ui/sounds.cpp
     src/ui/uci_console.cpp
     src/ui/widgets.cpp
     src/ui/item_hooks.cpp
@@ -139,8 +192,8 @@ set(CHESS_SOURCES
 )
 
 add_executable(chess-gui ${CHESS_SOURCES})
-target_link_libraries(chess-gui PRIVATE chesscore ${SFML_LIBS})
-target_include_directories(chess-gui PRIVATE ${pfd_SOURCE_DIR})
+target_link_libraries(chess-gui PRIVATE chesscore ${SFML_LIBS} ${AUDIO_LIBS})
+target_include_directories(chess-gui PRIVATE ${pfd_SOURCE_DIR} ${nanosvg_SOURCE_DIR}/src ${miniaudio_SOURCE_DIR})
 
 # Copy Resources next to the binary so ./chess-gui finds fonts, pieces,
 # engines and the perft suite.
@@ -163,8 +216,8 @@ if(APPLE)
 
     # Path B (guaranteed): a real bundle -> "Chess GUI for UCI.app".
     add_executable(chess-gui-app MACOSX_BUNDLE ${CHESS_SOURCES})
-    target_link_libraries(chess-gui-app PRIVATE chesscore ${SFML_LIBS})
-    target_include_directories(chess-gui-app PRIVATE ${pfd_SOURCE_DIR})
+    target_link_libraries(chess-gui-app PRIVATE chesscore ${SFML_LIBS} ${AUDIO_LIBS})
+    target_include_directories(chess-gui-app PRIVATE ${pfd_SOURCE_DIR} ${nanosvg_SOURCE_DIR}/src ${miniaudio_SOURCE_DIR})
     set_target_properties(chess-gui-app PROPERTIES
         OUTPUT_NAME "Chess GUI for UCI"
         MACOSX_BUNDLE_BUNDLE_NAME "Chess GUI for UCI"

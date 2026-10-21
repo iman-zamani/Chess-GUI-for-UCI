@@ -1,0 +1,121 @@
+name: "UCI engine checks (Chess-GUI-for-UCI)"
+description: >-
+  Checks a UCI chess engine built earlier in your workflow: UCI protocol compliance,
+  move generation (perft against a verified reference) and, optionally, a
+  position-based Elo estimate. Uses the chess-cli tool from a Chess-GUI-for-UCI release.
+branding:
+  icon: "check-circle"
+  color: "blue"
+
+inputs:
+  engine:
+    description: "Path to the engine executable (built earlier in the workflow)."
+    required: true
+  engine-args:
+    description: "Command-line arguments for the engine, as one string."
+    required: false
+    default: ""
+  checks:
+    description: "Comma-separated list of: uci-check, perft, elo-estimate."
+    required: false
+    default: "uci-check,perft"
+  uci-check-args:
+    description: "Extra arguments for chess-cli uci-check (default: --quick)."
+    required: false
+    default: "--quick"
+  perft-args:
+    description: "Extra arguments for chess-cli perft (default: the built-in suite up to depth 4)."
+    required: false
+    default: "--depth 4"
+  elo-estimate-args:
+    description: "Extra arguments for chess-cli elo-estimate (default: --quick)."
+    required: false
+    default: "--quick"
+  version:
+    description: "Chess-GUI-for-UCI release tag to download chess-cli from (default: the latest release)."
+    required: false
+    default: "latest"
+  chess-cli:
+    description: "Use this chess-cli executable instead of downloading one (testing)."
+    required: false
+    default: ""
+
+outputs:
+  elo:
+    description: "Estimated Elo (only when elo-estimate ran)."
+    value: ${{ steps.elo.outputs.elo }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Get chess-cli
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        LOCAL_CLI: ${{ inputs.chess-cli }}
+      run: |
+        set -euo pipefail
+        if [ -n "$LOCAL_CLI" ]; then
+          echo "CHESS_CLI=$LOCAL_CLI" >> "$GITHUB_ENV"
+          "$LOCAL_CLI" help | head -n 1
+          exit 0
+        fi
+        case "${RUNNER_OS}-${RUNNER_ARCH}" in
+          Linux-X64)   asset=chess-cli-linux-x86_64.tar.gz ;;
+          macOS-ARM64) asset=chess-cli-macos-arm64.tar.gz ;;
+          macOS-X64)   asset=chess-cli-macos-x86_64.tar.gz ;;
+          Windows-X64) asset=chess-cli-windows-x64.zip ;;
+          *) echo "::error::no chess-cli build for ${RUNNER_OS} ${RUNNER_ARCH}"; exit 1 ;;
+        esac
+        base=https://github.com/iman-zamani/Chess-GUI-for-UCI/releases
+        if [ "$VERSION" = latest ]; then url="$base/latest/download/$asset"; else url="$base/download/$VERSION/$asset"; fi
+        dir="$RUNNER_TEMP/chess-cli"
+        mkdir -p "$dir"
+        curl -fsSL --retry 3 -o "$RUNNER_TEMP/$asset" "$url"
+        case "$asset" in
+          *.zip) 7z x -y -o"$dir" "$RUNNER_TEMP/$asset" > /dev/null ;;
+          *)     tar -xzf "$RUNNER_TEMP/$asset" -C "$dir" ;;
+        esac
+        exe="$dir/chess-cli"; [ -f "$exe.exe" ] && exe="$exe.exe"
+        chmod +x "$exe" || true
+        echo "CHESS_CLI=$exe" >> "$GITHUB_ENV"
+        "$exe" help | head -n 1
+
+    - name: UCI compliance
+      if: contains(inputs.checks, 'uci-check')
+      shell: bash
+      env:
+        ENGINE: ${{ inputs.engine }}
+        ENGINE_ARGS: ${{ inputs.engine-args }}
+        EXTRA: ${{ inputs.uci-check-args }}
+      run: |
+        # EXTRA is split into words on purpose
+        "$CHESS_CLI" uci-check --engine cmd="$ENGINE" args="$ENGINE_ARGS" $EXTRA
+
+    - name: Perft
+      if: contains(inputs.checks, 'perft')
+      shell: bash
+      env:
+        ENGINE: ${{ inputs.engine }}
+        ENGINE_ARGS: ${{ inputs.engine-args }}
+        EXTRA: ${{ inputs.perft-args }}
+      run: |
+        # EXTRA is split into words on purpose
+        "$CHESS_CLI" perft --engine cmd="$ENGINE" args="$ENGINE_ARGS" $EXTRA
+
+    - name: Elo estimate
+      id: elo
+      if: contains(inputs.checks, 'elo-estimate')
+      shell: bash
+      env:
+        ENGINE: ${{ inputs.engine }}
+        ENGINE_ARGS: ${{ inputs.engine-args }}
+        EXTRA: ${{ inputs.elo-estimate-args }}
+      run: |
+        set -euo pipefail
+        "$CHESS_CLI" elo-estimate --engine cmd="$ENGINE" args="$ENGINE_ARGS" $EXTRA --json > "$RUNNER_TEMP/elo.json"
+        cat "$RUNNER_TEMP/elo.json"
+        py=$(command -v python3 || command -v python)
+        elo=$("$py" -c "import json,sys; print(round(json.load(open(sys.argv[1]))['elo']))" "$RUNNER_TEMP/elo.json")
+        echo "elo=$elo" >> "$GITHUB_OUTPUT"
+        echo "### Estimated Elo: $elo" >> "$GITHUB_STEP_SUMMARY"

@@ -62,11 +62,19 @@ bool App::init(){
     if (!imguiOk_){ std::fprintf(stderr, "ImGui initialisation failed\n"); return false; }
     ImGui::GetIO().IniFilename = nullptr;                 // no imgui.ini next to the binary
     setupFonts();
-    if (!pieces_.load("Resources/pieceTexture@2x.png") && !pieces_.load("Resources/pieceTexture.png"))
-        std::fprintf(stderr, "Piece images not found; using letters\n");
+    loadPieces();
     scanEngines();
     game_.newHumanGame(Position::startpos());
     return true;
+}
+
+void App::loadPieces(){
+    bool ok = false;
+    for (auto& ps : pieceSets())
+        if (ps.name == settings_.pieceSet && ps.name != "classic") ok = pieces_.loadDir(ps.path);
+    if (!ok && settings_.pieceSet != "classic") toast("Could not load the piece set '" + settings_.pieceSet + "'");
+    if (!ok) ok = pieces_.load("Resources/pieceTexture@2x.png") || pieces_.load("Resources/pieceTexture.png");
+    if (!ok) std::fprintf(stderr, "Piece images not found; using letters\n");
 }
 
 // ImGui draws in physical pixels; fonts are rasterized at the real pixel
@@ -220,6 +228,7 @@ void App::run(){
 void App::handleGlobalKeys(){
     ImGuiIO& io = ImGui::GetIO();
     if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_U)) showConsole_ = !showConsole_;
+    if (ImGui::IsKeyPressed(ImGuiKey_F1, false)) showShortcuts_ = !showShortcuts_;
     if (io.WantTextInput || ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId)) return;
     if (ImGui::IsKeyPressed(ImGuiKey_Escape, false) && screen_ != Screen::HOME) go(Screen::HOME);
 }
@@ -267,6 +276,7 @@ void App::drawFrame(){
                                               {"Log files", "*.log *.txt", "All files", "*"}); },
         [this](const std::string& m){ toast(m); });
     drawAbout();
+    drawShortcuts();
     drawToast();
 }
 
@@ -289,15 +299,29 @@ void App::drawMenuBar(){
     }
     if (ImGui::BeginMenu("Tools")){
         if (ImGui::MenuItem("Engine testing tools")) go(Screen::TOOLS);
+        if (ImGui::MenuItem("Estimate engine Elo")){ go(Screen::TOOLS); tools_.openEloTab(); }
         ImGui::MenuItem("UCI console", "Ctrl+U", &showConsole_);
         ImGui::EndMenu();
     }
     if (ImGui::BeginMenu("View")){
         if (ImGui::MenuItem("Flip board", "F", false, screen_ == Screen::GAME)) game_.flip();
         if (ImGui::MenuItem("Show coordinates", nullptr, &settings_.showCoordinates)) saveSettings();
+        bool anim = settings_.moveAnimationMs > 0;
+        if (ImGui::MenuItem("Animate moves", nullptr, &anim)){ settings_.moveAnimationMs = anim ? 150 : 0; saveSettings(); }
+        if (ImGui::MenuItem("Move sounds", nullptr, &settings_.moveSounds)) saveSettings();
         if (ImGui::BeginMenu("Board colours")){
             for (auto& t : boardThemes())
                 if (ImGui::MenuItem(t.name, nullptr, settings_.boardTheme == t.name)){ settings_.boardTheme = t.name; saveSettings(); }
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Pieces")){
+            for (auto& ps : pieceSets())
+                if (ImGui::MenuItem((ps.name + (ps.user ? "  (yours)" : "")).c_str(), nullptr, settings_.pieceSet == ps.name)){
+                    settings_.pieceSet = ps.name; saveSettings(); loadPieces();
+                }
+            ImGui::Separator();
+            ImGui::TextDisabled("Your own sets: a folder with wK.svg ... bP.svg");
+            ImGui::TextDisabled("(or a 6x2 pieces.png) in %s", userPieceDir().c_str());
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Theme")){
@@ -308,6 +332,7 @@ void App::drawMenuBar(){
         ImGui::EndMenu();
     }
     if (ImGui::BeginMenu("Help")){
+        if (ImGui::MenuItem("Keyboard shortcuts", "F1")) showShortcuts_ = true;
         if (ImGui::MenuItem("About")) showAbout_ = true;
         ImGui::EndMenu();
     }
@@ -349,13 +374,15 @@ void App::drawHome(){
 void App::drawAbout(){
     if (showAbout_){ ImGui::OpenPopup("About"); showAbout_ = false; }
     if (ImGui::BeginPopupModal("About", nullptr, ImGuiWindowFlags_AlwaysAutoResize)){
-        ImGui::TextUnformatted("Chess GUI for UCI");
+        ImGui::Text("Chess GUI for UCI %s", CHESSGUI_VERSION);
         ImGui::TextDisabled("GPL-2.0. A GUI for playing, analysing and testing UCI chess engines.");
         ImGui::Separator();
         ImGui::TextUnformatted("Third-party components:");
         ImGui::BulletText("SFML 3 (zlib), Dear ImGui and ImGui-SFML (MIT)");
         ImGui::BulletText("nlohmann/json (MIT), portable-file-dialogs (WTFPL)");
+        ImGui::BulletText("Fathom (MIT), nanosvg (zlib), miniaudio (public domain / MIT-0)");
         ImGui::BulletText("Cantarell and JetBrains Mono fonts (SIL OFL 1.1)");
+        ImGui::BulletText("Pieces: cburnett, merida (GPLv2+), fantasy, celtic (MIT); see Resources/pieces");
         ImGui::Text("Settings and engines are stored in:");
         ImGui::TextDisabled("%s", userConfigDir().c_str());
         if (ImGui::Button("Close")) ImGui::CloseCurrentPopup();
@@ -404,6 +431,7 @@ static bool keyFromName(const std::string& n, sf::Keyboard::Key& k){
     };
     for (auto& p : named) if (n == p.first){ k = p.second; return true; }
     if (n.size()==1 && n[0]>='A' && n[0]<='Z'){ k = (K)((int)K::A + (n[0]-'A')); return true; }
+    if (n.size() >= 2 && n[0] == 'F'){ int f = std::atoi(n.c_str() + 1); if (f >= 1 && f <= 12){ k = (K)((int)K::F1 + f - 1); return true; } }
     return false;
 }
 
@@ -418,6 +446,7 @@ static ImGuiKey imguiKey(sf::Keyboard::Key k){
     case K::End: return ImGuiKey_End;       case K::Space: return ImGuiKey_Space;
     default:
         if (k >= K::A && k <= K::Z) return (ImGuiKey)(ImGuiKey_A + ((int)k - (int)K::A));
+        if (k >= K::F1 && k <= K::F12) return (ImGuiKey)(ImGuiKey_F1 + ((int)k - (int)K::F1));
         return ImGuiKey_None;
     }
 }
@@ -517,4 +546,41 @@ void App::stepScript(){
         }
     }
     else if (s.op == "quit") window_.close();
+}
+
+void App::drawShortcuts(){
+    if (!showShortcuts_) return;
+    float em = ImGui::GetFontSize();
+    ImGui::SetNextWindowSize(ImVec2(em * 34, 0), ImGuiCond_Appearing);
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowBgAlpha(1.0f);
+    if (!ImGui::Begin("Keyboard shortcuts", &showShortcuts_, ImGuiWindowFlags_NoCollapse)){ ImGui::End(); return; }
+    static const char* rows[][2] = {
+        {"F1", "show / hide this list"},
+        {"Ctrl+U", "UCI console (every running engine, live)"},
+        {"Esc", "back to the home screen"},
+        {"", ""},
+        {"Left / Right", "previous / next move"},
+        {"Up or Home", "start of the game"},
+        {"Down or End", "end of the line shown (the live position in a game)"},
+        {"F", "flip the board"},
+        {"Ctrl+O / Ctrl+S", "open / save PGN"},
+        {"", ""},
+        {"Click or drag", "move a piece; right-click clears the selection and premoves"},
+        {"King onto rook", "castling (also in Chess960)"},
+        {"Move from a past position", "adds a variation (analysis, or after the game)"},
+        {"Right-click a move", "make it the main line, delete from here, comment"},
+        {"Click a move of an engine line", "add that line up to the move"},
+        {"Click the eval graph", "jump to that move"},
+        {"Drag the bar right of the board", "resize the board"},
+    };
+    if (ImGui::BeginTable("keys", 2, ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp)){
+        for (auto& r : rows){
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn(); ImGui::TextColored(ui::kAccent, "%s", r[0]);
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(r[1]);
+        }
+        ImGui::EndTable();
+    }
+    ImGui::End();
 }

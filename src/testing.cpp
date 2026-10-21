@@ -1,7 +1,10 @@
 /* Chess-GUI-for-UCI — engine developer tools. GPL-2.0 */
 #include "testing.hpp"
+#include "openings.hpp"
+#include <algorithm>
 #include <fstream>
 #include <sstream>
+#include <chrono>
 #include <cmath>
 
 std::vector<PerftCase> builtinPerftSuite(){
@@ -129,17 +132,42 @@ std::vector<std::string> defaultAccuracyPositions(){
 }
 
 std::vector<std::string> loadFenList(const std::string& path){
+    // plain FEN lines, EPD with opcodes (hmvc/fmvn honoured) or a PGN file
     std::vector<std::string> out;
-    std::ifstream f(path);
-    if (!f) return out;
-    std::string line;
-    while (std::getline(f, line)){
-        while (!line.empty() && (line.back()=='\r'||line.back()==' ')) line.pop_back();
-        if (line.empty() || line[0]=='#') continue;
-        bool ok=false; Position::fromFEN(line,&ok);
-        if (ok) out.push_back(line);
-    }
+    for (auto& o : loadOpeningBook(path).openings) out.push_back(o.finalPosition().toFEN());
     return out;
+}
+
+PerftBenchmark runPerftBenchmark(int runs){
+    // fixed work (about 11M leaf nodes): opening, a tactical middlegame (Kiwipete) and an endgame
+    static const std::pair<const char*, int> kWork[] = {
+        {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 5},
+        {"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 4},
+        {"8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1", 5},
+    };
+    PerftBenchmark b;
+    for (int r = 0; r < std::max(1, runs); r++){
+        auto t0 = std::chrono::steady_clock::now();
+        uint64_t nodes = 0;
+        for (auto& w : kWork) nodes += Position::fromFEN(w.first).perft(w.second);
+        double sec = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+        if (b.bestSeconds == 0 || sec < b.bestSeconds){ b.bestSeconds = sec; b.nodes = nodes; }
+    }
+    b.nps = b.bestSeconds > 0 ? b.nodes / b.bestSeconds : 0;
+    return b;
+}
+
+int reviewMark(double before, double after, bool playedBest, bool hasSecond, double second){
+    double drop = std::max(0.0, before - after);
+    if (drop >= 30) return 4;
+    if (drop >= 20) return 2;
+    if (drop >= 10) return 6;
+    if (playedBest && hasSecond){
+        double gap = before - second;
+        if (gap >= 40 && before < 80) return 3;
+        if (gap >= 15) return 1;
+    }
+    return 0;
 }
 
 // cp (mover POV) -> expected win percentage (lichess model)

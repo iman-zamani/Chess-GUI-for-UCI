@@ -227,3 +227,15 @@ TEST_CASE("game/time-control-label"){
     CHECK_EQ((TimeControl{180000, 2000}.label()), std::string("3+2"));
     CHECK_EQ((TimeControl{10000, 100}.label()), std::string("10s+0.1"));
 }
+
+TEST_CASE("game/review-marks"){
+    CHECK_EQ(reviewMark(60, 25, false, false, 0), 4);     // -35 points: ??
+    CHECK_EQ(reviewMark(60, 38, false, false, 0), 2);     // -22: ?
+    CHECK_EQ(reviewMark(60, 48, false, false, 0), 6);     // -12: ?!
+    CHECK_EQ(reviewMark(60, 55, false, false, 0), 0);
+    CHECK_EQ(reviewMark(55, 55, true, true, 35), 1);      // only good move: next best 20 worse
+    CHECK_EQ(reviewMark(70, 70, true, true, 25), 3);      // 45-point gap, not yet winning
+    CHECK_EQ(reviewMark(95, 95, true, true, 40), 1);      // already winning: no !!
+    CHECK_EQ(reviewMark(55, 55, true, true, 50), 0);      // several good moves
+    CHECK_EQ(reviewMark(55, 55, true, false, 0), 0);      // only one legal move: nothing to mark
+}

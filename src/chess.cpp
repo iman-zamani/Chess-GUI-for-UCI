@@ -35,6 +35,26 @@ Position Position::startpos(){
     return fromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }
 
+Position Position::chess960Start(int n){
+    n = ((n % 960) + 960) % 960;
+    char r[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    r[(n % 4) * 2 + 1] = 'B'; n /= 4;          // light-squared bishop: b, d, f, h
+    r[(n % 4) * 2] = 'B'; n /= 4;              // dark-squared bishop: a, c, e, g
+    int q = n % 6; n /= 6;                     // queen on the q-th empty square
+    for (int f = 0; f < 8; f++) if (!r[f] && q-- == 0){ r[f] = 'Q'; break; }
+    static const int KN[10][2] = {{0,1},{0,2},{0,3},{0,4},{1,2},{1,3},{1,4},{2,3},{2,4},{3,4}};
+    int e[5], ne = 0;                          // knights: one of 10 pairs of the 5 empty squares
+    for (int f = 0; f < 8; f++) if (!r[f]) e[ne++] = f;
+    r[e[KN[n][0]]] = 'N'; r[e[KN[n][1]]] = 'N';
+    const char* rkr = "RKR";                   // rook, king, rook on the last three
+    for (int f = 0, j = 0; f < 8; f++) if (!r[f]) r[f] = rkr[j++];
+    std::string w(r, 8), b = w;
+    for (auto& c : b) c = (char)std::tolower((unsigned char)c);
+    Position p = fromFEN(b + "/pppppppp/8/8/8/8/PPPPPPPP/" + w + " w KQkq - 0 1");
+    p.chess960 = true;
+    return p;
+}
+
 Position Position::fromFEN(const std::string& fen, bool* ok){
     Position p; if (ok) *ok = false;
     std::istringstream ss(fen);
@@ -53,14 +73,32 @@ Position Position::fromFEN(const std::string& fen, bool* ok){
     }
     if (sq != 64) return p;
     p.whiteToMove = (stm == "w");
-    p.castleWK = castling.find('K')!=std::string::npos;
-    p.castleWQ = castling.find('Q')!=std::string::npos;
-    p.castleBK = castling.find('k')!=std::string::npos;
-    p.castleBQ = castling.find('q')!=std::string::npos;
     p.epSquare = nameToSquare(ep);
     p.halfmoveClock = hm; p.fullmoveNumber = fm>0?fm:1;
     // sanity: both kings present
     if (p.kingSquare(true)<0 || p.kingSquare(false)<0) return p;
+    // castling: KQkq (outermost rook on that side), or the rook's file (X-FEN / Shredder-FEN)
+    bool* rights[4] = {&p.castleWK, &p.castleWQ, &p.castleBK, &p.castleBQ};
+    bool odd = false;                            // needs Chess960 rules or notation
+    if (castling != "-"){
+        for (char c : castling){
+            bool white = std::isupper((unsigned char)c) != 0;
+            char u = (char)std::toupper((unsigned char)c);
+            if (u != 'K' && u != 'Q' && (u < 'A' || u > 'H')) return p;
+            int rank = white ? 7 : 0, k = p.kingSquare(white), rook = white ? WHITE_ROOK : BLACK_ROOK;
+            if (k / 8 != rank) continue;
+            int kf = k % 8, rf = -1;
+            if (u == 'K'){ for (int f = 7; f > kf; f--) if (p.board[rank*8+f] == rook){ rf = f; break; } }
+            else if (u == 'Q'){ for (int f = 0; f < kf; f++) if (p.board[rank*8+f] == rook){ rf = f; break; } }
+            else { rf = u - 'A'; odd = true; if (p.board[rank*8+rf] != rook) rf = -1; }
+            if (rf < 0 || rf == kf) continue;
+            int idx = (white ? 0 : 2) + (rf > kf ? 0 : 1);
+            *rights[idx] = true;
+            p.castleRookFile[idx] = (int8_t)rf;
+            if (kf != 4 || rf != (rf > kf ? 7 : 0)) odd = true;
+        }
+    }
+    p.chess960 = odd;
     if (ok) *ok = true;
     return p;
 }
@@ -80,7 +118,18 @@ std::string Position::toFEN() const{
     }
     s += whiteToMove? " w " : " b ";
     std::string c;
-    if (castleWK)c+='K'; if(castleWQ)c+='Q'; if(castleBK)c+='k'; if(castleBQ)c+='q';
+    const bool* rights[4] = {&castleWK, &castleWQ, &castleBK, &castleBQ};
+    for (int i = 0; i < 4; i++){
+        if (!*rights[i]) continue;
+        bool white = i < 2, ks = i % 2 == 0;
+        char letter = ks ? 'K' : 'Q';
+        if (chess960){                           // X-FEN: the rook's file when it isn't the outermost
+            int rank = white ? 7 : 0, rook = white ? WHITE_ROOK : BLACK_ROOK, rf = castleRookFile[i];
+            for (int f = ks ? rf + 1 : 0; f < (ks ? 8 : rf); f++)
+                if (board[rank*8+f] == rook) letter = char('A' + rf);
+        }
+        c += white ? letter : (char)std::tolower((unsigned char)letter);
+    }
     s += c.empty()? "-" : c;
     s += " " + squareName(epSquare);
     s += " " + std::to_string(halfmoveClock) + " " + std::to_string(fullmoveNumber);
@@ -196,19 +245,26 @@ void Position::generatePseudo(std::vector<Move>& out) const{
                 int tv=board[ny*8+nx];
                 if (!tv || (tv>0)!=w) push(ny*8+nx);
             }
-            // castling (king on original square implied by rights)
+            // castling (king on its original square implied by the rights). King and
+            // rook end on g/f (O-O) or c/d (O-O-O), as in Chess960: every square
+            // between and including their start and end squares must be empty apart
+            // from the two, and no square on the king's path may be attacked.
             int rank = w? 7 : 0;
-            if (sq == rank*8+4 && !inCheck(w)){
-                bool ks = w? castleWK : castleBK;
-                bool qs = w? castleWQ : castleBQ;
-                int rook = w? WHITE_ROOK : BLACK_ROOK;
-                if (ks && board[rank*8+5]==0 && board[rank*8+6]==0 && board[rank*8+7]==rook
-                    && !squareAttacked(rank*8+5,!w) && !squareAttacked(rank*8+6,!w)){
-                    Move m; m.from=(int8_t)sq; m.to=(int8_t)(rank*8+6); m.isCastle=true; out.push_back(m);
-                }
-                if (qs && board[rank*8+3]==0 && board[rank*8+2]==0 && board[rank*8+1]==0 && board[rank*8+0]==rook
-                    && !squareAttacked(rank*8+3,!w) && !squareAttacked(rank*8+2,!w)){
-                    Move m; m.from=(int8_t)sq; m.to=(int8_t)(rank*8+2); m.isCastle=true; out.push_back(m);
+            if (sq / 8 == rank && (w ? (castleWK || castleWQ) : (castleBK || castleBQ)) && !inCheck(w)){
+                int rook = w? WHITE_ROOK : BLACK_ROOK, kf = sq % 8;
+                for (int side = 0; side < 2; side++){
+                    int idx = (w ? 0 : 2) + side;
+                    bool right = side == 0 ? (w ? castleWK : castleBK) : (w ? castleWQ : castleBQ);
+                    int rf = castleRookFile[idx];
+                    if (!right || board[rank*8+rf] != rook) continue;
+                    int kt = side == 0 ? 6 : 2, rt = side == 0 ? 5 : 3;
+                    int lo = std::min(std::min(kf, kt), std::min(rf, rt)), hi = std::max(std::max(kf, kt), std::max(rf, rt));
+                    bool ok = true;
+                    for (int f = lo; f <= hi && ok; f++) if (f != kf && f != rf && board[rank*8+f]) ok = false;
+                    for (int f = std::min(kf, kt); f <= std::max(kf, kt) && ok; f++) if (squareAttacked(rank*8+f, !w)) ok = false;
+                    if (!ok) continue;
+                    Move m; m.from = (int8_t)sq; m.to = (int8_t)(rank*8 + (chess960 ? rf : kt)); m.isCastle = true;
+                    out.push_back(m);
                 }
             }
         } else { // sliders
@@ -235,31 +291,33 @@ void Position::generatePseudo(std::vector<Move>& out) const{
 void Position::makeMove(const Move& m){
     bool w = whiteToMove;
     int v = board[m.from];
-    // halfmove clock
-    if (std::abs(v)==1 || board[m.to]!=0 || m.isEnPassant) halfmoveClock=0; else halfmoveClock++;
-    // en passant capture
-    if (m.isEnPassant){
-        int capSq = w? m.to+8 : m.to-8;
-        board[capSq]=0;
-    }
-    board[m.to] = m.promo? (w? m.promo : -m.promo) : v;
-    board[m.from]=0;
-    // castling rook
     if (m.isCastle){
-        int rank = w?7:0;
-        if (m.to == rank*8+6){ board[rank*8+5]=board[rank*8+7]; board[rank*8+7]=0; }
-        else                 { board[rank*8+3]=board[rank*8+0]; board[rank*8+0]=0; }
+        // lift king and rook first: in Chess960 either may land on the other's square
+        int rank = w ? 7 : 0;
+        bool ks = isKingsideCastle(m);
+        int rookSq = rank*8 + castleRookFile[(w ? 0 : 2) + (ks ? 0 : 1)];
+        int rook = board[rookSq];
+        board[m.from] = 0; board[rookSq] = 0;
+        board[rank*8 + (ks ? 6 : 2)] = v;
+        board[rank*8 + (ks ? 5 : 3)] = rook;
+        halfmoveClock++;
+    } else {
+        if (std::abs(v)==1 || board[m.to]!=0 || m.isEnPassant) halfmoveClock=0; else halfmoveClock++;
+        // en passant capture
+        if (m.isEnPassant){
+            int capSq = w? m.to+8 : m.to-8;
+            board[capSq]=0;
+        }
+        board[m.to] = m.promo? (w? m.promo : -m.promo) : v;
+        board[m.from]=0;
     }
-    // castling rights updates
-    auto touch=[&](int sq){
-        if (sq==60) {castleWK=false;castleWQ=false;}
-        if (sq==4)  {castleBK=false;castleBQ=false;}
-        if (sq==63) castleWK=false;
-        if (sq==56) castleWQ=false;
-        if (sq==7)  castleBK=false;
-        if (sq==0)  castleBQ=false;
-    };
-    touch(m.from); touch(m.to);
+    // castling rights: a king move loses both, moving or capturing a castling rook loses one
+    if (std::abs(v) == WHITE_KING){ if (w) castleWK = castleWQ = false; else castleBK = castleBQ = false; }
+    bool* rights[4] = {&castleWK, &castleWQ, &castleBK, &castleBQ};
+    for (int i = 0; i < 4; i++){
+        int rs = (i < 2 ? 56 : 0) + castleRookFile[i];
+        if (m.from == rs || m.to == rs) *rights[i] = false;
+    }
     // ep square
     epSquare = m.isDoublePush ? (w? m.from-8 : m.from+8) : -1;
     if (!w) fullmoveNumber++;
@@ -300,13 +358,35 @@ bool Position::uciToMove(const std::string& uci, Move& out) const{
     std::vector<Move> legal; generateLegal(legal);
     for (const Move& m : legal)
         if (moveToUCI(m)==uci){ out=m; return true; }
+    // the other castling notation: king takes rook in standard chess (some engines
+    // send it), king to its target square in Chess960 (when that isn't a king move)
+    if (uci.size() == 4){
+        int from = nameToSquare(uci.substr(0, 2)), to = nameToSquare(uci.substr(2, 2));
+        for (const Move& m : legal){
+            if (!m.isCastle || m.from != from) continue;
+            int rookSq = m.from / 8 * 8 + castleRookFile[(whiteToMove ? 0 : 2) + (isKingsideCastle(m) ? 0 : 1)];
+            if (!chess960 && to == rookSq){ out = m; return true; }
+            if (chess960 && to == castleKingTarget(m) && to != m.from){
+                bool kingMove = false;
+                for (const Move& o : legal) if (!o.isCastle && o.from == from && o.to == to) kingMove = true;
+                if (!kingMove){ out = m; return true; }
+            }
+        }
+    }
     return false;
+}
+
+bool Position::isKingsideCastle(const Move& m) const{
+    return chess960 ? m.to % 8 > m.from % 8 : m.to % 8 == 6;
+}
+int Position::castleKingTarget(const Move& m) const{
+    return m.from / 8 * 8 + (isKingsideCastle(m) ? 6 : 2);
 }
 
 std::string Position::moveToSAN(const Move& m) const{
     int v = board[m.from], a=std::abs(v);
     std::string s;
-    if (m.isCastle){ s = (m.to%8==6)? "O-O" : "O-O-O"; }
+    if (m.isCastle){ s = isKingsideCastle(m)? "O-O" : "O-O-O"; }
     else {
         if (a!=1) s += (char)std::toupper(pieceChar(a));
         // disambiguation
@@ -414,6 +494,7 @@ std::string resultReasonText(ResultReason r){
     case ResultReason::ILLEGAL_MOVE: return "illegal move";
     case ResultReason::AGREEMENT: return "agreement";
     case ResultReason::ADJUDICATION: return "adjudication";
+    case ResultReason::DISCONNECT: return "engine stopped responding";
     default: return "";
     }
 }
@@ -429,7 +510,8 @@ std::string Game::toPGN() const{
     std::ostringstream o;
     o << "[Event \"Chess-GUI-for-UCI\"]\n[White \""<<whiteName<<"\"]\n[Black \""<<blackName<<"\"]\n";
     std::string sf = start.toFEN();
-    if (sf != Position::startpos().toFEN())
+    if (start.chess960) o << "[Variant \"Chess960\"]\n";
+    if (sf != Position::startpos().toFEN() || start.chess960)
         o << "[SetUp \"1\"]\n[FEN \""<<sf<<"\"]\n";
     o << "[Result \""<<resultString()<<"\"]\n\n";
     int num = start.fullmoveNumber;
@@ -511,11 +593,13 @@ std::vector<PgnGame> parsePGN(const std::string& text){
             if (sp!=std::string::npos && q1!=std::string::npos && q2>q1){
                 std::string key = line.substr(1, sp-1);
                 std::string val = line.substr(q1+1, q2-q1-1);
+                cur.tags.push_back({key, val});
                 if (key=="White") cur.white = val;
                 else if (key=="Black") cur.black = val;
                 else if (key=="Result") cur.result = val;
                 else if (key=="Event") cur.event = val;
                 else if (key=="FEN") cur.fenTag = val;
+                else if (key=="Variant") cur.variant = val;
             }
             continue;
         }
@@ -532,6 +616,9 @@ bool gameFromPGN(const PgnGame& pg, Game& out, std::string* err){
     if (!pg.fenTag.empty()){
         bool ok=false;
         Position p = Position::fromFEN(pg.fenTag,&ok);
+        std::string v = pg.variant;
+        for (auto& c : v) c = (char)std::tolower((unsigned char)c);
+        if (v.find("960") != std::string::npos || v.find("fischer") != std::string::npos) p.chess960 = true;
         if (ok) start = p;
         else { if (err) *err = "Invalid FEN tag"; return false; }
     }

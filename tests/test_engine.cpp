@@ -305,3 +305,30 @@ TEST_CASE("engine/idle-output-is-logged-and-monitored"){
     uint64_t cur = 0;
     CHECK(!log->since(cur).empty());
 }
+
+TEST_CASE("engine/chess960-option-follows-the-position"){
+    UciEngine e;
+    REQUIRE(e.start(kMock));
+    auto sent = [&](const std::string& text){
+        uint64_t cur = 0;
+        int n = 0;
+        for (auto& l : e.logSince(cur)) if (l.dir == '>' && l.text == text) n++;
+        return n;
+    };
+    // a standard game: the option is never touched
+    e.setPosition(Position::startpos().toFEN(), {"e2e4"});
+    CHECK(!e.goDepth(1).empty());
+    CHECK_EQ(sent("setoption name UCI_Chess960 value true") + sent("setoption name UCI_Chess960 value false"), 0);
+    // Chess960: switched on, and castling comes back king-takes-rook
+    Position p = Position::fromFEN("6k1/8/8/8/8/8/8/RK5R w KQ - 0 1");
+    e.setPosition(p.toFEN(), {});
+    std::string best = e.goDepth(1);
+    Move m;
+    CHECK(p.uciToMove(best, m));
+    CHECK_EQ(sent("setoption name UCI_Chess960 value true"), 1);
+    // back to standard chess: switched off again
+    e.setPosition(Position::startpos().toFEN(), {});
+    CHECK(!e.goDepth(1).empty());
+    CHECK_EQ(sent("setoption name UCI_Chess960 value false"), 1);
+    e.quit();
+}

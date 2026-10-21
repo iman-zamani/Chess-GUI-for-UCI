@@ -1,5 +1,6 @@
 /* Chess-GUI-for-UCI — engine developer tools. GPL-2.0 */
 #pragma once
+#include <cstdint>
 #include "chess.hpp"
 #include "uci_engine.hpp"
 #include <string>
@@ -39,14 +40,26 @@ bool runInternalPerftSelfTest(const std::vector<PerftCase>& suite, int maxDepth,
                               std::function<void(int,int,bool)> progress,
                               std::atomic<bool>& abortFlag);
 
-// Load a plain list of FENs, one per line ('#' comments allowed).
+// Load positions: plain FEN lines ('#' comments allowed), EPD lines with
+// opcodes, or a .pgn file (final position of each game's first 8 plies).
 std::vector<std::string> loadFenList(const std::string& path);
+
+// Single-threaded speed of this machine: the internal perft over a fixed set
+// of positions, best of `runs`, in nodes per second. The Elo estimator scales
+// its move time by calibration NPS / this NPS.
+struct PerftBenchmark { double nps = 0; uint64_t nodes = 0; double bestSeconds = 0; };
+PerftBenchmark runPerftBenchmark(int runs = 3);
 
 // Lichess accuracy model: cp -> expected win %, and per-move accuracy from
 // the win-percentage drop caused by the move.
 double cpToWinPct(int cp);
 double moveAccuracyFromWinDrop(double drop);
-double acplToAccuracy(double acpl);   // legacy rough mapping (avoid; win-drop is correct)
+double acplToAccuracy(double acpl);
+// Game review mark for a move, as a NAG (0 none, 1 !, 2 ?, 3 !!, 4 ??, 6 ?!), from the mover's
+// winning chances (Lichess win-% model) before and after it: ?! / ? / ?? for a drop of 10 / 20 / 30
+// points; ! when it is the engine's best and the next best is 15+ points worse, !! with a 40+ gap
+// in a position not already won (< 80%).
+int reviewMark(double winBefore, double winAfter, bool playedBest, bool hasSecond, double winSecond);   // legacy rough mapping (avoid; win-drop is correct)
 
 // ---------- Accuracy testing vs a reference engine ----------
 struct AccuracyMoveReport {

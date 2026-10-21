@@ -1,0 +1,4 @@
+Piece set "merida" by Armando Hernandez Marroquin.
+License: GNU General Public License, version 2 or later (GPLv2+).
+Source: https://github.com/lichess-org/lila/tree/f95d97f46f0862b6703a3924edeb3d8795cd9433/public/piece/merida
+(licence as listed in lila's COPYING.md at that commit). Unmodified.

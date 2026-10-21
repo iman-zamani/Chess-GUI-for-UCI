@@ -24,7 +24,7 @@ struct Move {
 enum class GameResult { ONGOING, WHITE_WINS, BLACK_WINS, DRAW };
 enum class ResultReason { NONE, CHECKMATE, STALEMATE, FIFTY_MOVE, REPETITION,
                           INSUFFICIENT, RESIGNATION, TIMEOUT, ILLEGAL_MOVE, AGREEMENT,
-                          ADJUDICATION };
+                          ADJUDICATION, DISCONNECT };   // DISCONNECT: engine crashed / stopped responding
 // Human-readable reason ("checkmate", "50-move rule", ...); "" for NONE.
 std::string resultReasonText(ResultReason r);
 
@@ -35,8 +35,19 @@ struct Position {
     int epSquare = -1;         // target square for en passant, or -1
     int halfmoveClock = 0;
     int fullmoveNumber = 1;
+    // Chess960: castling moves are encoded king-takes-rook (to = the rook's
+    // square), which is also their UCI notation with UCI_Chess960. In standard
+    // chess castling is king two squares (e1g1). Rook files: WK, WQ, BK, BQ.
+    bool chess960 = false;
+    int8_t castleRookFile[4] = {7, 0, 7, 0};
 
     static Position startpos();
+    // Chess960 start position by its standard (Scharnagl) number 0..959; 518 is
+    // the normal start position.
+    static Position chess960Start(int n);
+    // Castling field: KQkq, X-FEN (KQkq = outermost rook, a file letter for an
+    // inner one) or Shredder-FEN (rook files, e.g. HAha). A position whose
+    // castling rights need a non-standard king or rook square is Chess960.
     static Position fromFEN(const std::string& fen, bool* ok = nullptr);
     std::string toFEN() const;
     std::string repetitionKey() const;   // FEN without move counters
@@ -54,6 +65,8 @@ struct Position {
     std::string moveToUCI(const Move& m) const;
     bool uciToMove(const std::string& uci, Move& out) const;   // must be legal
     std::string moveToSAN(const Move& m) const;                // call BEFORE makeMove
+    bool isKingsideCastle(const Move& m) const;                // m.isCastle; call BEFORE makeMove
+    int castleKingTarget(const Move& m) const;                 // where the king ends up (g1, c1, ...)
     bool sanToMove(const std::string& san, Move& out) const;
 };
 
@@ -89,7 +102,8 @@ bool premovePlausible(const Position& p, int from, int to);
 
 // ---------------- PGN import ----------------
 struct PgnGame {
-    std::string white="?", black="?", result="*", event, fenTag;
+    std::string white="?", black="?", result="*", event, fenTag, variant;
+    std::vector<std::pair<std::string, std::string>> tags;   // every tag, in file order
     std::string movetext;
 };
 // Split a PGN file/text into games (headers parsed, movetext kept raw).

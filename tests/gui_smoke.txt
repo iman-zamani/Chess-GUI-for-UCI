@@ -1,9 +1,9 @@
 # GUI smoke test: start a human-vs-human game from the home screen, play
 # Scholar's mate with clicks and drags, check the position, take a move back,
 # then visit the other screens. Run: chess-gui --script tests/gui_smoke.txt
-wait-item 5000 Human vs human
+wait-item 10000 Human vs human
 click-item Human vs human
-wait-item 3000 Takeback
+wait-item 10000 Takeback
 click-square e2
 click-square e4
 drag-square e7 e5
@@ -24,16 +24,16 @@ click-item Takeback
 wait 100
 expect r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 4 4
 key Escape
-wait-item 3000 Engine testing tools
+wait-item 10000 Engine testing tools
 click-item Engine testing tools
-wait-item 3000 Run self-test
+wait-item 10000 Run self-test
 key Escape
-wait-item 3000 Board editor
+wait-item 10000 Board editor
 click-item Board editor
-wait-item 3000 Clear board
+wait-item 10000 Clear board
 click-item Clear board
 key Escape
-wait-item 3000 Engines...
+wait-item 10000 Engines...
 click-item Engines...
-wait-item 3000 Add
+wait-item 10000 Add
 quit

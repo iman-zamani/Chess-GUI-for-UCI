@@ -2,6 +2,7 @@
 #pragma once
 #include "analysis.hpp"
 #include "chess.hpp"
+#include "game_tree.hpp"
 #include "tournament.hpp"
 #include "uci_engine.hpp"
 #include "ui/board_view.hpp"
@@ -25,7 +26,7 @@ public:
     void newHumanGame(const Position& p);
     bool newEngineGame(const EngineConfig& opponent, const Position& p, bool humanWhite);
     void openAnalysis(const Position& p);          // analysis board; engine chosen in the panel
-    void openGame(const Game& g);                  // e.g. a PGN game, opened at the first move
+    void openGame(const GameTree& t);              // e.g. a PGN game, opened at the start
     void showNewGameDialog(GameMode preset, std::optional<Position> start = std::nullopt);
     void openPgnDialog();                          // file dialog / paste, then pick a game
 
@@ -43,6 +44,13 @@ private:
     // game flow
     void resetBoardState();
     Position shownPosition() const;
+    bool atLiveEnd() const { return cur_ == tree_.mainLineEnd(); }
+    bool canBranch() const;                        // moving from a past position makes a variation
+    void branchMove(Move m);                       // a move from the shown (past) position
+    void goTo(int node);
+    void addLine(const std::vector<Move>& line);   // from the shown position (a PV click)
+    void syncMainLine();                           // game_ = the tree's main line (analysis)
+    void applyReview();                            // review results -> tree (UI thread)
     void squarePressed(int sq);
     void commitMove(Move m);
     void humanCommitMove(Move m);
@@ -60,6 +68,9 @@ private:
     // panels
     void drawPlayers(bool top);
     void drawMoveList(float height);
+    void drawVariation(int first, int nesting);     // one variation, starting with node `first`
+    void moveToken(int node, bool numbered);       // a clickable move in the move list
+    void drawEvalGraph();
     void drawAnalysis();
     void drawControls();
     void drawNewGameDialog();
@@ -78,7 +89,11 @@ private:
     int selectedSq_ = -1;
     std::vector<Move> legalForSelected_;
     std::optional<Move> pendingPromotion_;
-    int viewPly_ = -1;                             // -1 = live position
+    GameTree tree_;                                // the game with its variations; main line == game_
+    int cur_ = 0;                                  // node shown on the board
+    bool openComment_ = false;
+    int commentNode_ = -1;
+    std::string commentBuf_;
     int premoveFrom_ = -1, premoveTo_ = -1;
     bool scrollMoves_ = false;
 
@@ -106,12 +121,25 @@ private:
     std::string anaEngine_;                        // engine name the analysis runs
     ui::Job review_;
     int reviewMs_ = 400;
+    int reviewThreads_ = 0;                        // 0 = automatic
+    struct ReviewOut {
+        bool ready = false;
+        std::vector<int> nodes;                    // main line node of each move
+        std::vector<int> cpW, mateW;               // White's view after each move (+ the start at index 0)
+        std::vector<bool> isMate;
+        std::vector<int> nag;                      // 0 or 1..6 per move
+        std::string summary, engine;
+    };
+    std::mutex reviewMx_;
+    ReviewOut reviewOut_;
+    std::string reviewSummary_;
 
     // dialogs
     bool openNewGame_ = false;
     GameMode dlgMode_ = GameMode::HUMAN_VS_ENGINE;
     int dlgColor_ = 0;                             // 0 white, 1 black, 2 random
-    int dlgStart_ = 0;                             // 0 standard, 1 current position, 2 FEN
+    int dlgStart_ = 0;                             // 0 standard, 1 current position, 2 FEN, 3 Chess960
+    int dlg960_ = 518;                             // Chess960 start position number
     std::string dlgFen_;
     std::optional<Position> dlgPreset_;
     bool openPgn_ = false, openPgnList_ = false;

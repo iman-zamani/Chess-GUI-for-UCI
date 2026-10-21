@@ -129,6 +129,9 @@ public:
 
     // returns bestmove (uci) or "" on failure/timeout; fills last info
     std::string goMovetime(int ms);
+    // go movetime ms; "stop" if there is no bestmove after ms + graceMs (for
+    // engines that overrun or ignore movetime), then wait up to stopWaitMs.
+    std::string goMovetimeStrict(int ms, int graceMs, int stopWaitMs = 5000);
     std::string goDepth(int depth);
     std::string goNodes(long long nodes, int timeoutMs = 600000);
     std::string goClock(int wtimeMs, int btimeMs, int wincMs, int bincMs);
@@ -181,6 +184,7 @@ private:
 
     EngineConfig cfg_;
     std::vector<UciOption> opts;
+    int chess960Mode_ = -1;                      // UCI_Chess960 as last sent (-1 = never)
     std::string engName = "engine", engAuthor, errMsg;
     std::atomic<bool> running{false};
     EngineInfo info;
