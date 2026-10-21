@@ -548,7 +548,7 @@
    "commit": "c263e27dfb5cf3d2d7c586f3359226db600cd05c",
    "idName": "weiss 0.8",
    "builds": {
-    "Linux-x86_64": "make -C src CC=\"gcc -fcommon\" WARN=-Wall -j{jobs}"
+    "Linux-x86_64": "make -C src CC=gcc CFLAGS=\"-std=gnu11 -Wall -O3 -march=native -fcommon\" -j{jobs}"
    },
    "patchesFor": {
     "Linux-x86_64": []
@@ -676,7 +676,7 @@
    "commit": "0c1c0c0e9a9f05c88c5b90e3f12ee8c76a4e858c",
    "idName": "Berserk 2.0.0",
    "builds": {
-    "Linux-x86_64": "make -C src CC=\"gcc -fcommon\" EXE=berserk -j{jobs}"
+    "Linux-x86_64": "make -C src CC=gcc EXE=berserk CFLAGS=\"-std=gnu11 -O3 -march=native -fcommon\" -j{jobs}"
    },
    "patchesFor": {
     "Linux-x86_64": []
@@ -704,7 +704,7 @@
    "commit": "8a040a20bfb0712e94d5cad0665305f99d9455b9",
    "idName": "Berserk 3.2.0",
    "builds": {
-    "Linux-x86_64": "make -C src CC=\"gcc -fcommon\" EXE=berserk -j{jobs}"
+    "Linux-x86_64": "make -C src CC=gcc EXE=berserk CFLAGS=\"-std=gnu11 -O3 -march=native -fcommon -DNDEBUG\" -j{jobs}"
    },
    "patchesFor": {
     "Linux-x86_64": []
