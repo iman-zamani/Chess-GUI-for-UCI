@@ -1,111 +1,122 @@
-# Chess-GUI-for-UCI 
-![app screenshot](images/appScreenshot.png)
+# Chess-GUI-for-UCI
 
-A complete SFML chess GUI for playing, running engine matches and tournaments, analysing positions, and — most importantly — **testing your own UCI chess engine** while you develop it.
+**A chess GUI built for developing UCI engines: SPRT and engine matches, perft bisection,
+UCI compliance checks, a command-line tool and a GitHub Action for CI, and (in preview) a
+position-based Elo estimator.** It also plays, analyses and reviews games.
 
-License: GPL-2.0 · C++17 · SFML 3 · Windows / macOS / Linux
+[![CI](https://github.com/iman-zamani/Chess-GUI-for-UCI/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/iman-zamani/Chess-GUI-for-UCI/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/iman-zamani/Chess-GUI-for-UCI)](https://github.com/iman-zamani/Chess-GUI-for-UCI/releases)
+[![Downloads](https://img.shields.io/github/downloads/iman-zamani/Chess-GUI-for-UCI/total)](https://github.com/iman-zamani/Chess-GUI-for-UCI/releases)
 
-## Features
+GPL-2.0 · C++17 · Windows, macOS, Linux
 
-**Play**
-- Human vs human, and human vs any UCI engine (as White or Black)
-- Full legal chess: castling, en passant, promotions (with picker), pins/checks
-- All draw rules: stalemate, 50-move, threefold repetition, insufficient material
-- Real ticking clocks with increments (1+0, 3+2, 5+0, 10+0, 15+10, 30+0), flag detection
-- Drag-and-drop *and* click-click moving, legal-move dots, last-move & check highlights
-- Board flip (F), coordinates, move list in SAN, keyboard navigation through the game (arrow keys)
-- Takeback, resign, copy/paste FEN via clipboard, save PGN (auto-timestamped into `games/`)
+![Match screen running an SPRT](images/match.png)
 
-**Engines**
-- Load any UCI engine; engines dropped into `Resources/engines/` are auto-discovered
-  (common Stockfish install paths are also detected)
-- Engines run on background threads — the UI never freezes
-- Engine crash / illegal move / timeout handling with forfeit results
+## For engine developers
 
-**Engine vs Engine & Tournaments**
-- Select 2 engines for a match, or 3+ for a round-robin tournament
-- Configurable games per pairing (colors alternate) and time control
-- Live board, live eval, standings table (+/=/- and points), and a rolling log
-- Save all tournament games as a single PGN archive
+| | |
+|---|---|
+| **SPRT and matches** | Games in parallel, colour-swapped pairs from EPD/PGN books, match / round-robin / gauntlet, resign / draw / Syzygy adjudication, Elo and normalized Elo with 95% intervals, LOS, pentanomial counts, GSPRT with fastchess's conventions, a "dev vs base" preset, resumable runs. |
+| **Perft bisection** | Your engine's `go perft` against a verified generator; on a mismatch it walks down to the position where your generator lists the wrong moves and names them. |
+| **UCI compliance** | 13 protocol checks (handshake, `isready` during search, `stop`, go modes, mates, no legal moves, ponder, time management, ...) with an explanation and the engine log for each. |
+| **Elo estimate** (preview) | Estimates a CCRL-Blitz-equivalent rating from test positions in minutes. The estimator is built and tested; its calibrated model is still being produced and is not included yet (see below). |
+| **UCI console** | Every running engine, live, with a command line (Ctrl+U). |
+| **Search statistics** | Depth, seldepth, nodes, NPS, hash and time per move, with graphs. |
+| **CLI and CI** | `chess-cli` runs all of the above headless with `--json` and exit codes; a GitHub Action runs it in your engine's workflow. |
+| **Chess960** | X-FEN / Shredder-FEN, `UCI_Chess960`, Chess960 matches and perft. |
 
-**Analysis**
-- Analysis board (set any FEN, move pieces for both sides)
-- Toggle live engine analysis in any game: eval bar, depth, score, principal variation
-- Analysis follows you as you browse back through the move list
+![Perft bisection finding a move-generator bug](images/tools.png)
 
-**Engine developer tools** (Menu → Engine Testing Tools)
-1. **GUI self-test** — verifies the built-in move generator against the perft suite.
-2. **Move-generator test for YOUR engine** — sends `go perft <depth>` for every position in
-   the suite and compares your engine's node counts against verified expected values.
-   Ships with `Resources/perftsuite.epd`: **100 positions** (classic tricky positions —
-   Kiwipete, en-passant pins, promotion storms — plus varied real-game middlegames),
-   each with depth-1..4 node counts computed by the GUI's verified generator and
-   cross-checked against Stockfish 16. Any mismatch prints the exact FEN + depth so you
-   can debug with `divide`.
-3. **Accuracy test** — your engine plays a set of test positions; a reference engine
-   (e.g. Stockfish) evaluates its choices. Reports per-move centipawn loss, average
-   centipawn loss, blunders/mistakes/inaccuracies, and a Lichess-style accuracy %.
+## Playing and analysis
 
-### Requirements for the perft test
-Your engine must answer `go perft N` by printing a line containing `Nodes searched: X`
-(Stockfish's format). If it doesn't, the tester tells you so — it's a ~10 line feature
-that is absolutely worth adding to any engine.
+- Play against an engine or a human, with clocks, premoves and pondering.
+- Analysis board: MultiPV with clickable lines, arrows, eval bar.
+- Variations, comments and NAGs, with PGN import and export.
+- Game review with move marks (!!, !, ?!, ?, ??), accuracy per side and an eval graph;
+  the annotated game saves as PGN with `[%eval]` and NAGs.
+- Board editor, board themes and piece sets (your own SVG sets too), move animation,
+  sounds, resizable board, keyboard shortcuts (F1).
 
-### perftsuite.epd format
+![Analysis with variations and review](images/analysis.png)
+
+## How it compares
+
+What each tool offers out of the box, as far as we know (October 2026; corrections welcome).
+
+| | Chess-GUI-for-UCI | Arena | Cute Chess | fastchess | En Croissant |
+|---|---|---|---|---|---|
+| Graphical interface | yes | yes | yes | no (command line) | yes |
+| Runs on Windows / macOS / Linux | all three | Windows (old Linux build) | all three | all three | all three |
+| Engine games in parallel | yes | no | yes | yes | no |
+| SPRT | yes (GUI and CLI) | no | yes (cutechess-cli) | yes | no |
+| Engine perft check and bisection | yes | no | no | no | no |
+| UCI compliance checker | yes | no | no | no | no |
+| Position-based Elo estimate | preview (model not shipped yet) | no | no | no | no |
+| Licence | GPL-2.0 | freeware | GPL-3.0 | MIT | GPL-3.0 |
+
+## Quick start
+
+Download a build from [Releases](https://github.com/iman-zamani/Chess-GUI-for-UCI/releases),
+or build it ([docs/building.md](docs/building.md)):
+
 ```
-<FEN> ;D1 <nodes> ;D2 <nodes> ;D3 <nodes> [;D4 <nodes>]
-```
-You can replace it with the classic 126-position community suite or your own file.
-
-## Building
-
-```
-git clone https://github.com/iman-zamani/Chess-GUI-for-UCI/
-cd Chess-GUI-for-UCI
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j
 ./build/chess-gui
 ```
 
-CMake (3.24+) downloads and builds a pinned SFML 3 statically, so no SFML install is needed.
-To use an installed SFML 3 instead, configure with `-DCHESSGUI_USE_SYSTEM_SFML=ON`.
+Then **Engines > Manage engines** to add your engine, and see the
+[engine developer guide](docs/engine-developer-guide.md).
 
-- **Linux:** `sudo apt install cmake g++ libx11-dev libxrandr-dev libxcursor-dev libxi-dev libudev-dev libgl1-mesa-dev libfreetype-dev`
-- **macOS:** Xcode command line tools and `brew install cmake`
-- **Windows:** Visual Studio 2022 (C++ workload) and CMake
+## Command line
 
-Run the tests with `ctest --test-dir build --output-on-failure`.
+```
+chess-cli uci-check --engine cmd=./myengine
+chess-cli perft --engine cmd=./myengine --depth 4
+chess-cli perft-bisect --engine cmd=./myengine --fen "<FEN>" --depth 5
+chess-cli sprt --engine cmd=./dev name=dev --engine cmd=./base name=base --tc 10+0.1 \
+               --book book.epd --random --concurrency 4 --elo0 0 --elo1 5
+chess-cli elo-estimate --engine cmd=./myengine --quick     # once a model is shipped
+```
 
-Put UCI engine executables in `Resources/engines/` (e.g. download Stockfish and drop it
-in) and they appear automatically in every engine-selection screen. You can also type an
-absolute path in the picker.
+Every command takes `--json`; exit codes are non-zero when a check fails or the SPRT
+accepts H0. `chess-cli help` lists all options.
 
-## Resources folder
-- `pieceTexture.png` — 6×2 sprite sheet of 150 px sprites (K Q B N R P; white row, black row).
-  If missing, the GUI falls back to letter pieces so it still runs.
-- `Cantarell-Regular.ttf` — UI font (Cantarell, SIL OFL 1.1, see `Cantarell-OFL.txt`; falls back to system fonts if absent)
-- `engines/` — your UCI engines
-- `perftsuite.epd` — the 100-position move-generator test suite
+## GitHub Action
 
-## Source layout
-| File | Purpose |
-|---|---|
-| `src/chess.{hpp,cpp}` | Rules, legal move generation, FEN, SAN, PGN, perft, game state |
-| `src/uci_engine.{hpp,cpp}` | Cross-platform UCI engine process wrapper (Win32 + POSIX) |
-| `src/tournament.{hpp,cpp}` | Threaded match / round-robin tournament runner |
-| `src/testing.{hpp,cpp}` | Perft suites, engine perft tester, accuracy tester |
-| `src/gui.{hpp,cpp}` | All SFML screens, board rendering, input |
-| `src/main.cpp` | Entry point |
+```yaml
+- uses: iman-zamani/Chess-GUI-for-UCI@v2.0.0
+  with:
+    engine: ./my-engine
+    checks: uci-check,perft
+```
 
-## Verification
-- The internal generator passes the six canonical perft positions (startpos d5 = 4,865,609;
-  Kiwipete d4 = 4,085,603; positions 3–6) plus en-passant-pin corner cases.
-- Every entry in the shipped `perftsuite.epd` was cross-checked against Stockfish 16.
-- The UCI wrapper, match runner, and accuracy tester were exercised headlessly against
-  real Stockfish (full 2-game match with clocks → valid PGN output).
+See [docs/github-action.md](docs/github-action.md).
 
+## The Elo estimator
 
-## License
+An engine answers test positions at a fixed time per move; a 2PL item response model
+fitted on calibration engines with known CCRL Blitz ratings turns which positions it
+solves into a rating, with a 95% interval that includes the model's cross-validated
+error. Quick mode is adaptive (it stops once the estimate is precise enough).
 
-This project is licensed under the GNU General Public License v2.0.
-See [`LICENSE`](./LICENSE) for full terms.
+**Status:** the estimator (C++, GUI tab, `chess-cli elo-estimate`) and the calibration
+pipeline (`tools/elo/`) are finished and tested, and the reference analysis of the 4600
+candidate positions is done. The calibration engine runs, the cross-validation and the
+model file `Resources/elo/model.json` are not done yet, so this version has no model:
+the Elo tab and `chess-cli elo-estimate` say so instead of guessing. No accuracy figures
+are claimed until the cross-validation exists.
+
+Method and status: [docs/elo-estimator.md](docs/elo-estimator.md).
+
+## Documentation
+
+- [Engine developer guide](docs/engine-developer-guide.md): UCI checks, perft bisection, SPRT how-to
+- [Elo estimator](docs/elo-estimator.md): method, protocol and status
+- [GitHub Action](docs/github-action.md)
+- [Building from source](docs/building.md), [Contributing](CONTRIBUTING.md), [Changelog](CHANGELOG.md)
+
+## Licence
+
+GPL-2.0, see [LICENSE](LICENSE). Third-party components and assets and their licences are
+listed in [docs/building.md](docs/building.md) and in Help > About.
