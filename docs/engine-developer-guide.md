@@ -120,8 +120,9 @@ Run the same command again to resume. Other options: `--mode roundrobin|gauntlet
 on test positions and estimates its CCRL-Blitz-equivalent rating from which
 positions it solves. It takes minutes instead of the thousands of games a real
 rating needs, but it is an estimate from positions, not a rating from games:
-time management, for example, is not measured. See
-[elo-estimator.md](elo-estimator.md) for the method and its measured accuracy.
+time management, for example, is not measured. This version does not ship the
+calibrated model yet, so the tab and the command report that; see
+[elo-estimator.md](elo-estimator.md) for the method and the status.
 
 ## 6. In CI
 

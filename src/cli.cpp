@@ -610,7 +610,8 @@ static int cmdEloEstimate(const std::vector<std::string>& args){
     if (!t.hasEngine) return fail("elo-estimate needs --engine");
     if (t.quick && t.full) return fail("give --quick or --full, not both");
     std::string path = t.model.empty() ? findResource("elo/model.json") : t.model;
-    if (path.empty()) return fail("no Elo model found (Resources/elo/model.json next to chess-cli, or --model)");
+    if (path.empty()) return fail("no Elo model found: this build has no calibrated model yet (Resources/elo/model.json "
+                                "next to chess-cli, or --model FILE); see docs/elo-estimator.md");
     EloModel m;
     std::string err;
     if (!m.load(path, &err)) return fail(err);

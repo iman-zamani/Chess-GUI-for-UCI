@@ -9,7 +9,8 @@ A rebuild aimed at engine developers.
 - Perft bisection: finds the position and the missing or extra moves behind a perft mismatch.
 - UCI console (Ctrl+U): every running engine, live, with a command line.
 - Search statistics per engine move (depth, seldepth, nodes, NPS, hash, time) with graphs.
-- Position-based Elo estimator (GUI and `chess-cli elo-estimate`), with its measured accuracy.
+- Position-based Elo estimator (GUI and `chess-cli elo-estimate`) and its calibration pipeline;
+  the calibrated model is not included yet (see docs/elo-estimator.md).
 
 ### Matches
 - Games in parallel, colour-swapped game pairs, match / round-robin / gauntlet.

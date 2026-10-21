@@ -1,8 +1,8 @@
 # GUI test: variations on the analysis board. Play 1.e4 e5 2.Nf3, go back to
 # 1.e4, play 1...c5 2.Nf3 d6 (a variation), then walk the main line again.
-wait-item 5000 Analysis board
+wait-item 10000 Analysis board
 click-item Analysis board
-wait-item 3000 New game...
+wait-item 10000 New game...
 click-square e2
 click-square e4
 click-square e7

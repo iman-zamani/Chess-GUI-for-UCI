@@ -427,7 +427,8 @@ bool ToolsScreen::loadEloModel(){
     if (modelTried_) return modelError_.empty();
     modelTried_ = true;
     modelPath_ = findResource("elo/model.json");
-    if (modelPath_.empty()){ modelError_ = "The Elo model (Resources/elo/model.json) is not installed."; return false; }
+    if (modelPath_.empty()){ modelError_ = "This build has no calibrated Elo model yet (Resources/elo/model.json). "
+                                       "The calibration is still being produced; see docs/elo-estimator.md."; return false; }
     if (!model_.load(modelPath_, &modelError_)) return false;
     modelError_.clear();
     return true;
@@ -438,7 +439,12 @@ void ToolsScreen::drawEloTab(){
     ImGui::TextWrapped("Estimates an engine's CCRL-Blitz-equivalent Elo from how it plays test positions. "
                        "It is an estimate from positions, not a rating from games: time management and "
                        "other game skills are not measured.");
-    if (!loadEloModel()){ ImGui::TextColored(ui::kBad, "%s", modelError_.c_str()); return; }
+    if (!loadEloModel()){
+        ImGui::PushStyleColor(ImGuiCol_Text, ui::kWarn);
+        ImGui::TextWrapped("%s", modelError_.c_str());
+        ImGui::PopStyleColor();
+        return;
+    }
     ImGui::TextDisabled("%d positions, model v%d.", (int)model_.items.size(), model_.version);
     if (!model_.validationText.empty()) ImGui::TextWrapped("Accuracy: %s.", model_.validationText.c_str());
     ImGui::SetNextItemWidth(-1);

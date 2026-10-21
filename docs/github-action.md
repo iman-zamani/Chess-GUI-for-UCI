@@ -12,7 +12,8 @@ against an engine your workflow has just built:
   locally to find the bug.
 * `elo-estimate` (optional): a position-based Elo estimate, written to the job
   summary and to the `elo` output. It is an estimate from test positions, not
-  a rating from games.
+  a rating from games, and it needs a release that includes the calibrated model
+  (`Resources/elo/model.json`); releases without one fail this step with a clear message.
 
 **Requirement:** the action downloads `chess-cli` from a GitHub release of
 Chess-GUI-for-UCI, so it works once a release with `chess-cli` archives has
