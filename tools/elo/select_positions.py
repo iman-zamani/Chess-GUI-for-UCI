@@ -21,6 +21,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ENGINES = os.path.join(HERE, "..", "..", "data", "elo", "engines.json")
 FIT_MAX = 2.0           # mean squared standardised residual; ~1 for an item that fits
 A_MIN = 0.25
+RELIABLE_MAE = 150      # Elo; below the lowest rating band meeting this (LOFO MAE) the estimate gets a warning
 
 
 def elo_scaled(a, b, intercept, slope):
@@ -83,13 +84,23 @@ def main():
     calib = [{"name": "%s %s" % (eng[e]["family"], eng[e]["version"]), "elo": eng[e]["ccrl"]["rating"],
               "family": eng[e]["family"]} for e in items["engines"]]
     lo, lf = row["loeo"], row["lofo"]
+    ratings = {e: eng[e]["ccrl"]["rating"] for e in items["engines"]}
+    lf_b = irt.band_errors({e: v[0] for e, v in row["lofo_pred"].items() if e in ratings}, ratings)
+    # lowest rating from which every band's unseen-family error is acceptable
+    reliable_from = 0
+    for b in sorted(lf_b, reverse=True):
+        if lf_b[b][1] > RELIABLE_MAE:
+            reliable_from = b[1]
+            break
+    bands = "; by rating, unseen styles: " + ", ".join(
+        "%s MAE %.0f (bias %+.0f)" % (irt.band_name(*b), m, bias) for b, (n, m, bias) in sorted(lf_b.items()))
     text = ("leave-one-engine-out on %d engines: MAE %.0f, RMSE %.0f, max %.0f Elo; "
             "leave-one-family-out (unseen engine styles): MAE %.0f, RMSE %.0f Elo"
-            % (lo["n"], lo["mae"], lo["rmse"], lo["max"], lf["mae"], lf["rmse"]))
+            % (lo["n"], lo["mae"], lo["rmse"], lo["max"], lf["mae"], lf["rmse"])) + bands
     model = {
         "format": "chessgui-elo-model", "version": a.version,
         "created": datetime.date.today().isoformat(),
-        "threshold": T, "model": items["model"],
+        "threshold": T, "model": items["model"], "itemsRequested": a.n,   # selection asked for; fewer may qualify
         "protocol": {"baseMovetimeMs": a.movetime, "calibNps": a.calib_nps, "factorMin": 0.25, "factorMax": 4,
                      "hashMb": 64, "threads": 1, "moveOverheadMs": 10, "graceMs": 50},
         "elo": {"intercept": items["intercept"], "slope": items["slope"]},
@@ -99,6 +110,9 @@ def main():
         "errorRmse": lf["rmse"],            # unseen-family error: the honest one for a new engine
         "validation": {"loeo": lo, "lofo": lf},
         "validationText": text,
+        "reliableFromElo": reliable_from,
+        # the interval uses the unseen-family RMSE of engines estimated in the same range
+        "errorBands": irt.error_bands({e: v[0] for e, v in row["lofo_pred"].items() if e in ratings}, ratings),
         "calibration": calib,
         "items": out_items,
     }

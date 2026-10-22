@@ -8,6 +8,8 @@ Usage: report.py --cv cv.json --model Resources/elo/model.json
 """
 import argparse, json, os, sys
 
+import irt
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 ENGINES = os.path.join(HERE, "..", "..", "data", "elo", "engines.json")
 
@@ -24,7 +26,7 @@ def main():
     model = json.load(open(a.model))
     eng = {e["id"]: e for e in json.load(open(a.engines))["engines"]}
     chosen = next(r for r in cv["results"] if r["threshold"] == model["threshold"] and r["model"] == model["model"]
-                  and r["items"] == len(model["items"]))
+                  and r["items"] == model.get("itemsRequested", len(model["items"])))
     out = []
     w = out.append
     w("Calibration: %d engines from %d families, CCRL Blitz %d-%d. Model: %s fit, solved = a move within "
@@ -48,6 +50,30 @@ def main():
         w("| %g | %s%s | %.0f | %.0f | %.0f | %.3f | %.0f | %.0f | %.0f |"
           % (r["threshold"], r["model"], mark, l["mae"], l["rmse"], l["max"], l["spearman"], f["mae"], f["rmse"], f["max"]))
     w("")
+    ratings = {e: eng[e]["ccrl"]["rating"] for e in cv["engines"]}
+    lo_b = irt.band_errors({e: v[0] for e, v in chosen["loeo_pred"].items()}, ratings)
+    lf_b = irt.band_errors({e: v[0] for e, v in chosen["lofo_pred"].items()}, ratings)
+    w("By rating band (shipped configuration; bias > 0 means estimates too high):")
+    w("")
+    w("| CCRL Blitz | engines | LOEO MAE | LOEO bias | LOFO MAE | LOFO bias |")
+    w("|---|---|---|---|---|---|")
+    for band in irt.BANDS:
+        if band in lo_b:
+            n, m1, b1 = lo_b[band]; _, m2, b2 = lf_b[band]
+            w("| %s | %d | %.0f | %+.0f | %.0f | %+.0f |" % (irt.band_name(*band), n, m1, b1, m2, b2))
+    w("")
+    if model.get("errorBands"):
+        w("The 95% interval uses the LOFO RMSE of the engines *estimated* in the same range, "
+          "since that is what is known when a new engine is tested:")
+        w("")
+        w("| Estimate | engines | LOFO RMSE | model error in the 95% interval |")
+        w("|---|---|---|---|")
+        for b in model["errorBands"]:
+            w("| %s | %d | %.0f | +/- %.0f |" % (irt.band_name(b["from"], b["to"]), b["engines"], b["rmse"], 1.96 * b["rmse"]))
+        w("")
+    if model.get("reliableFromElo"):
+        w("Estimates below %d get a warning in the GUI and in `chess-cli`." % model["reliableFromElo"])
+        w("")
     w("The configuration with the lowest LOEO MAE is shipped. Choosing it on the LOEO numbers makes "
       "them slightly optimistic; the LOFO numbers and the held-out engine below are the checks that "
       "were not used for any choice.")

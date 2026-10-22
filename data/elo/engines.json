@@ -27,7 +27,13 @@
     "games": 684
    },
    "commit": "b7e07471798da75708a34b52f51a3d203f7acc9d",
-   "idName": "Stash v9.0.1"
+   "idName": "Stash v9.0.1",
+   "builds": {
+    "Linux-x86_64": "make CC=gcc -j{jobs}"
+   },
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "stash-11.0.1",
@@ -49,7 +55,13 @@
     "games": 490
    },
    "commit": "62c525c52580b31767cb0f1b47a48ba26f4b589c",
-   "idName": "Stash v11.0.1"
+   "idName": "Stash v11.0.1",
+   "builds": {
+    "Linux-x86_64": "make CC=gcc -j{jobs}"
+   },
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "stash-12.0",
@@ -71,7 +83,13 @@
     "games": 750
    },
    "commit": "c59e2739e3d33eef9b177f2063187dbe2795233c",
-   "idName": "Stash v12.0"
+   "idName": "Stash v12.0",
+   "builds": {
+    "Linux-x86_64": "make CC=gcc -j{jobs}"
+   },
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "stash-13.0.1",
@@ -93,7 +111,13 @@
     "games": 848
    },
    "commit": "5863d3abeb1770bee4389e96a01d565ce1e924e5",
-   "idName": "Stash v13.0.1"
+   "idName": "Stash v13.0.1",
+   "builds": {
+    "Linux-x86_64": "make -C src CC=gcc -j{jobs}"
+   },
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "stash-14.0",
@@ -115,7 +139,13 @@
     "games": 856
    },
    "commit": "d87eaa36ffdf778ba1fee05ce34861f89ac610e9",
-   "idName": "Stash v14.0"
+   "idName": "Stash v14.0",
+   "builds": {
+    "Linux-x86_64": "make -C src CC=gcc -j{jobs}"
+   },
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "stash-15.3",
@@ -137,7 +167,13 @@
     "games": 982
    },
    "commit": "7d17ff80eb53b9d4808fd285c7439e641f1c5a3b",
-   "idName": "Stash v15.3"
+   "idName": "Stash v15.3",
+   "builds": {
+    "Linux-x86_64": "make -C src CC=gcc -j{jobs}"
+   },
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "stash-17.0",
@@ -159,7 +195,13 @@
     "games": 955
    },
    "commit": "f85863d68b2f20812f8e1b330cd2613212a1b12a",
-   "idName": "Stash v17.0"
+   "idName": "Stash v17.0",
+   "builds": {
+    "Linux-x86_64": "make -C src CC=gcc -j{jobs}"
+   },
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "stash-19.0",
@@ -181,7 +223,13 @@
     "games": 1052
    },
    "commit": "de408a3e8d8ffbd41f4b1608b19f18c69eac2512",
-   "idName": "Stash v19.0"
+   "idName": "Stash v19.0",
+   "builds": {
+    "Linux-x86_64": "make -C src CC=gcc -j{jobs}"
+   },
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "stash-21.0",
@@ -203,7 +251,13 @@
     "games": 1493
    },
    "commit": "6dc8c9cdefaa43e3d82a7c59cd2a5f93bcbd9d5a",
-   "idName": "Stash v21.0"
+   "idName": "Stash v21.0",
+   "builds": {
+    "Linux-x86_64": "make -C src CC=gcc -j{jobs}"
+   },
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "stash-25.0",
@@ -225,7 +279,13 @@
     "games": 874
    },
    "commit": "664849453d3fa0b5b60869325a3764921c902512",
-   "idName": "Stash v25.0"
+   "idName": "Stash v25.0",
+   "builds": {
+    "Linux-x86_64": "make -C src CC=gcc -j{jobs}"
+   },
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "stash-27.0",
@@ -247,7 +307,13 @@
     "games": 989
    },
    "commit": "8f7808e2650a0765f7f4a3117461eecce0f92be0",
-   "idName": "Stash v27.0"
+   "idName": "Stash v27.0",
+   "builds": {
+    "Linux-x86_64": "make -C src CC=gcc -j{jobs}"
+   },
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "stash-29.0",
@@ -269,7 +335,13 @@
     "games": 827
    },
    "commit": "80db6d9b41b2612d0613ab67266316e442c4f678",
-   "idName": "Stash v29.0"
+   "idName": "Stash v29.0",
+   "builds": {
+    "Linux-x86_64": "make -C src CC=gcc -j{jobs}"
+   },
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "stash-33.0",
@@ -291,7 +363,13 @@
     "games": 1374
    },
    "commit": "8be4b7f20249ea64fcebc24c49399a5093cad9c5",
-   "idName": "Stash v33.0"
+   "idName": "Stash v33.0",
+   "builds": {
+    "Linux-x86_64": "make -C src CC=gcc -j{jobs}"
+   },
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "stash-35.0",
@@ -313,7 +391,13 @@
     "games": 1932
    },
    "commit": "67c3a08dd8b96e3d917507c34cca90a629451302",
-   "idName": "Stash v35.0"
+   "idName": "Stash v35.0",
+   "builds": {
+    "Linux-x86_64": "make -C src CC=gcc -j{jobs}"
+   },
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "stash-37.0",
@@ -335,7 +419,13 @@
     "games": 2327
    },
    "commit": "077a93828fee354853ffac322f178d1a4f1670ff",
-   "idName": "Stash v37.0"
+   "idName": "Stash v37.0",
+   "builds": {
+    "Linux-x86_64": "make -C src CC=gcc -j{jobs}"
+   },
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "bit-genie-2",
@@ -354,7 +444,15 @@
     "games": 862
    },
    "commit": "edf80bdaa5f10def761155517746ce9456b09ae0",
-   "idName": "Bit-Genie 2"
+   "idName": "Bit-Genie 2",
+   "builds": {
+    "Linux-x86_64": "make -C Bit-Genie CXX=g++ EXE=bitgenie -j{jobs}"
+   },
+   "patchesFor": {
+    "Linux-x86_64": [
+     "bitgenie-bench-max"
+    ]
+   }
   },
   {
    "id": "bit-genie-4",
@@ -373,7 +471,13 @@
     "games": 946
    },
    "commit": "80f08ec662710971f132b981f088c17fe23e8c7e",
-   "idName": "Bit-Genie 4"
+   "idName": "Bit-Genie 4",
+   "builds": {
+    "Linux-x86_64": "make -C Bit-Genie CXX=g++ EXE=bitgenie -j{jobs}"
+   },
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "bit-genie-5",
@@ -392,7 +496,13 @@
     "games": 826
    },
    "commit": "8d095f16e9e08f58827224c254daf8526722f9c9",
-   "idName": "Bit-Genie 5"
+   "idName": "Bit-Genie 5",
+   "builds": {
+    "Linux-x86_64": "make -C Bit-Genie CXX=g++ EXE=bitgenie -j{jobs}"
+   },
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "bit-genie-8",
@@ -411,26 +521,13 @@
     "games": 440
    },
    "commit": "3eced05b93bd6dbfbdc77681354a2306be68450b",
-   "idName": "Bit-Genie 8"
-  },
-  {
-   "id": "weiss-0.8",
-   "family": "Weiss",
-   "version": "0.8",
-   "repo": "https://github.com/TerjeKir/weiss",
-   "tag": "v0.8",
-   "build": "make -C src CC=clang WARN=-Wall -j{jobs}",
-   "binary": "src/weiss",
-   "ccrl": {
-    "list": "CCRL Blitz",
-    "name": "Weiss 0.8 64-bit",
-    "rating": 2609,
-    "plus": 17,
-    "minus": 17,
-    "games": 1096
+   "idName": "Bit-Genie 8",
+   "builds": {
+    "Linux-x86_64": "make -C src CXX=g++ EXE=bitgenie -j{jobs}"
    },
-   "commit": "c263e27dfb5cf3d2d7c586f3359226db600cd05c",
-   "idName": "weiss 0.8"
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "weiss-1.0",
@@ -449,7 +546,13 @@
     "games": 895
    },
    "commit": "f44a4c654c67139ecbd5f3afd9da1ebe41241464",
-   "idName": "Weiss 1.0"
+   "idName": "Weiss 1.0",
+   "builds": {
+    "Linux-x86_64": "make -C src CC=gcc WARN=-Wall -j{jobs}"
+   },
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "weiss-1.2",
@@ -468,7 +571,13 @@
     "games": 1195
    },
    "commit": "f8d625d26f82e6656e348daded9c258413fb83e3",
-   "idName": "Weiss 1.2"
+   "idName": "Weiss 1.2",
+   "builds": {
+    "Linux-x86_64": "make -C src basic CC=gcc WARN=-Wall -j{jobs}"
+   },
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "weiss-1.4",
@@ -487,7 +596,13 @@
     "games": 978
    },
    "commit": "d1ea87308fd2dcdde5a83db97e2e06c90b5dca7b",
-   "idName": "Weiss 1.4"
+   "idName": "Weiss 1.4",
+   "builds": {
+    "Linux-x86_64": "make -C src basic CC=gcc WARN=-Wall -j{jobs}"
+   },
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "weiss-2.0",
@@ -506,7 +621,13 @@
     "games": 6590
    },
    "commit": "0db49c7270f5c6286a983390a5ea2780e1e0c9f4",
-   "idName": "Weiss 2.0"
+   "idName": "Weiss 2.0",
+   "builds": {
+    "Linux-x86_64": "make -C src basic CC=gcc WARN=-Wall -j{jobs}"
+   },
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "berserk-2.0.0",
@@ -528,7 +649,13 @@
     "games": 1101
    },
    "commit": "0c1c0c0e9a9f05c88c5b90e3f12ee8c76a4e858c",
-   "idName": "Berserk 2.0.0"
+   "idName": "Berserk 2.0.0",
+   "builds": {
+    "Linux-x86_64": "cd src && gcc -std=gnu11 -O3 -march=native -fcommon -DNDEBUG *.c -o berserk -lm -pthread"
+   },
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "berserk-3.2.0",
@@ -550,29 +677,13 @@
     "games": 943
    },
    "commit": "8a040a20bfb0712e94d5cad0665305f99d9455b9",
-   "idName": "Berserk 3.2.0"
-  },
-  {
-   "id": "berserk-4.1.0",
-   "family": "Berserk",
-   "version": "4.1.0",
-   "repo": "https://github.com/jhonnold/berserk",
-   "tag": "4.1.0",
-   "patches": [
-    "guard-x86-headers"
-   ],
-   "build": "make -C src CC=clang EXE=berserk POPCOUNT=-DPOPCOUNT -j{jobs}",
-   "binary": "src/berserk",
-   "ccrl": {
-    "list": "CCRL Blitz",
-    "name": "Berserk 4.1.0 64-bit",
-    "rating": 3133,
-    "plus": 17,
-    "minus": 17,
-    "games": 893
+   "idName": "Berserk 3.2.0",
+   "builds": {
+    "Linux-x86_64": "cd src && gcc -std=gnu11 -O3 -march=native -fcommon -DNDEBUG *.c -o berserk -lm -pthread"
    },
-   "commit": "7f4b87578aab3ca27a93d917189d9a5c3521acab",
-   "idName": "Berserk 4.1.0"
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "ethereal-12.00",
@@ -591,7 +702,13 @@
     "games": 946
    },
    "commit": "37ccbfe233ac418a49cb9a5c9f54d62b060d44ad",
-   "idName": "Ethereal 12.00"
+   "idName": "Ethereal 12.00",
+   "builds": {
+    "Linux-x86_64": "make -C src CC=gcc -j{jobs}"
+   },
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "ethereal-13.00",
@@ -610,7 +727,13 @@
     "games": 1564
    },
    "commit": "2687b3834179fc3ebf52f0f13b96499f4f6977e9",
-   "idName": "Ethereal 13.00"
+   "idName": "Ethereal 13.00",
+   "builds": {
+    "Linux-x86_64": "make -C src CC=gcc -j{jobs}"
+   },
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "blunder-8.0.0",
@@ -629,7 +752,13 @@
     "games": 1426
    },
    "commit": "527906ccccdb0c603dc62e9ea1a885c0c7c333f3",
-   "idName": "Blunder 8.0.0"
+   "idName": "Blunder 8.0.0",
+   "builds": {
+    "Linux-x86_64": "PATH=$PWD/../go/bin:$PATH go build -o blunder-bin ./blunder"
+   },
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "stockfish-10",
@@ -648,7 +777,13 @@
     "games": 650
    },
    "commit": "b4c239b625285307c5871f1104dc3fb80aa6d5d2",
-   "idName": "Stockfish 10 64 POPCNT"
+   "idName": "Stockfish 10 64 POPCNT",
+   "builds": {
+    "Linux-x86_64": "make -C src build ARCH=x86-64-modern COMP=gcc -j{jobs}"
+   },
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   },
   {
    "id": "stockfish-11",
@@ -667,7 +802,13 @@
     "games": 1487
    },
    "commit": "c3483fa9a7d7c0ffa9fcc32b467ca844cfb63790",
-   "idName": "Stockfish 11 64 POPCNT"
+   "idName": "Stockfish 11 64 POPCNT",
+   "builds": {
+    "Linux-x86_64": "make -C src build ARCH=x86-64-modern COMP=gcc -j{jobs}"
+   },
+   "patchesFor": {
+    "Linux-x86_64": []
+   }
   }
  ],
  "excluded": [
@@ -702,6 +843,14 @@
   {
    "engine": "Koivisto (all versions)",
    "reason": "the NNUE code uses AVX2 unconditionally: no native ARM build, and emulation would make it weaker than its rating"
+  },
+  {
+   "engine": "Weiss 0.8",
+   "reason": "answers about 9% of test positions with an illegal move (13 of its first 150, e.g. moves from empty squares), an engine bug with 'position fen' that has nothing to do with its playing strength"
+  },
+  {
+   "engine": "Berserk 4.1.0",
+   "reason": "does not use the move time: given 500 ms it answers in a median of 2 ms (depth 6), so its answers say nothing about its rated strength"
   }
  ]
 }

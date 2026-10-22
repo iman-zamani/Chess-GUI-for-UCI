@@ -40,7 +40,12 @@ bool EloModel::loadJson(const std::string& text, std::string* err){
             minItems = j["adaptive"].value("minItems", 20);
         }
         errorRmse = j.value("errorRmse", 0.0);
+        errorBands.clear();
+        if (j.contains("errorBands"))
+            for (auto& b : j["errorBands"])
+                errorBands.push_back({b.at("from").get<double>(), b.at("to").get<double>(), b.at("rmse").get<double>()});
         validationText = j.value("validationText", "");
+        reliableFromElo = j.value("reliableFromElo", 0.0);
         groupShare.clear();
         if (j.contains("groupShare")) for (auto& [k, v] : j["groupShare"].items()) groupShare[k] = v.get<double>();
         calibration.clear();
@@ -148,6 +153,11 @@ void EloSession::record(int item, bool solved){
     est_ = estimateTheta(model_, resp_);
 }
 
+double EloModel::errorAt(double elo) const {
+    for (auto& b : errorBands) if (elo >= b.from && elo < b.to) return b.rmse;
+    return errorRmse;
+}
+
 // ---------------------------------------------------------------- results
 EloResult eloResultFrom(const EloModel& m, const EloSession& s){
     EloResult r;
@@ -155,7 +165,8 @@ EloResult eloResultFrom(const EloModel& m, const EloSession& s){
     ThetaEstimate t = s.estimate();
     r.elo = m.toElo(t.theta);
     r.seMeasurement = t.se * m.eloSlope;
-    r.ci95 = 1.96 * std::sqrt(r.seMeasurement * r.seMeasurement + m.errorRmse * m.errorRmse);
+    double err = m.errorAt(r.elo);
+    r.ci95 = 1.96 * std::sqrt(r.seMeasurement * r.seMeasurement + err * err);
     r.answered = (int)s.responses().size();
     std::map<std::string, std::vector<std::pair<int, bool>>> byGroup;
     for (auto& x : s.responses()){ r.solved += x.second; byGroup[m.items[x.first].group].push_back(x); }
@@ -244,6 +255,13 @@ EloResult runEloEstimate(const EngineConfig& cfg, const EloModel& m, const EloOp
 }
 
 // ---------------------------------------------------------------- reports
+std::string eloRangeWarning(const EloResult& r, const EloModel& m){
+    if (!r.ok || m.reliableFromElo <= 0 || r.elo >= m.reliableFromElo) return "";
+    return "Below about " + std::to_string(std::lround(m.reliableFromElo)) + " Elo this model is much less accurate: "
+           "few calibration engines are that weak, and in cross-validation its estimates there were too high, "
+           "often by several hundred Elo. Treat this number as a rough indication only.";
+}
+
 std::string eloResultJson(const EloResult& r, const EloModel& m){
     json groups = json::object();
     for (auto& [g, v] : r.groups) groups[g] = {{"elo", std::lround(v.first)}, {"positions", v.second}};
@@ -254,7 +272,8 @@ std::string eloResultJson(const EloResult& r, const EloModel& m){
               {"seMeasurement", std::lround(r.seMeasurement)}, {"scale", "CCRL Blitz equivalent"},
               {"mode", r.adaptive ? "quick" : "full"}, {"positions", r.answered}, {"solved", r.solved},
               {"movetimeMs", r.movetimeMs}, {"hardwareFactor", r.factor}, {"nps", r.userNps},
-              {"modelVersion", m.version}, {"modelError", m.validationText}, {"groups", groups},
+              {"modelVersion", m.version}, {"modelError", m.validationText}, {"warning", eloRangeWarning(r, m)},
+              {"groups", groups},
               {"note", "estimated from test positions, not from games; time management is not measured"},
               {"answers", ans}};
     return j.dump(2);
@@ -273,5 +292,7 @@ std::string eloResultMarkdown(const EloResult& r, const EloModel& m){
     o.precision(2);
     o << r.factor << ").\n";
     if (!m.validationText.empty()) o << "\nModel accuracy: " << m.validationText << ".\n";
+    std::string warn = eloRangeWarning(r, m);
+    if (!warn.empty()) o << "\n**Warning:** " << warn << "\n";
     return o.str();
 }

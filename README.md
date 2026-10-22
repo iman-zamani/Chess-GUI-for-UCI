@@ -1,7 +1,7 @@
 # Chess-GUI-for-UCI
 
 **A chess GUI built for developing UCI engines: SPRT and engine matches, perft bisection,
-UCI compliance checks, a command-line tool and a GitHub Action for CI, and (in preview) a
+UCI compliance checks, a command-line tool and a GitHub Action for CI, and a
 position-based Elo estimator.** It also plays, analyses and reviews games.
 
 [![CI](https://github.com/iman-zamani/Chess-GUI-for-UCI/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/iman-zamani/Chess-GUI-for-UCI/actions/workflows/ci.yml)
@@ -19,7 +19,7 @@ GPL-2.0 · C++17 · Windows, macOS, Linux
 | **SPRT and matches** | Games in parallel, colour-swapped pairs from EPD/PGN books, match / round-robin / gauntlet, resign / draw / Syzygy adjudication, Elo and normalized Elo with 95% intervals, LOS, pentanomial counts, GSPRT with fastchess's conventions, a "dev vs base" preset, resumable runs. |
 | **Perft bisection** | Your engine's `go perft` against a verified generator; on a mismatch it walks down to the position where your generator lists the wrong moves and names them. |
 | **UCI compliance** | 13 protocol checks (handshake, `isready` during search, `stop`, go modes, mates, no legal moves, ponder, time management, ...) with an explanation and the engine log for each. |
-| **Elo estimate** (preview) | Estimates a CCRL-Blitz-equivalent rating from test positions in minutes. The estimator is built and tested; its calibrated model is still being produced and is not included yet (see below). |
+| **Elo estimate** | Estimates a CCRL-Blitz-equivalent rating from test positions in minutes. Cross-validated error about 60 Elo for engines rated 2500 and above; much less accurate below that (see below). |
 | **UCI console** | Every running engine, live, with a command line (Ctrl+U). |
 | **Search statistics** | Depth, seldepth, nodes, NPS, hash and time per move, with graphs. |
 | **CLI and CI** | `chess-cli` runs all of the above headless with `--json` and exit codes; a GitHub Action runs it in your engine's workflow. |
@@ -51,7 +51,7 @@ What each tool offers out of the box, as far as we know (October 2026; correctio
 | SPRT | yes (GUI and CLI) | no | yes (cutechess-cli) | yes | no |
 | Engine perft check and bisection | yes | no | no | no | no |
 | UCI compliance checker | yes | no | no | no | no |
-| Position-based Elo estimate | preview (model not shipped yet) | no | no | no | no |
+| Position-based Elo estimate | yes (accurate from about 2500 CCRL Blitz) | no | no | no | no |
 | Licence | GPL-2.0 | freeware | GPL-3.0 | MIT | GPL-3.0 |
 
 ## Quick start
@@ -100,19 +100,28 @@ fitted on calibration engines with known CCRL Blitz ratings turns which position
 solves into a rating, with a 95% interval that includes the model's cross-validated
 error. Quick mode is adaptive (it stops once the estimate is precise enough).
 
-**Status:** the estimator (C++, GUI tab, `chess-cli elo-estimate`) and the calibration
-pipeline (`tools/elo/`) are finished and tested, and the reference analysis of the 4600
-candidate positions is done. The calibration engine runs, the cross-validation and the
-model file `Resources/elo/model.json` are not done yet, so this version has no model:
-the Elo tab and `chess-cli elo-estimate` say so instead of guessing. No accuracy figures
-are claimed until the cross-validation exists.
+**Accuracy** (cross-validation on 29 calibration engines from 7 families, CCRL Blitz
+1271-3563; every fold refits and reselects the positions without the engines it predicts):
 
-Method and status: [docs/elo-estimator.md](docs/elo-estimator.md).
+| CCRL Blitz | engines | error, engine left out (MAE) | error, whole family left out (MAE) |
+|---|---|---|---|
+| 2500 and above | 18 | 60 | 59 |
+| 2000-2500 | 6 | 57 | 177 |
+| below 2000 | 5 | 239 | 508 |
+
+Below 2500 the estimate is too high, often by hundreds of Elo, for an engine whose family the
+model has not seen: few calibration engines are that weak. The GUI and `chess-cli` print a
+warning when an estimate lands there. A held-out engine, Berserk 3.2.0 (CCRL Blitz 2910), was
+kept out of everything and then estimated with the shipped model: 2877 +/- 173 (full) and
+2886 +/- 180 (quick, 168 positions).
+It is an estimate from positions, not a rating from games; time management is not measured.
+
+Method, full results and limits: [docs/elo-estimator.md](docs/elo-estimator.md).
 
 ## Documentation
 
 - [Engine developer guide](docs/engine-developer-guide.md): UCI checks, perft bisection, SPRT how-to
-- [Elo estimator](docs/elo-estimator.md): method, protocol and status
+- [Elo estimator](docs/elo-estimator.md): method, protocol and accuracy
 - [GitHub Action](docs/github-action.md)
 - [Building from source](docs/building.md), [Contributing](CONTRIBUTING.md), [Changelog](CHANGELOG.md)
 

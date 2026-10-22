@@ -427,8 +427,8 @@ bool ToolsScreen::loadEloModel(){
     if (modelTried_) return modelError_.empty();
     modelTried_ = true;
     modelPath_ = findResource("elo/model.json");
-    if (modelPath_.empty()){ modelError_ = "This build has no calibrated Elo model yet (Resources/elo/model.json). "
-                                       "The calibration is still being produced; see docs/elo-estimator.md."; return false; }
+    if (modelPath_.empty()){ modelError_ = "The Elo model (Resources/elo/model.json) is missing from this installation. "
+                                       "Reinstall, or set CHESSGUI_RESOURCES; see docs/elo-estimator.md."; return false; }
     if (!model_.load(modelPath_, &modelError_)) return false;
     modelError_.clear();
     return true;
@@ -509,6 +509,12 @@ void ToolsScreen::drawEloResult(){
                             "The interval includes the model's measured error.", r.engineName.c_str(), r.solved,
                             r.answered, r.movetimeMs, r.factor);
         ImGui::TextColored(ui::kWarn, "An estimate from positions, not from games: time management is not measured.");
+        std::string warn = eloRangeWarning(r, model_);
+        if (!warn.empty()){
+            ImGui::PushStyleColor(ImGuiCol_Text, ui::kBad);
+            ImGui::TextWrapped("%s", warn.c_str());
+            ImGui::PopStyleColor();
+        }
     }
     // where the engine sits among the calibration engines
     if ((r.ok || p.answered) && !model_.calibration.empty()){

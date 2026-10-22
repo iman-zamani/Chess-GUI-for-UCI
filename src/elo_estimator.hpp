@@ -36,7 +36,10 @@ struct EloModel {
     double seTargetElo = 50;
     int maxItems = 300, minItems = 20;
     double errorRmse = 0;                   // cross-validated error, added to the CI
+    struct ErrorBand { double from, to, rmse; };
+    std::vector<ErrorBand> errorBands;      // the same by estimated Elo; errorRmse outside them
     std::string validationText;             // e.g. "on 32 known engines: median error 85 Elo"
+    double reliableFromElo = 0;             // below this the cross-validated error is much larger (0: no limit)
     std::map<std::string, double> groupShare;
     std::vector<std::pair<std::string, double>> calibration;   // engine -> CCRL Elo (for the chart)
     std::vector<EloItem> items;
@@ -44,6 +47,7 @@ struct EloModel {
     bool load(const std::string& path, std::string* err = nullptr);
     bool loadJson(const std::string& text, std::string* err = nullptr);
     double toElo(double theta) const { return eloIntercept + eloSlope * theta; }
+    double errorAt(double elo) const;       // model error for an engine estimated at this Elo
 };
 
 struct ThetaEstimate { double theta = 0, se = 0; };
@@ -113,3 +117,5 @@ EloResult eloResultFrom(const EloModel& model, const EloSession& s);
 
 std::string eloResultJson(const EloResult& r, const EloModel& m);
 std::string eloResultMarkdown(const EloResult& r, const EloModel& m);
+// "" or a warning that the estimate lies where the model is known to be unreliable.
+std::string eloRangeWarning(const EloResult& r, const EloModel& m);

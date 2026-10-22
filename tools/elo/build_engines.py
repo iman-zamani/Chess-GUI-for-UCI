@@ -9,9 +9,13 @@ id name are recorded (with --update they are written back to engines.json; a
 pinned commit that no longer matches the tag fails the build). Engines are never redistributed;
 only their answers to the test positions are kept.
 
+An entry's "build", "binary" and "patches" are the default recipe (written for
+macOS on Apple Silicon); "builds", "binaries" and "patchesFor" can override them
+per platform, keyed by "<system>-<machine>" (e.g. "Linux-x86_64").
+
 Usage: build_engines.py --workdir DIR [--only ID ...] [--jobs N] [--update]
 """
-import argparse, json, os, re, subprocess, sys
+import argparse, json, os, platform, re, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -22,6 +26,9 @@ PATCHES = {
     # them sits behind #ifdefs: include them only on x86
     "guard-x86-headers": r"""grep -rlE '^#\s*include\s*<(immintrin|x86intrin|nmmintrin|xmmintrin|smmintrin)\.h>' . """
                          r"""| xargs perl -pi -e 's/^(#\s*include\s*<(immintrin|x86intrin|nmmintrin|xmmintrin|smmintrin)\.h>.*)$/#if defined(__x86_64__) || defined(_M_X64)\n$1\n#endif/'""",
+    # Bit-Genie 2's bench command calls std::max(long long, long), which only compiles where
+    # int64_t is long long; spell out the type (the benchmark only, not the search)
+    "bitgenie-bench-max": r"""sed -i.orig 's/std::max(1ll, elapsed)/std::max<long long>(1ll, elapsed)/' Bit-Genie/src/benchmark.cpp""",
 }
 ENGINES = os.path.join(HERE, "..", "..", "data", "elo", "engines.json")
 
@@ -66,6 +73,17 @@ def norm(s):
     return re.sub(r"\s+", " ", s.strip().lower())
 
 
+def platform_key():
+    """e.g. "Linux-x86_64" or "Darwin-arm64": an entry's "builds" may give a recipe for it."""
+    return "%s-%s" % (platform.system(), platform.machine())
+
+
+def recipe(e, field):
+    """The entry's field for this platform (builds / binaries / patchesFor), else the default."""
+    per = e.get({"build": "builds", "binary": "binaries", "patches": "patchesFor"}[field], {})
+    return per.get(platform_key(), e.get(field, [] if field == "patches" else None))
+
+
 def build(e, workdir, jobs, log):
     d = os.path.join(workdir, e["id"])
     if not os.path.isdir(os.path.join(d, ".git")):
@@ -78,16 +96,16 @@ def build(e, workdir, jobs, log):
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=d, text=True).strip()
     if commit != want:
         return {"ok": False, "commit": commit, "error": "checked out %s, but %s is %s" % (commit, e["tag"], want)}
-    binary = os.path.join(d, e["binary"])
+    binary = os.path.join(d, recipe(e, "binary"))
     if not os.path.exists(binary):
-        for p in e.get("patches", []):
+        for p in recipe(e, "patches"):
             if run(PATCHES[p], d, log):
                 return {"ok": False, "commit": commit, "error": "patch %s failed" % p}
         env = dict(os.environ)
-        if run("nice -n 19 sh -c '%s'" % e["build"].replace("{jobs}", str(jobs)).replace("'", "'\\''"), d, log, env):
+        if run("nice -n 19 sh -c '%s'" % recipe(e, "build").replace("{jobs}", str(jobs)).replace("'", "'\\''"), d, log, env):
             return {"ok": False, "commit": commit, "error": "build failed (see %s)" % log}
     if not os.path.exists(binary):
-        return {"ok": False, "commit": commit, "error": "no binary at " + e["binary"]}
+        return {"ok": False, "commit": commit, "error": "no binary at " + recipe(e, "binary")}
     name, err = uci_name(binary)
     if name is None:
         return {"ok": False, "commit": commit, "error": "uci: " + err}
