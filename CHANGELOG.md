@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.0.0 (not released yet)
+## 1.1.0 (2026-10-22)
 
 A rebuild aimed at engine developers.
 

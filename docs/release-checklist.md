@@ -1,15 +1,16 @@
 # Release checklist (for the maintainer)
 
-The code is ready for a 2.0.0 release; nothing has been tagged or published.
+A release is made by pushing a version tag. The steps:
 
 ## Release
-1. Check that `project(... VERSION 2.0.0 ...)` in `CMakeLists.txt` matches the tag you
-   will create, and update the date in `CHANGELOG.md`.
-2. Tag and push: `git tag v2.0.0 && git push origin v2.0.0`. The release workflow builds the
+1. Check that `project(... VERSION x.y.z ...)` in `CMakeLists.txt` matches the tag you
+   will create, and give the version and date in the top heading of `CHANGELOG.md`
+   (the release notes are taken from that section).
+2. Tag and push: `git tag vx.y.z && git push origin vx.y.z`. The release workflow builds the
    Windows zip, the macOS DMGs (Intel and Apple Silicon), the Linux AppImage, .deb and .rpm,
    and the standalone `chess-cli-*` archives, and creates the GitHub release.
-3. After the release exists, the GitHub Action (`uses: iman-zamani/Chess-GUI-for-UCI@v2.0.0`)
-   can download `chess-cli`. Consider a moving `v2` tag for it.
+3. After the release exists, the GitHub Action (`uses: iman-zamani/Chess-GUI-for-UCI@vx.y.z`)
+   can download `chess-cli`. Consider a moving major-version tag (`v1`) for it.
 
 ## Repository settings (suggested)
 - Description: "A chess GUI for developing UCI engines: SPRT and matches, perft bisection,
