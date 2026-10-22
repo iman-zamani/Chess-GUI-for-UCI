@@ -686,34 +686,6 @@
    }
   },
   {
-   "id": "berserk-4.1.0",
-   "family": "Berserk",
-   "version": "4.1.0",
-   "repo": "https://github.com/jhonnold/berserk",
-   "tag": "4.1.0",
-   "patches": [
-    "guard-x86-headers"
-   ],
-   "build": "make -C src CC=clang EXE=berserk POPCOUNT=-DPOPCOUNT -j{jobs}",
-   "binary": "src/berserk",
-   "ccrl": {
-    "list": "CCRL Blitz",
-    "name": "Berserk 4.1.0 64-bit",
-    "rating": 3133,
-    "plus": 17,
-    "minus": 17,
-    "games": 893
-   },
-   "commit": "7f4b87578aab3ca27a93d917189d9a5c3521acab",
-   "idName": "Berserk 4.1.0",
-   "builds": {
-    "Linux-x86_64": "make -C src CC=gcc EXE=berserk -j{jobs}"
-   },
-   "patchesFor": {
-    "Linux-x86_64": []
-   }
-  },
-  {
    "id": "ethereal-12.00",
    "family": "Ethereal",
    "version": "12.00",
@@ -875,6 +847,10 @@
   {
    "engine": "Weiss 0.8",
    "reason": "answers about 9% of test positions with an illegal move (13 of its first 150, e.g. moves from empty squares), an engine bug with 'position fen' that has nothing to do with its playing strength"
+  },
+  {
+   "engine": "Berserk 4.1.0",
+   "reason": "does not use the move time: given 500 ms it answers in a median of 2 ms (depth 6), so its answers say nothing about its rated strength"
   }
  ]
 }
