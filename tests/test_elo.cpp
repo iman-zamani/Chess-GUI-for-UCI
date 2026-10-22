@@ -2,6 +2,7 @@
  * testing on simulated answers, and a run against the mock engine. GPL-2.0 */
 #include "testlib.hpp"
 #include "elo_estimator.hpp"
+#include "chess.hpp"
 #include <nlohmann/json.hpp>
 #include <cmath>
 #include <fstream>
@@ -135,4 +136,54 @@ TEST_CASE("elo/model-validation"){
     fx["model"]["items"] = json::array();
     CHECK(!m.loadJson(fx["model"].dump(), &err));
     CHECK(err.find("no positions") != std::string::npos);
+}
+
+TEST_CASE("elo/shipped-model"){
+    // Resources/elo/model.json: loads, and every position and acceptable move is legal
+    std::ifstream f(std::string(CHESSGUI_SOURCE_DIR) + "/Resources/elo/model.json");
+    REQUIRE(f.good());
+    std::stringstream ss; ss << f.rdbuf();
+    EloModel m;
+    std::string err;
+    bool loaded = m.loadJson(ss.str(), &err);
+    CHECK_MSG(loaded, err);
+    REQUIRE(loaded);
+    CHECK(m.calibNps > 0);
+    CHECK(m.errorRmse > 0);
+    CHECK(!m.validationText.empty());
+    CHECK(m.items.size() >= 300);
+    for (auto& it : m.items){
+        bool ok = false;
+        Position p = Position::fromFEN(it.fen, &ok);
+        CHECK_MSG(ok, it.id);
+        CHECK_MSG(!it.ok.empty(), it.id);
+        for (auto& u : it.ok){
+            Move mv;
+            CHECK_MSG(p.uciToMove(u, mv), it.id + " " + u);
+        }
+    }
+}
+
+TEST_CASE("elo/range-warning"){
+    EloModel m;
+    EloResult r; r.ok = true; r.elo = 1900;
+    CHECK(eloRangeWarning(r, m).empty());          // the model sets no limit
+    m.reliableFromElo = 2500;
+    CHECK(eloRangeWarning(r, m).find("2500") != std::string::npos);
+    CHECK(eloResultMarkdown(r, m).find("Warning") != std::string::npos);
+    CHECK_EQ(json::parse(eloResultJson(r, m))["warning"].get<std::string>(), eloRangeWarning(r, m));
+    r.elo = 2600;
+    CHECK(eloRangeWarning(r, m).empty());
+}
+
+TEST_CASE("elo/error-by-band"){
+    json fx = fixture();
+    fx["model"]["errorRmse"] = 200.0;
+    fx["model"]["errorBands"] = json::array({{{"from", 0}, {"to", 2500}, {"rmse", 400.0}},
+                                             {{"from", 2500}, {"to", 99999}, {"rmse", 60.0}}});
+    EloModel m;
+    REQUIRE(m.loadJson(fx["model"].dump()));
+    CHECK_EQ(m.errorAt(1800), 400.0);
+    CHECK_EQ(m.errorAt(2500), 60.0);
+    CHECK_EQ(m.errorAt(-100), 200.0);              // outside every band
 }

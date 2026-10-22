@@ -1,0 +1,8700 @@
+{
+ "format": "chessgui-elo-model",
+ "version": 1,
+ "created": "2026-10-22",
+ "threshold": 5.0,
+ "model": "anchored",
+ "itemsRequested": 1000,
+ "protocol": {
+  "baseMovetimeMs": 500,
+  "calibNps": 9043110.0,
+  "factorMin": 0.25,
+  "factorMax": 4,
+  "hashMb": 64,
+  "threads": 1,
+  "moveOverheadMs": 10,
+  "graceMs": 50
+ },
+ "elo": {
+  "intercept": 2500.0,
+  "slope": 400.0
+ },
+ "prior": {
+  "mean": 0.0,
+  "sd": 3.0
+ },
+ "adaptive": {
+  "seTargetElo": 50.0,
+  "maxItems": 300,
+  "minItems": 20
+ },
+ "groupShare": {
+  "tactics": 0.4,
+  "positional": 0.35,
+  "endgame": 0.25
+ },
+ "errorRmse": 244.75772869934417,
+ "validation": {
+  "loeo": {
+   "n": 29,
+   "mae": 90.21937843918975,
+   "rmse": 151.5274357954029,
+   "max": 592.778670029385,
+   "bias": 31.097752211309203,
+   "spearman": 0.9842364532019702
+  },
+  "lofo": {
+   "n": 29,
+   "mae": 161.05628290306916,
+   "rmse": 244.75772869934417,
+   "max": 839.6579104288867,
+   "bias": 100.54927061297879,
+   "spearman": 0.9891625615763545
+  }
+ },
+ "validationText": "leave-one-engine-out on 29 engines: MAE 90, RMSE 152, max 593 Elo; leave-one-family-out (unseen engine styles): MAE 161, RMSE 245 Elo; by rating, unseen styles: below 2000 MAE 508 (bias +508), 2000-2500 MAE 177 (bias +177), 2500 and above MAE 59 (bias -38)",
+ "reliableFromElo": 2500,
+ "errorBands": [
+  {
+   "from": 0,
+   "to": 2500,
+   "engines": 10,
+   "rmse": 403.08540534234174
+  },
+  {
+   "from": 2500,
+   "to": 9999,
+   "engines": 19,
+   "rmse": 77.00515020370226
+  }
+ ],
+ "calibration": [
+  {
+   "name": "Stash 9.0.1",
+   "elo": 1271,
+   "family": "Stash"
+  },
+  {
+   "name": "Stash 11.0.1",
+   "elo": 1687,
+   "family": "Stash"
+  },
+  {
+   "name": "Stash 12.0",
+   "elo": 1883,
+   "family": "Stash"
+  },
+  {
+   "name": "Stash 13.0.1",
+   "elo": 1968,
+   "family": "Stash"
+  },
+  {
+   "name": "Stash 14.0",
+   "elo": 2059,
+   "family": "Stash"
+  },
+  {
+   "name": "Stash 15.3",
+   "elo": 2174,
+   "family": "Stash"
+  },
+  {
+   "name": "Stash 17.0",
+   "elo": 2297,
+   "family": "Stash"
+  },
+  {
+   "name": "Stash 19.0",
+   "elo": 2474,
+   "family": "Stash"
+  },
+  {
+   "name": "Stash 21.0",
+   "elo": 2714,
+   "family": "Stash"
+  },
+  {
+   "name": "Stash 25.0",
+   "elo": 2933,
+   "family": "Stash"
+  },
+  {
+   "name": "Stash 27.0",
+   "elo": 3049,
+   "family": "Stash"
+  },
+  {
+   "name": "Stash 29.0",
+   "elo": 3128,
+   "family": "Stash"
+  },
+  {
+   "name": "Stash 33.0",
+   "elo": 3273,
+   "family": "Stash"
+  },
+  {
+   "name": "Stash 35.0",
+   "elo": 3345,
+   "family": "Stash"
+  },
+  {
+   "name": "Stash 37.0",
+   "elo": 3418,
+   "family": "Stash"
+  },
+  {
+   "name": "Bit-Genie 2",
+   "elo": 1793,
+   "family": "Bit-Genie"
+  },
+  {
+   "name": "Bit-Genie 4",
+   "elo": 2166,
+   "family": "Bit-Genie"
+  },
+  {
+   "name": "Bit-Genie 5",
+   "elo": 2361,
+   "family": "Bit-Genie"
+  },
+  {
+   "name": "Bit-Genie 8",
+   "elo": 2860,
+   "family": "Bit-Genie"
+  },
+  {
+   "name": "Weiss 1.0",
+   "elo": 2896,
+   "family": "Weiss"
+  },
+  {
+   "name": "Weiss 1.2",
+   "elo": 3056,
+   "family": "Weiss"
+  },
+  {
+   "name": "Weiss 1.4",
+   "elo": 3255,
+   "family": "Weiss"
+  },
+  {
+   "name": "Weiss 2.0",
+   "elo": 3319,
+   "family": "Weiss"
+  },
+  {
+   "name": "Berserk 2.0.0",
+   "elo": 2529,
+   "family": "Berserk"
+  },
+  {
+   "name": "Ethereal 12.00",
+   "elo": 3391,
+   "family": "Ethereal"
+  },
+  {
+   "name": "Ethereal 13.00",
+   "elo": 3487,
+   "family": "Ethereal"
+  },
+  {
+   "name": "Blunder 8.0.0",
+   "elo": 2654,
+   "family": "Blunder"
+  },
+  {
+   "name": "Stockfish 10",
+   "elo": 3509,
+   "family": "Stockfish"
+  },
+  {
+   "name": "Stockfish 11",
+   "elo": 3563,
+   "family": "Stockfish"
+  }
+ ],
+ "items": [
+  {
+   "id": "lichess-puzzle:sCp1R",
+   "fen": "8/1R6/8/8/2k3p1/2r5/4K1P1/8 w - - 0 56",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "b7c7"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:FeAqh",
+   "fen": "1rr3k1/5pp1/2n1p1p1/1qPp4/pPn2B2/P2B1P2/K4QPP/3R3R b - - 8 31",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 2.223838,
+   "b": -0.617689,
+   "ok": [
+    "c6b4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:TqVO7",
+   "fen": "r4bk1/3n1r1p/pqb1p1p1/1p2PpQB/2pP1R2/8/PPPN3P/2K1B1R1 w - - 6 24",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.321428,
+   "b": 0.13372,
+   "ok": [
+    "h5g6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:xz9MO",
+   "fen": "r4rk1/pp2Rppp/3p4/7q/3n2b1/3B1N2/PPPB1PPP/R2Q2K1 b - - 0 14",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "d4f3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:sBiDy",
+   "fen": "8/8/4p2p/2K1Pp2/5P1k/2R3rP/8/8 w - - 9 47",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 2.064559,
+   "b": -1.294465,
+   "ok": [
+    "c3g3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:6Egp9",
+   "fen": "8/4k3/8/5R2/4Bp2/5PpK/r7/8 b - - 3 54",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "a2h2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:aKKxh",
+   "fen": "6nk/8/3pQqBp/3P4/1r2p3/1P6/2K2P2/7R w - - 0 38",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.053745,
+   "b": -3.614483,
+   "ok": [
+    "h1h6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:UTYdY",
+   "fen": "8/p7/4k1p1/8/2p2PPP/1b6/3KN3/8 w - - 0 39",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.873561,
+   "b": -0.856817,
+   "ok": [
+    "e2d4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:1OIQh",
+   "fen": "7r/r4pkp/1R6/8/5P2/8/1PP3PP/1K2R3 b - - 2 23",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "h8a8"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:hqeyj",
+   "fen": "6k1/1pr2bp1/p4p1p/q2P4/3QP1P1/3B1P1P/P5K1/1R6 b - - 0 32",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.670478,
+   "b": -1.552481,
+   "ok": [
+    "a5d2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:eHNxn",
+   "fen": "1nQ5/p1p1bk1p/3p1rp1/8/8/5P2/P1qBK1PP/RN3R2 b - - 0 21",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "f6e6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:Fa4Ja",
+   "fen": "2rq1rk1/3bbpp1/p1n1pn1p/3p4/1P1P3B/1NPB1N2/1PQ2PPP/R4RK1 b - - 0 15",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "c6b4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:7zbFq",
+   "fen": "3k1r2/3nn3/4p3/1N1pP3/1PqP2P1/2PQ4/1B2KP2/7R b - - 2 27",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "f8f2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:guz8f",
+   "fen": "r1bq1rk1/ppp2ppp/3bpn2/6N1/3P3Q/3nB3/PPP3PP/RN3RK1 w - - 0 11",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 2.848929,
+   "b": -0.399185,
+   "ok": [
+    "f1f6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:8s1uD",
+   "fen": "8/7P/1p4R1/pk6/6K1/8/8/7r w - - 1 57",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "g6g5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:zWz5c",
+   "fen": "3r4/5p2/p7/1p5P/6P1/Pb1pk3/3R2P1/1B4K1 w - - 1 42",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "d2d3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:bXgqv",
+   "fen": "r4rk1/p3b1p1/3p1p1p/Bp2p3/3nPPB1/1q6/6PP/2RQ1R1K w - - 2 23",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "d1b3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:jGRq9",
+   "fen": "5r1k/2q3p1/p3Q3/1p1pP1P1/2nP4/P5P1/1P1B1P2/6K1 w - - 1 26",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.190163,
+   "b": -2.253529,
+   "ok": [
+    "e6h3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:PF431",
+   "fen": "r7/5PR1/2k1p1p1/3p3p/8/1p6/5KPP/8 w - - 0 42",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.053745,
+   "b": -3.614483,
+   "ok": [
+    "g7g8"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:3MOfz",
+   "fen": "2r1r1k1/p2p4/3BpQ1p/2P2p1q/1p1P2p1/4R3/PP3PP1/6K1 w - - 0 38",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "d6e5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:Iiv8p",
+   "fen": "r3r1k1/pp1n1ppp/1qp2n2/5b2/2PP4/4BPN1/P2Q2PP/R3KB1R b KQ - 5 16",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 2.013041,
+   "b": -1.848011,
+   "ok": [
+    "e8e3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:ZPR5q",
+   "fen": "5rk1/p4ppp/3Q4/3P4/4P1P1/4B3/PrPKN1q1/R7 b - - 2 24",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "b2c2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:hlreg",
+   "fen": "8/2k5/2n4p/1K2p1p1/1P2Pp2/5B1P/6P1/8 b - - 8 41",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.065513,
+   "b": 1.309311,
+   "ok": [
+    "c6d4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:EDzYQ",
+   "fen": "4r2k/1b3pp1/p2q1b1p/1p1p1B2/1P2PP2/P7/3QN1PP/5RK1 b - - 0 24",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "d6b6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:1ZQ4W",
+   "fen": "2Q2bk1/8/4p1p1/4P2p/3P1p2/pq3N2/5PK1/8 w - - 0 46",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.384188,
+   "b": 1.099631,
+   "ok": [
+    "f3g5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:7wz6J",
+   "fen": "r3r1k1/q2p1p2/p1n3pB/2b2p2/P6Q/2P5/2N3PP/R4R1K w - - 2 23",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.454688,
+   "b": 0.030696,
+   "ok": [
+    "h4f6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:mLPmZ",
+   "fen": "4rrk1/p6p/2pn2q1/2pbR3/5B2/1P1P4/P1PQ1PPP/4R1K1 w - - 1 23",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.750002,
+   "b": -2.307637,
+   "ok": [
+    "e5g5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:IP8pu",
+   "fen": "r3kb1r/pppn1ppp/2b1p3/8/2PPn3/2N2N2/PP2BP1P/R1B1K1R1 w Qkq - 7 11",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.934226,
+   "b": -2.233276,
+   "ok": [
+    "d4d5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:9IL6v",
+   "fen": "8/6k1/8/1PN1b3/5pp1/P7/4K3/8 b - - 1 59",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "f4f3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:pTtNh",
+   "fen": "8/1R4p1/2r1kp1p/P6P/8/8/6P1/6K1 w - - 1 39",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 2.154448,
+   "b": 2.408698,
+   "ok": [
+    "b7b6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:IysCO",
+   "fen": "7k/6p1/7p/1p6/7P/PKP5/1P6/8 b - - 1 43",
+   "category": "defence",
+   "group": "tactics",
+   "a": 0.505749,
+   "b": -3.495836,
+   "ok": [
+    "g7g5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:aJq0r",
+   "fen": "8/6pp/p2k1p2/1p1p1P2/1P1Rr1P1/P2K3P/2P5/8 b - - 4 39",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 2.064559,
+   "b": -1.294465,
+   "ok": [
+    "d6e5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:aFRyi",
+   "fen": "6k1/p4p2/3p2P1/2pPr3/8/5P2/P1KQbq2/2R4R b - - 0 29",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.023917,
+   "b": -2.444564,
+   "ok": [
+    "e2d3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:oXbBJ",
+   "fen": "8/8/7p/3N1k2/P3p2P/4Kpn1/8/8 w - - 0 54",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.228818,
+   "b": -1.853838,
+   "ok": [
+    "a4a5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:Roqiz",
+   "fen": "8/2p2k1p/1p2pn1q/4r3/8/2Q2P2/PP3P1P/3R1KR1 b - - 16 28",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.584031,
+   "b": -1.993433,
+   "ok": [
+    "h6h3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:BFUc7",
+   "fen": "2rqr1k1/pp3p2/3bb2Q/3p4/4n3/2PB1N1P/PP3PP1/3R1RK1 w - - 1 19",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.319107,
+   "b": -1.794602,
+   "ok": [
+    "d3e4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:iG5lV",
+   "fen": "8/6p1/2k4p/3p1P2/3K2P1/7P/8/8 w - - 1 55",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "h3h4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:brO3T",
+   "fen": "8/6p1/3rk2p/1K2p1p1/4P3/2R2PPP/8/8 w - - 7 51",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 2.003277,
+   "b": -0.629057,
+   "ok": [
+    "c3c6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:uVMgs",
+   "fen": "8/5k2/2p1q2p/6p1/5r2/3QN1BP/5PPK/r7 w - - 5 37",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "d3h7"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:2HHF9",
+   "fen": "r1b1k1nr/pp1pppbp/6p1/8/2B1P3/2N1BQ2/Pq3PPP/R3K2R w KQkq - 0 10",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "f3f7"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:I6rc6",
+   "fen": "6r1/p1pq1p1k/2p2Q1p/3p1P2/6r1/5R2/PPP3PP/R5K1 w - - 3 22",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.101116,
+   "b": -1.960286,
+   "ok": [
+    "f3h3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:TyfOK",
+   "fen": "5rk1/1p3rp1/6Qp/p1qpp3/6R1/2P2P2/PP1K4/6R1 w - - 6 30",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "g6h6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:fHiGQ",
+   "fen": "6r1/ppp5/4kq1p/2P1pnr1/8/P1B2Q1P/1P3PP1/R3R1K1 b - - 7 22",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 2.505261,
+   "b": -0.402902,
+   "ok": [
+    "g5g2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:bwamM",
+   "fen": "r2q3r/p4pk1/2pb1np1/2p5/4PN2/2PP4/P4B1P/R2Q2RK w - - 5 22",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.113866,
+   "b": -1.058102,
+   "ok": [
+    "g1g6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:K4Ksu",
+   "fen": "5rk1/ppp3p1/6P1/8/7N/P5r1/KP3n2/4R2R w - - 3 32",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "h4f5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:rxI2d",
+   "fen": "1k1r4/bpp2pp1/p1np4/P3p1Qr/1PB1Pn2/2PP4/3N1PPN/R1B2RK1 b - - 0 17",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.196728,
+   "b": -1.877791,
+   "ok": [
+    "f4e2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:ol5Od",
+   "fen": "6k1/2R2pN1/p6p/1pbbB3/8/2P2rP1/1P2K2P/8 b - - 0 33",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "f3e3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:GudCD",
+   "fen": "8/5ppp/Pb6/5PPP/3k4/3p4/8/3K4 w - - 1 46",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.709648,
+   "b": -2.623606,
+   "ok": [
+    "g5g6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:1kmGt",
+   "fen": "r2qr1k1/5ppp/p5b1/1p6/3N2P1/2Q1P2P/PP1NK3/1R5R b - - 0 23",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.437483,
+   "b": 0.34846,
+   "ok": [
+    "a8c8"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:FuEd9",
+   "fen": "6k1/1p4b1/p1n4q/3p2p1/3PrP2/1P3QP1/P4PN1/2R2RK1 b - - 0 35",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "c6d4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:v4JSf",
+   "fen": "8/p1k5/1pP1p3/1P2n1pB/5pP1/7P/6K1/8 w - - 0 42",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.112348,
+   "b": -0.807543,
+   "ok": [
+    "h3h4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:DbXu1",
+   "fen": "8/5p1p/2Rrk1p1/5p2/3P1K2/4P2P/6P1/8 w - - 0 39",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.039879,
+   "b": -1.104022,
+   "ok": [
+    "c6d6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:pBnkb",
+   "fen": "r3rbk1/ppq2pp1/2p4p/5b2/2PQN3/1P3N2/PBn2PPP/R3R1K1 w - - 3 22",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "e4f6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:5UhBm",
+   "fen": "1b3r1k/pp4pp/2p2r2/2Pp3P/PP1Pp1P1/7Q/3BBq2/1R2R2K b - - 2 37",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.09739,
+   "b": -0.575338,
+   "ok": [
+    "f6f3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:FDbJk",
+   "fen": "rb3rk1/5p2/p2q3p/B1p1n1pQ/3p4/R2P3P/1P3PPN/4R1K1 w - - 2 26",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.930412,
+   "b": 0.763611,
+   "ok": [
+    "e1e5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:2wrPL",
+   "fen": "1kr5/pp2Q3/1q2N2p/3pP3/3P4/4PK2/P6P/8 w - - 5 37",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 2.184945,
+   "b": -1.808992,
+   "ok": [
+    "e7d6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:Pd92e",
+   "fen": "6k1/3q1p2/pQ1p2p1/1p1P2Pn/4b2P/8/PP6/K1R5 w - - 2 32",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.168316,
+   "b": -0.105099,
+   "ok": [
+    "b6b8"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:n7aCc",
+   "fen": "1r3k2/p3r2p/2p4R/2qp1p2/5P2/4P3/P3QK2/6R1 w - - 2 28",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.053745,
+   "b": -3.614483,
+   "ok": [
+    "h6f6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:3n1r2",
+   "fen": "r3r1k1/2p2p2/1p2bQp1/p3P3/6q1/3B4/PBP3P1/5R1K w - - 0 26",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 2.661244,
+   "b": -0.811382,
+   "ok": [
+    "f1f4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:AnYmG",
+   "fen": "5rk1/1b2Rppp/p2r1q2/1p6/2p5/P4N2/2B1QPPP/1R4K1 b - - 6 24",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "b7f3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:8m5xQ",
+   "fen": "8/8/8/2k2p2/2p2P1p/2P2K1P/8/8 b - - 0 47",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.937355,
+   "b": -3.115116,
+   "ok": [
+    "c5b5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:W17OR",
+   "fen": "r3kb1r/pp2pp1p/2qp2p1/3N2Pn/8/5Q2/PP1B1P1P/R3K2R w KQkq - 3 16",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "a1c1"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:C2SbQ",
+   "fen": "r1b1r1k1/pp1n2p1/4pb2/q2pN2P/2p2B2/2P1P1Q1/PP3PP1/R3K2R w KQ - 6 19",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.184131,
+   "b": -1.021768,
+   "ok": [
+    "h5h6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:nynCc",
+   "fen": "8/8/2K3p1/3pk2p/7P/2P3P1/8/8 b - - 11 45",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "d5d4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:rSRa2",
+   "fen": "8/6pp/5p2/8/5Pk1/6P1/2r2R1P/6K1 b - - 6 32",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "c2f2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:0dcve",
+   "fen": "2r1k3/pp1q2r1/2n2p2/1BR1p1p1/Q2p4/8/PP1K1PPP/2R5 w - - 0 19",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.094316,
+   "b": -0.576647,
+   "ok": [
+    "c5c6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:pIEh4",
+   "fen": "r2qkb1r/ppp3pp/5p2/4n3/6b1/3B1N2/PPP3PP/R1BQR1K1 w kq - 0 11",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.937355,
+   "b": -3.115116,
+   "ok": [
+    "f3e5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:ELEYn",
+   "fen": "8/7N/1k4p1/8/p1R1ppP1/7P/r4PK1/8 b - - 1 41",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.127624,
+   "b": -2.794032,
+   "ok": [
+    "e4e3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:QFYhH",
+   "fen": "3r2k1/3qppbp/1p4p1/2n1P3/2BB1P2/r7/3Q2PP/2RR3K w - - 0 26",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "d4c5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:qpE5S",
+   "fen": "3r2k1/4q1pp/p4p2/1p2p3/1Pb3Q1/P3P3/1B3PPP/3R2K1 b - - 1 25",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.596244,
+   "b": 1.103911,
+   "ok": [
+    "f6f5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:wr6Wj",
+   "fen": "8/2q2pk1/p3bnpp/1p1p4/2r5/PN1QPB1P/1P3PP1/3R2K1 b - - 5 28",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "e6f5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:rErAO",
+   "fen": "r1b1k2r/5p1p/2p1p1p1/p2pP1Q1/3P4/4P3/P2q2PP/R4RK1 w kq - 0 17",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.849373,
+   "b": 0.186524,
+   "ok": [
+    "f1f7"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:QM5Yk",
+   "fen": "3r1r2/1p2qpk1/p1b1p1pp/4P3/5P2/2pQ2R1/PPB3PP/4R1K1 w - - 0 23",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.951606,
+   "b": 2.23204,
+   "ok": [
+    "g3g6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:HDbP6",
+   "fen": "8/8/2p1k3/1p2P1pp/1P1P4/5KP1/8/8 w - - 3 51",
+   "category": "defence",
+   "group": "tactics",
+   "a": 0.687499,
+   "b": -1.865652,
+   "ok": [
+    "f3e4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:AJbai",
+   "fen": "8/4k3/1p2p3/1Pp1Pppp/P1P5/5K1P/8/8 w - f6 0 35",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "e5f6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:dd7Vv",
+   "fen": "k1r3q1/p7/1p4pp/6p1/8/Q3P2P/5PP1/3R2K1 w - - 2 40",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.962215,
+   "b": -2.537256,
+   "ok": [
+    "d1d7"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:3lLEt",
+   "fen": "8/8/2k5/1pp1bp1p/P5pP/1P1KB1P1/5P2/8 b - - 0 40",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 2.184945,
+   "b": -1.808992,
+   "ok": [
+    "c5c4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:gSeEK",
+   "fen": "rnq1kb1r/p1p2ppp/1pb1p3/4P1BQ/2B5/2P5/P1P2P1P/2KR2N1 w kq - 2 12",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "c4e6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:SlbF0",
+   "fen": "2rr2k1/3q2pp/p4p2/1p1n4/3Q4/P4NP1/1P1R1PKP/4R3 b - - 1 23",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "c8c4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:RgK2L",
+   "fen": "4k3/2R4p/3P1Kp1/5p2/8/8/4rPP1/8 w - - 6 40",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.849822,
+   "b": 0.693087,
+   "ok": [
+    "c7e7"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:66NT5",
+   "fen": "1r6/2R2pkp/8/6p1/4B3/br2PPPb/3RN2P/6K1 b - - 0 28",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "b3b1"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:vHHhg",
+   "fen": "r7/8/6p1/1pkp1p1p/5P1P/P1K1P1P1/8/R7 b - - 1 36",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.258702,
+   "b": -2.641154,
+   "ok": [
+    "a8a3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:91D0k",
+   "fen": "8/4k1p1/4bb2/7B/2p1Q3/2PpB3/1q4PP/7K w - - 0 34",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "e3c5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:6w50q",
+   "fen": "r2r2k1/1b3p1p/p1n2np1/1pppqpN1/7Q/PBNP4/1PP3PP/R4R1K w - - 2 19",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "a1e1"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:yH8CT",
+   "fen": "r4r2/1bq2pkp/p1n1p1p1/3pP3/Pp1NnQ2/1B3N2/1PP2PPP/R3R1K1 w - - 2 19",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.103018,
+   "b": 2.359444,
+   "ok": [
+    "e1e4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:PeQvV",
+   "fen": "4r1k1/ppp1q3/3p2B1/3P2Nr/2PQ2Pp/8/PP6/1K6 w - - 0 33",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "g6f7"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:P5jtj",
+   "fen": "1k1r3r/p2q4/1p1p1pn1/1P1Q3p/3P4/P3P3/4BPp1/2R2RK1 w - - 0 24",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.395835,
+   "b": -1.224783,
+   "ok": [
+    "e2f3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:a1SR4",
+   "fen": "5qk1/6pp/1p3p2/p4Q2/P6R/1P5P/3r2r1/5R1K w - - 0 43",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.053745,
+   "b": -3.614483,
+   "ok": [
+    "f5h7"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:C5fNe",
+   "fen": "r2qkr2/pppb2Qp/2np2p1/3N1p2/8/P1P4P/Bb3P2/1N3RK1 w q - 5 20",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.833289,
+   "b": -1.089394,
+   "ok": [
+    "f1e1"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:kkmSp",
+   "fen": "r3k2r/ppp2pp1/8/4P1b1/8/2NQ1KP1/PP2P2q/R3R3 w kq - 0 20",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 2.678046,
+   "b": -0.810897,
+   "ok": [
+    "e1h1"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:wbwtk",
+   "fen": "r4r2/ppp1q1pp/2np2k1/4p3/4P1n1/1QPP4/PP3PPP/RNB2RK1 b - - 2 11",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.934226,
+   "b": -2.233276,
+   "ok": [
+    "e7h4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:z5Myy",
+   "fen": "2kr2b1/ppp5/2n5/3q1p2/2pP1Q2/5NP1/PP3P1P/1K1RR3 b - - 2 26",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.108041,
+   "b": -1.06141,
+   "ok": [
+    "c4c3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:3AaSw",
+   "fen": "8/5p1p/p1pk2p1/6P1/1PP5/3K3P/P4B2/b7 w - - 1 32",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.764409,
+   "b": -2.965009,
+   "ok": [
+    "f2d4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:0H6pq",
+   "fen": "1k6/5p2/1KR5/1P3r2/8/8/8/8 w - - 11 61",
+   "category": "defence",
+   "group": "tactics",
+   "a": 0.913537,
+   "b": -2.190262,
+   "ok": [
+    "c6h6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:dcQ1R",
+   "fen": "6k1/6p1/4q2p/2Q1Pp2/1pP5/1P4P1/4RK1P/3r4 b - - 2 38",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.934226,
+   "b": -2.233276,
+   "ok": [
+    "f5f4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:GZjTB",
+   "fen": "1r3rk1/4q1pp/2b1P3/4QB2/pp6/1P6/P1P4P/1K1R2R1 b - - 0 25",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.269939,
+   "b": -1.240405,
+   "ok": [
+    "b8b5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:yxJZu",
+   "fen": "4r1k1/p2b2pp/1p1q4/1P3p2/P1rPp3/2N5/3Q1PPP/2R1R1K1 w - - 3 24",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "d2a2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:1h41Y",
+   "fen": "4rr2/1R1bppkp/p2p2p1/2pP4/q7/3P3P/4BPP1/1Q2R1K1 w - - 2 22",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "b1b2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:pV7xE",
+   "fen": "8/p2k4/1q5Q/2p2p1p/2P5/6P1/2P2PK1/8 w - - 6 41",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.506263,
+   "b": 3.165331,
+   "ok": [
+    "h6b6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:D8c0W",
+   "fen": "r3q2k/1Q4p1/R7/2Pp2p1/1P2b3/8/1P3P2/3R2K1 b - - 0 30",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "a8a6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:3Rtc7",
+   "fen": "3r4/1kq5/1p2p2p/2p1P1n1/8/Q4PKP/1P1r2P1/R1R5 w - - 4 34",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "a3a6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:qntjv",
+   "fen": "3r1q1k/pQ6/2p4p/2b3p1/2B5/2P2N1P/PP4P1/4n2K w - - 0 28",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "f3e5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:PFdJA",
+   "fen": "1r1r2k1/7p/1q2b1p1/1B2PpQ1/1R1P1P2/8/8/1R4K1 w - - 1 43",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.461242,
+   "b": -1.168922,
+   "ok": [
+    "b5d7"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:REFqc",
+   "fen": "8/8/3k1p1p/p2bpp2/1pB4P/1P2P1P1/1P1K1P2/8 b - - 3 48",
+   "category": "defence",
+   "group": "tactics",
+   "a": 0.649829,
+   "b": -2.814662,
+   "ok": [
+    "d5c4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:Ulhr9",
+   "fen": "2kr2r1/ppp2p1p/3p1Q2/4p3/2P1P2q/4P2P/PPP3P1/R4RK1 b - - 0 15",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.072288,
+   "b": -2.872889,
+   "ok": [
+    "g8g2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:5oVf7",
+   "fen": "2r2rk1/ppb2ppp/3q4/3p4/8/1NP2BnP/PPQ2P2/3R1RK1 w - - 0 20",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "f2g3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:usI45",
+   "fen": "3r1r1k/1q3p2/p3pPpp/1p6/3B2Q1/P7/1PP3bP/R4RK1 w - - 0 25",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.496845,
+   "b": 0.920549,
+   "ok": [
+    "g4h4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:z0uGj",
+   "fen": "1r4k1/2pq1r1p/3p2nP/3Pp3/p4p1B/3Q1P2/PP6/K2R2R1 w - - 2 32",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.873561,
+   "b": -0.856817,
+   "ok": [
+    "g1g6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:v5iXC",
+   "fen": "3r4/8/3r1p2/k4Pp1/3pK1P1/7R/7P/3R4 w - - 0 52",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.590687,
+   "b": -3.048605,
+   "ok": [
+    "h3b3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:7GoHq",
+   "fen": "rq3nk1/4b1p1/p2p2p1/3Pp3/1pr1P3/2N1BP1Q/PP3K2/6RR w - - 0 27",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 2.100747,
+   "b": 0.950632,
+   "ok": [
+    "g1g6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:IiquJ",
+   "fen": "8/1p4p1/3kp2p/p3p3/PP2P3/2P2KPP/8/8 b - - 0 30",
+   "category": "defence",
+   "group": "tactics",
+   "a": 0.693878,
+   "b": -1.506178,
+   "ok": [
+    "b7b5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:LAh24",
+   "fen": "3k3r/2rP1pp1/1Q4p1/p1p1p3/7q/1PR1P3/P4PP1/5RK1 w - - 1 32",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "b6b8"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:ntqNO",
+   "fen": "r1bq2kr/pp2b2p/2n1pnp1/3p4/3P4/1N1B1NQ1/PP3PPP/R1B2RK1 b - - 1 15",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "f6h5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:PccSA",
+   "fen": "r1b2rk1/pp3pbp/2p3p1/4p3/1P2P1qP/P7/1BQPB3/R3K1NR b KQ - 1 15",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.017739,
+   "b": -1.704888,
+   "ok": [
+    "g4g3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:lkNpD",
+   "fen": "3rrbk1/4qp2/p3p1pp/3nR3/1p1PN2Q/5N2/PP3PPP/4R1K1 w - - 2 25",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "e5d5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:JDdzX",
+   "fen": "r2r2k1/1q2bp1p/ppn1p1pB/4n3/P2N4/2N5/1PP2QPP/R4R1K w - - 0 19",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.737129,
+   "b": -1.351294,
+   "ok": [
+    "d4c6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:fMwEV",
+   "fen": "8/8/5p2/pR2rk1p/P7/5KPP/8/8 b - - 0 41",
+   "category": "defence",
+   "group": "tactics",
+   "a": 0.652606,
+   "b": -2.804877,
+   "ok": [
+    "e5b5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:kkop4",
+   "fen": "4rrk1/pp1b2pp/1qnbp3/3p4/B2P2n1/P4NNP/1P3PP1/R1BQR1K1 b - - 0 17",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.171812,
+   "b": -2.271264,
+   "ok": [
+    "g4f2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:TH4Nv",
+   "fen": "6rk/ppp2R2/3p1R2/2PPp3/1P2P1rn/3B4/PB4p1/6K1 b - - 3 33",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.545716,
+   "b": 0.401451,
+   "ok": [
+    "h4f3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:HbHC5",
+   "fen": "2R5/5P2/8/8/7P/pp1K4/1k5r/8 b - - 2 59",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.934226,
+   "b": -2.233276,
+   "ok": [
+    "h2f2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:0uldo",
+   "fen": "rn1qr1k1/pp4bp/2p2pp1/4N3/3PR3/6P1/PP3P1P/R1BQ2K1 w - - 0 15",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "d1b3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:5hDl0",
+   "fen": "8/4kP2/1p1bP3/5K2/2P4p/7P/P7/8 w - - 3 51",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.466322,
+   "b": -1.428929,
+   "ok": [
+    "a2a4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:iBiXa",
+   "fen": "r1b1r1k1/pp3ppp/1qnBp3/3pP3/8/P4N2/P3QPPP/2R2RK1 w - - 7 16",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.538178,
+   "b": 0.358682,
+   "ok": [
+    "f3g5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:D0cIs",
+   "fen": "1k1r1r2/1ppbqpp1/p3p2p/n3P3/2Q1B3/2P2N2/PP1R1PP1/2KR4 w - - 1 24",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "c4b4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:FBYGy",
+   "fen": "4k2r/p2bnpbp/Q3p1p1/3pn1B1/Bq1p4/5N2/P2N1PPP/5RK1 w k - 0 17",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.629718,
+   "b": -1.654649,
+   "ok": [
+    "f1b1"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:ExJCr",
+   "fen": "1r4k1/4p2p/3p1pp1/3P4/qr2R3/4Q2P/5PP1/1R4K1 w - - 0 30",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "b1b4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:aPpeL",
+   "fen": "1k1r3r/1bpp4/1pn1qp2/8/Q3P1p1/4B1P1/P4PB1/1RR3K1 w - - 0 23",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.674565,
+   "b": 0.174018,
+   "ok": [
+    "e3b6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:BpRVo",
+   "fen": "r2q2k1/1pp1b1r1/p1b2n1Q/3p2N1/8/2N5/PPP2PPP/R3R1K1 w - - 3 17",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "g5e6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:FcqSz",
+   "fen": "7k/1p2r1p1/2pb1rqp/p7/P2PR3/1P3BP1/4Q1KP/5R2 b - - 2 32",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.258702,
+   "b": -2.641154,
+   "ok": [
+    "f6f3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:scJOr",
+   "fen": "2r5/6pk/p3R1qp/1p6/5P2/3r2nP/P4QP1/4RN1K w - - 1 36",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "h1g1"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:CJMlc",
+   "fen": "8/8/7p/2k2p1P/2p2P2/2P5/4K3/8 b - - 3 40",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.572548,
+   "b": -3.736446,
+   "ok": [
+    "c5b5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:5p3Ko",
+   "fen": "Q7/4bBkp/p2rP1pq/8/2pp1P2/7P/P5P1/3R2K1 w - - 2 35",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.892954,
+   "b": -3.214945,
+   "ok": [
+    "a8g8"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:fvs6i",
+   "fen": "r4qk1/1b4b1/pp1p3p/3Pp1N1/4P3/2NB3Q/PP3rP1/2K4R w - - 0 27",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.024992,
+   "b": -1.69772,
+   "ok": [
+    "h3e6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:7XoXj",
+   "fen": "8/8/2PK3p/1R4p1/6k1/6P1/2r5/8 w - - 0 46",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.299188,
+   "b": 0.528873,
+   "ok": [
+    "b5c5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:4XZ6k",
+   "fen": "5rk1/2q2pp1/4b2p/pNp5/3b2P1/Q6P/PP3P2/R3R1K1 b - - 1 22",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.819696,
+   "b": -1.622437,
+   "ok": [
+    "d4f2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:8h8MJ",
+   "fen": "1r4k1/p4p2/1p2r2B/2p1b1p1/2P5/1P3P1P/P4P2/4RRK1 b - - 1 28",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "b8e8"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:S0ZMq",
+   "fen": "8/8/8/6k1/4pp2/4P3/5P1K/8 b - - 1 60",
+   "category": "defence",
+   "group": "tactics",
+   "a": 0.932911,
+   "b": -2.16098,
+   "ok": [
+    "f4e3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:JfrvU",
+   "fen": "7k/1R6/6pp/8/4qP2/3p4/6r1/6QK w - - 0 43",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "b7b8"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:csKI1",
+   "fen": "1r1r2k1/R1p1q2p/5pp1/1p1Rp3/1bp1P2Q/1n2B1PB/1P3PKP/8 w - - 6 27",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.129842,
+   "b": -0.334782,
+   "ok": [
+    "a7c7"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:YBJUa",
+   "fen": "2b1k1r1/r2p1p1p/pqn1p3/8/B2RP3/4Q1P1/P4P1P/3R2K1 w - - 4 23",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "a4c6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:5ALvB",
+   "fen": "8/5p2/2p1p1k1/1p4P1/pP1P1K2/2P5/P7/8 b - - 0 35",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.118811,
+   "b": 0.095424,
+   "ok": [
+    "g6h5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:fVHg6",
+   "fen": "r4rk1/pp2bppp/1qp1p3/3nR3/8/2BB1Q1P/PPP2PP1/R5K1 w - - 2 18",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 2.100747,
+   "b": 0.950632,
+   "ok": [
+    "d3h7"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:y9mi9",
+   "fen": "1br2r1k/3b2p1/R6p/3p4/1p1P4/1P1QN1Pq/3B1P1P/R5K1 b - - 3 32",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.68745,
+   "b": -0.026073,
+   "ok": [
+    "f8f2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:X5ME3",
+   "fen": "r2r3k/5p2/5p2/2p2P2/8/3B2R1/qP1N3P/2KR4 w - - 0 35",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "d1g1"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:a7w8g",
+   "fen": "4R3/1b3pk1/1b3R1p/pp4p1/1Pqn4/P5BN/2P2PPP/6K1 w - - 2 27",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "g3e5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:3GSsR",
+   "fen": "8/8/p3nP1p/8/5P1P/4P3/1k2K3/8 w - - 1 45",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 2.132406,
+   "b": -0.412512,
+   "ok": [
+    "f4f5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:6Zqgt",
+   "fen": "8/p3R2R/1p4p1/5pk1/4p3/4P1P1/5PKP/r1r5 w - - 0 38",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.294524,
+   "b": -0.077296,
+   "ok": [
+    "e7e6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:T52YP",
+   "fen": "7r/5k2/2R1n1q1/1P1p4/3Np1p1/4PpP1/5P2/5QK1 w - - 3 37",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.638894,
+   "b": -3.408625,
+   "ok": [
+    "f1a1"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:M3p6K",
+   "fen": "4r1kb/pp3p1p/6pB/3R4/1r6/2N5/PPP1b3/2KR4 w - - 0 25",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "d5d8"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:bwgii",
+   "fen": "3r1k2/5pp1/7p/1p2P3/1RP1KP2/3r2PP/8/2R5 b - - 0 36",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "d8d4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:Bhq0i",
+   "fen": "r1r5/1p2QR2/1q2p3/1k1p4/3p3P/3P4/3B2P1/7K w - - 3 34",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "f7f1"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:ibpKq",
+   "fen": "8/1p3pk1/2p1bNp1/2n1P1Pp/2PN1n1P/1P6/r5B1/3R2K1 w - - 1 33",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.679056,
+   "b": 3.046397,
+   "ok": [
+    "d4f5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:vgH5e",
+   "fen": "8/1p2k3/1P3p2/3Pp1p1/2K3Pp/5P1P/8/8 w - - 5 61",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "c4d3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:wcB1Y",
+   "fen": "5r1k/5qp1/1p1Q3p/4p3/1PP2n2/4N2P/P5P1/3R2K1 b - - 0 32",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "f4e2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:nvVyT",
+   "fen": "8/8/p1p3p1/1p1p1kP1/7P/PPP3K1/8/8 b - - 0 38",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.934226,
+   "b": -2.233276,
+   "ok": [
+    "c6c5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:8LarT",
+   "fen": "4R3/p5pk/6p1/5pq1/8/2P2PP1/PP1r4/4Q1K1 b - - 5 31",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.94474,
+   "b": 0.267609,
+   "ok": [
+    "d2c2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:yKSki",
+   "fen": "r3k1r1/p2p1p2/b3p3/2p2NpQ/8/2q5/P1P2PPP/2KRR3 w q - 0 17",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "e1e6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:yxi0K",
+   "fen": "8/1p6/p1p1k1p1/PPP2p1p/K1P1pP1P/4P3/8/8 b - - 0 57",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.840945,
+   "b": 0.007231,
+   "ok": [
+    "g6g5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:sDm7Y",
+   "fen": "8/8/5p2/6p1/5P1p/5K1P/6P1/5k2 w - - 3 51",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "g2g3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:KhEQp",
+   "fen": "8/5p2/2pk2p1/6P1/3K3P/8/2P5/8 w - - 3 54",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.831533,
+   "b": -2.333437,
+   "ok": [
+    "d4c4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:0xqKq",
+   "fen": "8/p7/8/1P2k2p/P2p2p1/4P3/3K3P/8 w - - 0 30",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.750646,
+   "b": -1.617596,
+   "ok": [
+    "a4a5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:JHBWL",
+   "fen": "1q4k1/2pB1pbp/3p2p1/5r2/N1P1n3/Q3P2P/P2r1PP1/1R3RK1 b - - 10 21",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.878641,
+   "b": -1.323139,
+   "ok": [
+    "b8b1"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:5T6oP",
+   "fen": "r5k1/2R2p1p/6p1/2pP4/8/2q3PP/P2r1PK1/2RQ4 b - - 2 22",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 2.396166,
+   "b": -1.499278,
+   "ok": [
+    "d2f2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:AS125",
+   "fen": "8/8/7k/4Pp2/2pP1q2/p4Q2/P4K2/8 b - - 1 60",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.899376,
+   "b": 1.61094,
+   "ok": [
+    "f4f3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:YxhxD",
+   "fen": "1r4r1/q2k1pBQ/2p1p3/p2p4/P1b4N/8/5bPP/2R1R2K w - - 0 26",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.117637,
+   "b": -1.616797,
+   "ok": [
+    "g7d4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:sYYol",
+   "fen": "6K1/6RP/3k4/8/2p5/8/7r/8 w - - 0 50",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.047652,
+   "b": -1.098775,
+   "ok": [
+    "g7g5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:5UCXV",
+   "fen": "6k1/ppr2p2/4p3/3pbpNQ/7R/1P1q2P1/P4PK1/8 w - - 0 34",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "g5e6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:akeiI",
+   "fen": "8/2R1k1p1/p2p1r1p/3P4/1PP5/P3p2P/R5PK/4r3 b - - 3 33",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.888764,
+   "b": -1.58294,
+   "ok": [
+    "e7d8"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:yll1z",
+   "fen": "8/p1k1r2p/2p1Ppp1/3p1P2/6P1/r7/P3R1K1/7R w - - 2 29",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "g4g5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:9bhqP",
+   "fen": "8/1ppr1qpk/pb5p/4QN2/1P2PP2/3b3P/1B4P1/2R4K w - - 1 31",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.876836,
+   "b": -1.585663,
+   "ok": [
+    "f5g7"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:HixlC",
+   "fen": "8/1p1k4/p1p2p2/1PPp1Pp1/P2P2P1/2K5/8/8 w - - 0 39",
+   "category": "defence",
+   "group": "tactics",
+   "a": 0.798585,
+   "b": -2.004255,
+   "ok": [
+    "c3b4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:31VoM",
+   "fen": "2kr2nr/ppp2pBp/6b1/1N6/1Q1Pq3/5n2/PP3PPP/R2K3R w - - 0 16",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.937355,
+   "b": -3.115116,
+   "ok": [
+    "b4c3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:OYu9B",
+   "fen": "8/3k4/4p1p1/1PP1K3/p2B2P1/7P/8/2b5 b - - 0 40",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "a4a3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:gxqhl",
+   "fen": "r1bq1rk1/ppp2pp1/1b5p/3nN3/2B5/3PB3/PPP1QPPP/2K3RR b - - 0 12",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.250289,
+   "b": -2.649769,
+   "ok": [
+    "d5e3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:QFy14",
+   "fen": "1k5r/2pQR3/pp4q1/7r/8/2P2P2/6P1/4R1K1 b - - 5 38",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "g6g3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:EBQkn",
+   "fen": "8/8/6B1/7P/pp1k4/2p5/PpK3P1/8 b - - 0 46",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.05812,
+   "b": -2.003841,
+   "ok": [
+    "b4b3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:H2xrD",
+   "fen": "3r4/Bkp5/R4Q1p/1p1r4/1b2q2P/1P4P1/1P3P1K/7R b - - 5 32",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.914896,
+   "b": 0.479565,
+   "ok": [
+    "d5d1"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:Es119",
+   "fen": "2r2r1k/6p1/p2p1p1p/1p5q/3Q2R1/P7/1PP2P2/2K3R1 w - - 0 27",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "g4g7"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:G4Tyv",
+   "fen": "8/8/6pp/8/6PP/4k1K1/8/8 b - - 0 55",
+   "category": "defence",
+   "group": "tactics",
+   "a": 0.772627,
+   "b": -0.025209,
+   "ok": [
+    "e3e4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:bZjGh",
+   "fen": "8/8/1kp5/p1p5/8/2P5/PP1K4/8 w - - 0 39",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "a2a4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:k9JMm",
+   "fen": "1k6/pp2b1pq/2p5/8/1BKP2P1/1Q2P1P1/PP3r2/2R5 b - - 3 29",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.090853,
+   "b": -2.35873,
+   "ok": [
+    "b7b5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:07joG",
+   "fen": "3R4/6p1/2K4p/8/4p3/3p1k2/5P1P/8 b - - 3 52",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.180789,
+   "b": -0.777303,
+   "ok": [
+    "f3f2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:Fb2kA",
+   "fen": "r7/pQp3pk/2Np1r2/2b1n1Bp/6pq/8/PPP1N1PP/R4R1K b - - 1 22",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.939331,
+   "b": -1.791733,
+   "ok": [
+    "f6f1"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:lRsfE",
+   "fen": "2r5/1p4kp/p3p1p1/3pP3/q7/2PQ2R1/1r5P/6RK w - - 0 29",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "g3g6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:j2nTZ",
+   "fen": "3r4/8/2pk2p1/1p6/PP2p2P/5pP1/R4P2/5K2 w - - 0 66",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "a2d2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:P6N8a",
+   "fen": "8/1B6/p7/1p4n1/1P1kp1P1/P5K1/8/8 b - - 0 55",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.01364,
+   "b": -2.053995,
+   "ok": [
+    "e4e3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:6xIBv",
+   "fen": "6k1/p6p/2p5/1p1p1pp1/1P1P4/P3K2P/2P2PP1/8 w - - 0 27",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "f2f4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:H8eO3",
+   "fen": "3rr1k1/4bppp/p1q1p3/1pp1P3/2pPP1Q1/2P3P1/PP1B3P/4RRK1 w - - 3 21",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.670862,
+   "b": -0.921887,
+   "ok": [
+    "d2h6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:KPe9m",
+   "fen": "8/5p2/4k2p/pp6/6K1/6P1/2B4P/8 b - - 1 38",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.448051,
+   "b": -0.475603,
+   "ok": [
+    "a5a4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:WcDKh",
+   "fen": "8/8/1p6/p7/k1PK4/3P4/8/8 w - - 0 60",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.934226,
+   "b": -2.233276,
+   "ok": [
+    "d4c3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:sFH7x",
+   "fen": "8/8/6P1/6KP/2k5/8/8/6r1 w - - 5 59",
+   "category": "defence",
+   "group": "tactics",
+   "a": 0.797865,
+   "b": -2.402901,
+   "ok": [
+    "g5f6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:MVy6v",
+   "fen": "4r2k/1p5p/p2p4/3P1p2/3p3q/3B3P/PPPQ2K1/6R1 b - - 11 30",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.937355,
+   "b": -3.115116,
+   "ok": [
+    "e8e3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:mxKvB",
+   "fen": "1B6/1p4k1/p1p2p2/4n3/PPK3P1/6P1/8/8 w - - 1 40",
+   "category": "defence",
+   "group": "tactics",
+   "a": 0.476513,
+   "b": -2.599895,
+   "ok": [
+    "b8e5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:qQscK",
+   "fen": "8/6pk/1qR4p/1P3p2/P3r3/7P/2Q3P1/7K b - - 1 46",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.611003,
+   "b": -2.377149,
+   "ok": [
+    "e4e1"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:3tSz2",
+   "fen": "8/6rk/5Rp1/3qp1Qp/2p4R/8/r1P3PP/6K1 w - - 0 34",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.053745,
+   "b": -3.614483,
+   "ok": [
+    "h4h5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:Z0TS2",
+   "fen": "5k2/1np1q1bQ/1p1p1B1p/3P3N/1Pn2P2/r7/2B3K1/3R1R2 b - - 0 29",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.48772,
+   "b": -2.542644,
+   "ok": [
+    "e7e2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:TlOlB",
+   "fen": "2kb3r/4qp2/pp2p1p1/4P3/P1pPBP2/2P4r/3BQ3/1R3RK1 b - - 1 28",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.404489,
+   "b": -0.058546,
+   "ok": [
+    "e7h4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:Os4m6",
+   "fen": "2r4Q/3bkp2/p2pp1r1/1pq1n3/3NP3/P1N2B1P/1nP5/2KR1R2 w - - 4 29",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.072288,
+   "b": -2.872889,
+   "ok": [
+    "d4f5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:8TeuJ",
+   "fen": "8/7p/2p1k3/1p2P1K1/p1r2P1P/8/8/4R3 w - - 0 40",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.995736,
+   "b": -1.068444,
+   "ok": [
+    "f4f5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:wZukw",
+   "fen": "8/p7/2p3p1/k2p2K1/1p1P3P/5N2/8/8 w - - 0 56",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.979349,
+   "b": -3.030834,
+   "ok": [
+    "f3d2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:L5G9U",
+   "fen": "7r/pn6/1p1p3p/1Q1Rp1kN/1P6/1qr4P/5PP1/2b3K1 w - - 5 30",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.815194,
+   "b": 1.378503,
+   "ok": [
+    "d5e5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:09whl",
+   "fen": "2r3k1/5p1q/5Q2/1p4pp/P2Rp1P1/3p3P/5P2/6K1 w - - 0 37",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.677987,
+   "b": -2.719784,
+   "ok": [
+    "d4d5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:PR9lv",
+   "fen": "8/pR3p1k/4q1pp/2p1r3/2Rp2P1/P4Q1P/5PK1/4r3 w - - 5 34",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.994548,
+   "b": 0.194496,
+   "ok": [
+    "b7f7"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:yEty2",
+   "fen": "8/8/4p3/1p3k1p/2p5/P3K2P/1P4P1/8 b - - 1 36",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "h5h4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:FwwuN",
+   "fen": "k2r3r/ppb1q3/3p4/8/QP1Pp3/4P1pP/P2N2P1/2R2RBK b - - 3 28",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.34505,
+   "b": 0.533564,
+   "ok": [
+    "e7e6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:CTrCD",
+   "fen": "8/8/1pk2p2/p1p2P2/P1P1K3/1P4B1/8/b7 w - - 2 48",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.979077,
+   "b": -0.395192,
+   "ok": [
+    "e4f3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:1AUbZ",
+   "fen": "5Q2/1p1k1p2/1rr1p1p1/3pP3/8/5qP1/5P1P/1R3RK1 w - - 5 33",
+   "category": "defence",
+   "group": "tactics",
+   "a": 0.604256,
+   "b": -2.085751,
+   "ok": [
+    "b1b6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:iXUff",
+   "fen": "8/8/B1k2p1p/P2n4/1P2p1P1/3p4/3K3P/8 b - - 3 40",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.497708,
+   "b": -0.91672,
+   "ok": [
+    "d5b4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:ZE5y2",
+   "fen": "8/6pp/8/2p1k1P1/p3P2P/4K3/P7/8 b - - 0 39",
+   "category": "defence",
+   "group": "tactics",
+   "a": 0.886025,
+   "b": -2.674397,
+   "ok": [
+    "c5c4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:t5EQ7",
+   "fen": "3r2r1/Q2bq2k/4p2p/7B/5R2/2P5/P5PP/3R2K1 b - - 0 31",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "g8g2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:64EqW",
+   "fen": "4r3/p2R3p/1pr3pk/6N1/8/5P2/PP3PK1/8 w - - 8 31",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.957333,
+   "b": 0.270651,
+   "ok": [
+    "f3f4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:SDCnH",
+   "fen": "1k2r3/ppp5/2b5/2N1b3/3P2P1/4P2Q/P1Pq3P/2R2RK1 b - - 0 27",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 2.383586,
+   "b": 0.005733,
+   "ok": [
+    "e5h2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:2pAzR",
+   "fen": "r4r1k/qp4pp/8/p2Npp1P/2RbP3/1P1P2Q1/P6K/5B2 w - - 0 29",
+   "category": "defence",
+   "group": "tactics",
+   "a": 2.013041,
+   "b": -1.848011,
+   "ok": [
+    "c4c7"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:78qhF",
+   "fen": "r4rk1/bR3p1p/pnp1pPp1/3pP3/3P1QB1/2P5/1q3KPP/8 w - - 4 22",
+   "category": "defence",
+   "group": "tactics",
+   "a": 0.768925,
+   "b": -0.532471,
+   "ok": [
+    "f2g3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:rKg4U",
+   "fen": "Q7/p4q1k/8/2ppBb2/8/3PbP2/PP5P/R6K b - - 2 34",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.659881,
+   "b": -3.320581,
+   "ok": [
+    "f5g4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:g4fj8",
+   "fen": "4r2k/p5pp/1pR5/3Q2BP/6q1/8/PP3rB1/6KR b - - 5 31",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.653473,
+   "b": -1.646788,
+   "ok": [
+    "f2g2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:lc52X",
+   "fen": "5rk1/Rpq3pp/5b2/8/3PQR2/6K1/1P6/8 b - - 3 30",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "g7g5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:IeZDy",
+   "fen": "5b1k/1p4p1/2p1p2p/p5PQ/Pn1P3P/2N1P2q/1P6/1B4K1 w - - 3 32",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "h5f7"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:IXDab",
+   "fen": "1q2r1k1/5p1p/2pb2pB/5rNn/6Q1/1P6/P5PP/3R1R1K b - - 3 26",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.536033,
+   "b": -3.318051,
+   "ok": [
+    "f5f1"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:zA2uF",
+   "fen": "5rk1/1p2n1p1/4p2p/R2pP3/2qPbPP1/P3Q3/3B3P/R5K1 b - - 0 27",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "f8f4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:BkbiX",
+   "fen": "8/p7/4p3/1p2Kp2/5P2/1P4kP/P7/8 w - - 9 46",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "b3b4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:V4Ry7",
+   "fen": "r4r2/5ppk/2n2b1p/3qpN2/pp4R1/3PB1P1/2PQ1P1P/4R1K1 w - - 4 25",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.053745,
+   "b": -3.614483,
+   "ok": [
+    "e3h6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:p0EXf",
+   "fen": "6k1/2q2p2/p4Qp1/1p1r4/P1b5/7P/2R2RP1/7K b - - 0 47",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "d5d1"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:CdnoL",
+   "fen": "r1b2rk1/pp2P1pp/1qp2n2/3p4/8/2N2NK1/PPPQ2PP/R4B1R b - - 0 15",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.823656,
+   "b": -0.000434,
+   "ok": [
+    "f6h5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:aTVOY",
+   "fen": "r1b1k2N/ppp3pp/8/8/3np2q/5P2/PPP3KP/RNBQR3 b q - 3 15",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.176505,
+   "b": -0.320216,
+   "ok": [
+    "c8h3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:atI3H",
+   "fen": "r3kb1r/pp4pp/2N2p2/3p4/Q2Pq3/P1P1PR2/R5PP/6K1 b kq - 0 18",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "b7c6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:Jsvg5",
+   "fen": "k6r/1q2np2/6p1/p2r4/2Qb1B2/R6P/1PP3PK/5R2 w - - 1 27",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 2.559777,
+   "b": -1.245725,
+   "ok": [
+    "c4d4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:9nAUU",
+   "fen": "8/8/6Q1/3k1Kp1/6P1/8/8/2q5 w - - 7 60",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.50726,
+   "b": -3.486403,
+   "ok": [
+    "g6g8"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:SLwiM",
+   "fen": "r2q4/6kp/2p1Q1p1/2Pp2P1/1Pb2PN1/7P/P7/6K1 w - - 3 34",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.768219,
+   "b": -3.57228,
+   "ok": [
+    "e6e5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:ZimpP",
+   "fen": "8/1p3N2/p4Kp1/1k4P1/2b5/8/8/8 w - - 1 55",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.053745,
+   "b": -3.614483,
+   "ok": [
+    "f7d6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:m3Fmi",
+   "fen": "4r1k1/2R2pp1/p4n2/5Q1p/1P3N2/P6P/3q1PP1/6K1 b - - 0 26",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 2.013041,
+   "b": -1.848011,
+   "ok": [
+    "e8e1"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:lDiFe",
+   "fen": "r4rk1/1p1q1ppp/p1p2b2/3p1P1P/4p3/1PN1P3/PBPPKPQ1/6R1 w - - 1 20",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.334182,
+   "b": 2.455073,
+   "ok": [
+    "c3d5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:15iay",
+   "fen": "7Q/p2n1kpp/5q2/4p3/1Prb4/P7/R2P1PPP/1NB2RK1 b - - 0 21",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.530491,
+   "b": -1.190266,
+   "ok": [
+    "d4f2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:uFEYT",
+   "fen": "Q3N3/p2n1p1p/7k/2p2Pp1/2Bbp1nq/7P/PP4P1/R1B2R1K b - - 0 24",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.118831,
+   "b": -1.05532,
+   "ok": [
+    "h4g3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:16v61",
+   "fen": "4rr1k/pp2Nppp/2p2n2/q3nQ2/7R/1B2P3/PP3PPP/5RK1 w - - 8 21",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 2.003889,
+   "b": -0.418256,
+   "ok": [
+    "b3c2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:GyPGE",
+   "fen": "3r3r/2p2kB1/p4P2/4b1P1/b1P1P3/8/P5B1/1K3R1R b - - 4 27",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.48605,
+   "b": 2.018758,
+   "ok": [
+    "d8b8"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:DZetj",
+   "fen": "1kr5/pp4p1/5pb1/1q2p2p/n5P1/QP1PBP1P/P1rRBP2/K6R b - - 0 25",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.672723,
+   "b": -2.290614,
+   "ok": [
+    "b5b4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:omLKH",
+   "fen": "r1b1k1r1/p4p1p/1pn1pQp1/2ppn3/4N1q1/3PB3/PPP2PPP/R4RK1 w q - 0 19",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "f2f3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:2J7WW",
+   "fen": "8/5p1k/4pPp1/3pQ3/3P4/6K1/3r3n/8 w - - 1 59",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.630274,
+   "b": 0.927223,
+   "ok": [
+    "e5f4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:op0Qe",
+   "fen": "8/p5pp/P5k1/2P3q1/6Pr/4Q1K1/5P2/8 w - - 3 52",
+   "category": "defence",
+   "group": "tactics",
+   "a": 2.064559,
+   "b": -1.294465,
+   "ok": [
+    "e3g5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:F9KXa",
+   "fen": "4r3/p4pk1/N1R2bq1/3R4/6r1/1P2P1P1/P4P2/3Q2K1 b - - 0 34",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 2.905333,
+   "b": -0.19403,
+   "ok": [
+    "g4g3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:pKqEC",
+   "fen": "8/8/7p/3p1kp1/8/3KPPP1/8/8 w - - 0 46",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.914517,
+   "b": -1.577218,
+   "ok": [
+    "g3g4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:3JTul",
+   "fen": "r5k1/1R6/3N4/4P2P/p4KP1/1p5r/8/8 w - - 0 41",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.545328,
+   "b": 0.359355,
+   "ok": [
+    "d6e4"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:nC7lV",
+   "fen": "r6k/ppp1Q1p1/2q4p/2r5/5p2/1P3P2/1PP3P1/2KRR3 w - - 2 29",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 2.028595,
+   "b": -0.209658,
+   "ok": [
+    "e1e6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:cZDjS",
+   "fen": "r4rk1/p5pp/bqp5/5p2/8/2NN4/PPPKQ1PP/R4R2 b - - 2 19",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 2.013041,
+   "b": -1.848011,
+   "ok": [
+    "a6d3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:ilbZh",
+   "fen": "8/8/4k1p1/7p/8/5KP1/6P1/8 b - - 1 49",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.350824,
+   "b": -1.206508,
+   "ok": [
+    "e6e5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:SVhN1",
+   "fen": "4r1k1/R4p1p/8/1P1Qn1pq/2P5/5pP1/7P/4R1K1 b - - 1 35",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "f3f2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:pEFoj",
+   "fen": "r3qrk1/5ppp/b3p3/p2pP1BQ/1n5P/1P1n2P1/1P3PBN/3RR1K1 w - - 1 21",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.93272,
+   "b": 1.284068,
+   "ok": [
+    "g5f6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:4m4ZT",
+   "fen": "r3k3/5pb1/2R1p1p1/p2pP2r/1p1P1P2/1P1P1K2/P2Q1B1q/2R5 w q - 5 26",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.190241,
+   "b": 0.315943,
+   "ok": [
+    "d2c2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:lszct",
+   "fen": "1r2qr2/pp4bk/7p/4pp1Q/3p3P/5N2/PP4R1/3R3K w - - 6 29",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.192549,
+   "b": -1.881035,
+   "ok": [
+    "g2g7"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:Perp2",
+   "fen": "5r1k/ppQ3pp/8/4PbR1/5P1q/P3P3/1B1r2PP/R5K1 b - - 0 23",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.881743,
+   "b": 0.024038,
+   "ok": [
+    "h4g5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:5P27K",
+   "fen": "8/2k1p3/8/p2pP3/2pP4/q3P3/1p6/1K4QR b - - 1 34",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.934226,
+   "b": -2.233276,
+   "ok": [
+    "a3a1"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:5HhgP",
+   "fen": "8/1p1k1p2/2p2n2/2p3B1/1r1pP1P1/3P4/qPP2QP1/2KR4 b - - 2 27",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.215969,
+   "b": -1.007262,
+   "ok": [
+    "b4b2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:7v2ps",
+   "fen": "8/6p1/B5Kb/6P1/1p1k1p1P/pP6/P7/8 b - - 0 40",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.934226,
+   "b": -2.233276,
+   "ok": [
+    "d4c3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:8se1R",
+   "fen": "1n1r2k1/2R2r1p/p3QqpP/5p2/PP6/8/5PP1/4R1K1 w - - 1 28",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 2.184945,
+   "b": -1.808992,
+   "ok": [
+    "e6f6"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:FIidx",
+   "fen": "2r1qrk1/pb1pb2p/2n1pnp1/1p6/2BP1B2/2P1PN2/PPQN1P2/2KR2R1 w - - 0 16",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.607942,
+   "b": 0.364975,
+   "ok": [
+    "c4d3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:uHp04",
+   "fen": "8/8/1br5/5k2/P1PR4/5pP1/3R4/6K1 b - - 0 38",
+   "category": "defence",
+   "group": "tactics",
+   "a": 0.877793,
+   "b": 0.473576,
+   "ok": [
+    "f5e5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:4JrDY",
+   "fen": "8/2B5/bP6/5k2/1P2ppp1/8/3K1P2/8 b - - 3 45",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "g4g3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:HEJ5C",
+   "fen": "8/8/7p/8/6N1/1K3p2/4k2P/8 b - - 2 54",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.341713,
+   "b": -3.614931,
+   "ok": [
+    "h6h5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:CkrF2",
+   "fen": "N1Q2b1r/2B2ppp/2K1pkb1/3p4/2nP2P1/7P/PqP5/R7 w - - 6 32",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.47342,
+   "b": 0.377666,
+   "ok": [
+    "c8d8"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:Iqu1X",
+   "fen": "2r3k1/5ppp/b3p3/P7/3PN3/R1p1P3/1r3PPP/2K4R b - - 2 21",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "a6d3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:UEB7W",
+   "fen": "8/4N3/1p1b4/p7/P1K1k3/1P6/8/8 w - - 2 49",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.985794,
+   "b": 1.609193,
+   "ok": [
+    "e7d5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:Ptf4Y",
+   "fen": "r2q2k1/3n1rP1/2pb1p2/5PR1/1P1Pp3/4B3/1qPQ4/2NK2R1 w - - 1 28",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.840484,
+   "b": -0.999821,
+   "ok": [
+    "g5h5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:de2em",
+   "fen": "8/p2r4/1p6/8/1N6/3p1k2/PK6/3R4 b - - 1 66",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.998741,
+   "b": -1.72431,
+   "ok": [
+    "d3d2"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:cVdDS",
+   "fen": "2r5/pk5p/1p1Qp1pb/B3Np2/2P1qP2/P5P1/4P2P/2R3K1 b - - 0 36",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.286558,
+   "b": -1.232929,
+   "ok": [
+    "h6f8"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:ogQYk",
+   "fen": "1r4k1/2R1n2p/2p1P1pP/3p2Q1/1q4r1/3B4/2P1K1P1/7R w - - 2 32",
+   "category": "defence",
+   "group": "tactics",
+   "a": 0.276235,
+   "b": -3.093343,
+   "ok": [
+    "g5e5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:ohaBo",
+   "fen": "6b1/8/6N1/3p1p2/1p6/2k1pB2/2P5/3K4 b - - 1 48",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.380981,
+   "b": -0.947361,
+   "ok": [
+    "b4b3"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:p2802",
+   "fen": "r2q1r2/2p1N1k1/p2pQ2p/1p2nBp1/3bP2B/8/PP3P1P/2K4R w - - 2 22",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 2.322657,
+   "b": 0.960205,
+   "ok": [
+    "h4g5"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:rtd9Q",
+   "fen": "4Qb2/3P2kp/6p1/2p1pp2/2P5/5qPP/5P1K/8 w - - 7 46",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "h2g1"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:s70Pv",
+   "fen": "3Q2k1/6b1/3p3q/3P4/2PNb3/5Np1/P3r1P1/2R3K1 b - - 5 37",
+   "category": "defence",
+   "group": "tactics",
+   "a": 1.930412,
+   "b": 0.763611,
+   "ok": [
+    "g8h7"
+   ]
+  },
+  {
+   "id": "lichess-puzzle:ucNz6",
+   "fen": "4r3/8/1p2r2k/6pP/P2Pnp1q/3Q1R1P/1PP2NK1/7R b - - 2 36",
+   "category": "tactics",
+   "group": "tactics",
+   "a": 0.979349,
+   "b": -3.030834,
+   "ok": [
+    "e4f2"
+   ]
+  },
+  {
+   "id": "lichess-game:2w6yW5cu#35",
+   "fen": "r1q1r1k1/pppb1pb1/2np1np1/8/2PNPPPp/1PN1B2P/P3Q1BK/R4R2 b - - 0 18",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "c6d4"
+   ]
+  },
+  {
+   "id": "lichess-game:hFPYHHto#47",
+   "fen": "5rk1/1pb2ppp/p1b1pq2/P1pn4/2N1R3/3P1N2/1PP2PPP/R2Q2K1 b - - 17 24",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.053745,
+   "b": -3.614483,
+   "ok": [
+    "d5b4",
+    "d5e7",
+    "d5f4",
+    "f8d8"
+   ]
+  },
+  {
+   "id": "lichess-game:vUwCwazd#51",
+   "fen": "5rk1/3n2p1/p2qp1Pp/1pb2P2/8/P1PB3Q/2PBK3/7R b - - 0 26",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "e6f5"
+   ]
+  },
+  {
+   "id": "lichess-game:cKT4lNZV#37",
+   "fen": "3rr3/p1q1bpkp/2p3p1/3np3/2B5/2P1BQ2/PP3PPP/1R1R2K1 b - - 3 19",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "c7b7",
+    "c7d7",
+    "d5e3",
+    "e5e4",
+    "f7f5"
+   ]
+  },
+  {
+   "id": "lichess-game:2kIUrPpf#52",
+   "fen": "r7/pbqpk1rB/1p2pb2/2P4Q/3P4/4p1NR/PP4P1/5R1K w - - 3 27",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.745986,
+   "b": -2.52508,
+   "ok": [
+    "f1f6",
+    "h5h6"
+   ]
+  },
+  {
+   "id": "lichess-game:DPAW9d5a#29",
+   "fen": "2r2rk1/pbq1bppp/1p2pn2/2p1NP2/3Pp3/1P2P1N1/PBP3PP/R2Q1RK1 b - - 0 15",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "c5d4"
+   ]
+  },
+  {
+   "id": "lichess-game:uyL9IeLf#29",
+   "fen": "r1bq1rk1/ppp4p/3p1np1/3P1n2/P1BNp3/2P3PP/1P1N1P2/R2QK2R b KQ - 1 15",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.740009,
+   "b": -3.037422,
+   "ok": [
+    "e4e3"
+   ]
+  },
+  {
+   "id": "lichess-game:uxdmvjOq#25",
+   "fen": "r3kb1r/1p1b1ppp/p1n1pn2/4N3/2B2B2/2N5/PPP3PP/2KRR3 b - - 1 13",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "c6e5"
+   ]
+  },
+  {
+   "id": "lichess-game:9wTphB32#53",
+   "fen": "5rk1/4bppp/p2pp3/5P2/4P3/6QP/4q1P1/2R2R1K b - - 2 27",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.987039,
+   "b": -0.391389,
+   "ok": [
+    "e6f5"
+   ]
+  },
+  {
+   "id": "lichess-game:pvt2VCer#63",
+   "fen": "1r4k1/3qb1p1/3p3p/3Pp3/1PQ5/4B2P/3N1PP1/6K1 b - - 2 32",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.415719,
+   "b": 0.354309,
+   "ok": [
+    "d7b7",
+    "d7c8",
+    "e7f8",
+    "g8h8"
+   ]
+  },
+  {
+   "id": "lichess-game:sERxkiVg#52",
+   "fen": "2r2rk1/3n2pp/p2q1p2/1p1Pp3/4P3/P1p1B2P/2R1QPP1/R5K1 w - - 2 27",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "e2d3",
+    "e2e1"
+   ]
+  },
+  {
+   "id": "lichess-game:Cwt5meZD#66",
+   "fen": "5r2/pbk5/4pB2/2p5/2P1N2P/rP1RK3/8/8 w - - 6 34",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.55163,
+   "b": -0.458826,
+   "ok": [
+    "f6e5"
+   ]
+  },
+  {
+   "id": "lichess-game:8Iz6x1oL#39",
+   "fen": "2r2rk1/3n1pbp/p1bR1np1/2p5/1pP5/1P2BN1P/PN2BPP1/3R2K1 b - - 4 20",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "f6e4"
+   ]
+  },
+  {
+   "id": "lichess-game:1seXxoqU#45",
+   "fen": "2r1r1n1/pb2qpk1/1p4p1/4p2p/2P1P3/P2BBP2/3Q2PP/2RR2K1 b - - 3 23",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.963761,
+   "b": -1.161569,
+   "ok": [
+    "b7a6",
+    "e8d8",
+    "h5h4"
+   ]
+  },
+  {
+   "id": "lichess-game:GqpjCHfX#26",
+   "fen": "r2qk2r/1p1nbppp/2ppb3/p1n5/P1P1P3/1PN1BP2/2BQ2PP/R3K1NR w KQkq - 2 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "f3f4",
+    "g1e2"
+   ]
+  },
+  {
+   "id": "lichess-game:4GDiAc67#46",
+   "fen": "r2q1bk1/1pNb1r1p/3p4/3Pp2n/P3Pn2/5P2/1P2B1PB/2RQNRK1 w - - 3 24",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "c7a8"
+   ]
+  },
+  {
+   "id": "lichess-game:4O4AtTJB#31",
+   "fen": "r2q1r1k/1b1pb1pp/p3pn2/1p6/3pNP2/1B1P4/PPPBQ1PP/4RRK1 b - - 5 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.368893,
+   "b": -1.766331,
+   "ok": [
+    "a6a5",
+    "f6e4"
+   ]
+  },
+  {
+   "id": "lichess-game:uybAZFRb#36",
+   "fen": "3rr1k1/p3qppp/1pn5/2p5/2B3b1/P1Q1PN2/3P1PPP/R2R2K1 w - - 4 19",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.445501,
+   "b": 0.150836,
+   "ok": [
+    "c4e2"
+   ]
+  },
+  {
+   "id": "lichess-game:hPXGh20m#32",
+   "fen": "3rk2r/ppp1qp2/5p1p/4p3/4Pn2/2P1N3/PP1Q2PP/R4RK1 w k - 4 17",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.316275,
+   "b": 0.334031,
+   "ok": [
+    "d2f2"
+   ]
+  },
+  {
+   "id": "lichess-game:18AieLQj#52",
+   "fen": "r6r/3bp3/1p1k3p/1P1Pp1pB/p1P1P3/8/R5PP/R5K1 w - - 1 27",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.842895,
+   "b": -1.589243,
+   "ok": [
+    "a2a4"
+   ]
+  },
+  {
+   "id": "lichess-game:Kw9x4jqw#45",
+   "fen": "rk5r/7p/p2q1pn1/2Nbp2Q/Pp6/4B3/1PP3PP/3RR1K1 b - - 1 23",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.503938,
+   "b": -3.507224,
+   "ok": [
+    "a8a7",
+    "b8c7",
+    "d6c6",
+    "g6f4"
+   ]
+  },
+  {
+   "id": "lichess-game:r8erjYnQ#44",
+   "fen": "1rq2r2/p4pbk/2b1p1pp/1p1nP3/2p3P1/P1PP1N1P/1P4B1/R1B1QRK1 w - - 1 23",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.133691,
+   "b": -0.333517,
+   "ok": [
+    "d3d4",
+    "e1h4"
+   ]
+  },
+  {
+   "id": "lichess-game:CbW6pIoQ#36",
+   "fen": "1r2r1k1/pp2ppbp/1q1p2p1/2n1P3/5P2/2N3P1/PP2Q1BP/3R1R1K w - - 1 19",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.36257,
+   "b": -1.363091,
+   "ok": [
+    "c3d5"
+   ]
+  },
+  {
+   "id": "lichess-game:2iDMHyo5#47",
+   "fen": "2k4r/pp1n1p2/2b5/5Q1p/6p1/4q1P1/PP1rBRP1/2RN2K1 b - - 3 24",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.628439,
+   "b": -2.014785,
+   "ok": [
+    "e3b6",
+    "e3d4",
+    "e3h6"
+   ]
+  },
+  {
+   "id": "lichess-game:eX27L1Pj#30",
+   "fen": "2kr3r/pppq1pp1/2n4p/3N1b2/2Pb4/3PB3/P3BPPP/1R1Q1RK1 w - - 2 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.888863,
+   "b": 2.288714,
+   "ok": [
+    "e2f3"
+   ]
+  },
+  {
+   "id": "lichess-game:SokgvgCw#70",
+   "fen": "4Q3/2q2p1k/2p4p/4br2/3p4/P2P2pP/1R4K1/4R3 w - - 2 36",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.610232,
+   "b": -3.540241,
+   "ok": [
+    "b2e2"
+   ]
+  },
+  {
+   "id": "lichess-game:vMlMBUpw#51",
+   "fen": "2r3k1/p1r2p1p/1q1p1Qp1/7P/1p1pP1b1/3P1R2/PPP2RB1/6K1 b - - 0 26",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.200501,
+   "b": -0.313337,
+   "ok": [
+    "g4h5"
+   ]
+  },
+  {
+   "id": "lichess-game:bR8RqQrY#26",
+   "fen": "r2q1rk1/pppn1p1p/3pb1p1/8/3QP1P1/2N2P2/PPP4P/2KR1B1R w - - 1 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.212478,
+   "b": -0.764956,
+   "ok": [
+    "c1b1",
+    "d4e3",
+    "h2h4"
+   ]
+  },
+  {
+   "id": "lichess-game:EiqYyUS2#53",
+   "fen": "7r/p5kb/3q1p2/3Pp1p1/3b4/1B1P3Q/PrPB4/2R1K2R b K - 5 27",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.619808,
+   "b": -2.926972,
+   "ok": [
+    "a7a5",
+    "d4c5",
+    "e5e4"
+   ]
+  },
+  {
+   "id": "lichess-game:xfkk6Vhk#27",
+   "fen": "r2q1rk1/pppnpbbp/1n3pp1/3P4/2P4P/1P3N2/PB1NB1P1/R2QK2R b KQ - 0 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.817235,
+   "b": 1.377625,
+   "ok": [
+    "d8e8",
+    "e7e6",
+    "f8e8"
+   ]
+  },
+  {
+   "id": "lichess-game:kkCeuZ9C#30",
+   "fen": "2kr2r1/pp1bp3/qn1p1np1/2pP1pN1/2P5/1QPBP3/P2BKPP1/R6R w - - 9 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.867908,
+   "b": 1.46034,
+   "ok": [
+    "a2a4"
+   ]
+  },
+  {
+   "id": "lichess-game:kFoQEIek#45",
+   "fen": "1rb1r1k1/1pq4p/p2p1n2/2pP1p2/P1Bb2P1/R1N2PBP/1P1Q4/5R1K b - - 4 23",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.410633,
+   "b": 3.2462,
+   "ok": [
+    "d4e5"
+   ]
+  },
+  {
+   "id": "lichess-game:hgtb0fIk#25",
+   "fen": "1r2kb1r/p2q1p1p/4bp2/3pp3/Q7/2N3P1/PP2PPBP/2KR3R b k - 3 13",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.06238,
+   "b": -0.833192,
+   "ok": [
+    "d7a4"
+   ]
+  },
+  {
+   "id": "lichess-game:I8Kawqkm#33",
+   "fen": "r2q1rk1/pp3pp1/2n1b2p/2pNp3/2B1PP2/P1P5/1P1Q2PP/1K1R3R b - - 0 17",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.595658,
+   "b": -0.436207,
+   "ok": [
+    "e5f4"
+   ]
+  },
+  {
+   "id": "lichess-game:IOMsBF9N#41",
+   "fen": "r3k2r/3n1pb1/p5p1/1p1q2B1/P1pPp2P/6P1/4BP2/1R1Q1RK1 b kq - 0 21",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.614115,
+   "b": -2.949708,
+   "ok": [
+    "d7f8",
+    "e8g8"
+   ]
+  },
+  {
+   "id": "lichess-game:ZWPVwYoz#33",
+   "fen": "r2q1rk1/2pp2pp/pp6/1P1p4/P3p3/B1PnP3/4QPPP/R4RK1 b - - 1 17",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "d7d6",
+    "f8e8",
+    "f8f5",
+    "f8f6",
+    "f8f7"
+   ]
+  },
+  {
+   "id": "lichess-game:6vWV31oz#38",
+   "fen": "2r2rk1/pp1n1ppp/4b3/2P1p3/4P3/1N2BP2/P1P2K1P/R6R w - - 3 20",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.192549,
+   "b": -1.881035,
+   "ok": [
+    "a1d1",
+    "h1d1"
+   ]
+  },
+  {
+   "id": "lichess-game:OYFhobHu#63",
+   "fen": "3rr2k/pR6/4Bb1p/8/1P1p1N2/6P1/P4P1P/6K1 b - - 4 32",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.90367,
+   "b": 1.610837,
+   "ok": [
+    "e8e6"
+   ]
+  },
+  {
+   "id": "lichess-game:ofQ0SONc#27",
+   "fen": "2rq1rk1/1b2bppp/pp3n2/2npN3/3N1B2/6P1/PP2PPBP/2RQ1RK1 b - - 1 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.218269,
+   "b": -0.093162,
+   "ok": [
+    "a6a5",
+    "c5e4",
+    "e7d6",
+    "f6d7"
+   ]
+  },
+  {
+   "id": "lichess-game:vw7EnXKp#38",
+   "fen": "2k3rr/1p2bp2/1qp1pp1p/p2n3P/P2P2P1/1B3Q2/1PPB1P2/2KR2R1 w - - 3 20",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.979349,
+   "b": -3.030834,
+   "ok": [
+    "c1b1",
+    "c2c4",
+    "g1g3"
+   ]
+  },
+  {
+   "id": "lichess-game:ryVhpugz#32",
+   "fen": "r2r2k1/1bp2pp1/1pn2n1p/p1q1p3/2P5/PPB2NPP/2Q1PPBK/R2R4 w - - 2 17",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.728241,
+   "b": -1.934434,
+   "ok": [
+    "d1d8",
+    "d1f1",
+    "e2e3",
+    "f3h4",
+    "h2g1"
+   ]
+  },
+  {
+   "id": "lichess-game:kCjOzxc3#39",
+   "fen": "5rk1/3q1pbp/2npb3/3Np3/Q7/2P5/PP3PPP/R2R2K1 b - - 8 20",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.862218,
+   "b": 0.693633,
+   "ok": [
+    "g8h8"
+   ]
+  },
+  {
+   "id": "lichess-game:tydXZ1LX#29",
+   "fen": "r2qk2r/1p1bppb1/p1np4/6p1/3NP2p/2N2P2/PPPQ1BPP/2KR3R b kq - 5 15",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.481239,
+   "b": -0.274798,
+   "ok": [
+    "a8b8",
+    "a8c8",
+    "c6e5",
+    "d8a5"
+   ]
+  },
+  {
+   "id": "lichess-game:n8Xl6VYW#39",
+   "fen": "4rrk1/p1n2ppp/b2p4/2pPnQ2/7q/P1N1R1NP/BP3PP1/R5K1 b - - 6 20",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.637551,
+   "b": -1.288245,
+   "ok": [
+    "a6c8",
+    "c7b5",
+    "g7g6"
+   ]
+  },
+  {
+   "id": "lichess-game:vk5iGzDt#49",
+   "fen": "1r2r1k1/p4ppp/8/5q2/4p3/2PpRPQP/PP1R2P1/6K1 b - - 0 25",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.139932,
+   "b": -0.794726,
+   "ok": [
+    "f5a5",
+    "f5d5",
+    "f5e6"
+   ]
+  },
+  {
+   "id": "lichess-game:6dNeKqjQ#23",
+   "fen": "r1bn1rk1/ppp3pp/3p1n2/1P2pp1q/P1P5/2BP1NP1/4PPBP/R2Q1RK1 b - - 0 12",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.146647,
+   "b": 0.590029,
+   "ok": [
+    "f5f4"
+   ]
+  },
+  {
+   "id": "lichess-game:WeUS7BnJ#60",
+   "fen": "3r2k1/2q3p1/2npp2p/p3N3/1p2P2P/1Pr3P1/P2RQP1K/3R4 w - - 3 31",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "e5c4"
+   ]
+  },
+  {
+   "id": "lichess-game:vK1xvBHb#39",
+   "fen": "r1b3k1/p1p3b1/2p1qrpp/2N1p3/4Qp2/B1PP2P1/4PP1P/R4RK1 b - - 3 20",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.142714,
+   "b": -1.308297,
+   "ok": [
+    "e6d5",
+    "e6f7",
+    "e6h3"
+   ]
+  },
+  {
+   "id": "lichess-game:XFJv3RFg#48",
+   "fen": "4r1k1/p5bp/2p3p1/q2nN3/3PQ3/P3B1P1/5P1P/1R4K1 w - - 1 25",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.55383,
+   "b": -1.134971,
+   "ok": [
+    "e4c2"
+   ]
+  },
+  {
+   "id": "lichess-game:mICU1MWz#37",
+   "fen": "2r2rk1/1p2bppp/pq2p3/3p4/Q2P4/1P2P1BP/P1b1BPP1/2R2RK1 b - - 0 19",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.35277,
+   "b": -1.475494,
+   "ok": [
+    "c8c6",
+    "e7b4",
+    "f8d8"
+   ]
+  },
+  {
+   "id": "lichess-game:mYpzTDAN#24",
+   "fen": "rn1qk2r/pbp5/1p1pp2p/2nP1pp1/2P5/2PBPNB1/P1Q2PPP/R3K2R w KQkq - 1 13",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.744511,
+   "b": 0.798319,
+   "ok": [
+    "f3d4",
+    "h2h4"
+   ]
+  },
+  {
+   "id": "lichess-game:ZL0pPes0#23",
+   "fen": "rn2k2r/ppqnbppp/2p1p1b1/2Pp4/3P1NP1/1QN1P2P/PP3P2/R1B1KB1R b KQkq - 2 12",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "b7b6",
+    "d7f6",
+    "e6e5",
+    "e7h4",
+    "e8g8"
+   ]
+  },
+  {
+   "id": "lichess-game:JJFpfqjm#43",
+   "fen": "3r4/p1k5/1pprbpn1/4p1p1/4P2p/2N1BP1P/PPP1K1P1/3R3R b - - 5 22",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.442618,
+   "b": -1.7292,
+   "ok": [
+    "e6c4"
+   ]
+  },
+  {
+   "id": "lichess-game:vvoeOEKA#47",
+   "fen": "r5k1/5ppp/2p1p2q/3b4/1r1P4/pPNQ2R1/K1P4P/6R1 b - - 1 24",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.103063,
+   "b": -2.344487,
+   "ok": [
+    "g7g6"
+   ]
+  },
+  {
+   "id": "lichess-game:AF3R5tER#35",
+   "fen": "1rbq1rk1/3nppbp/pN1p2p1/PnpP4/2N1PP2/7P/1P2B1P1/R1BQ1RK1 b - - 6 18",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.022622,
+   "b": 1.11209,
+   "ok": [
+    "b5d4",
+    "d7b6",
+    "g8h8"
+   ]
+  },
+  {
+   "id": "lichess-game:YXM8STfV#27",
+   "fen": "r1b1k2r/pp2ppbp/3p1np1/1NnP4/2P2P2/1P4P1/1P2N1BP/R1B1K2R b KQkq - 2 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.888764,
+   "b": -1.58294,
+   "ok": [
+    "a8b8",
+    "e8g8"
+   ]
+  },
+  {
+   "id": "lichess-game:PHGNdraQ#47",
+   "fen": "4r1k1/pp3pp1/7p/3p4/3NrB2/2P2QPq/PP3K1P/3R4 b - - 2 24",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "h3h2"
+   ]
+  },
+  {
+   "id": "lichess-game:CwnOVaXc#35",
+   "fen": "r1bq1r2/pp2n1kp/4n3/2p1p3/4Bp1N/2PP2P1/PP1Q3P/R2N1RK1 b - - 1 18",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "e6g5",
+    "e7g6"
+   ]
+  },
+  {
+   "id": "lichess-game:lHC4NjFT#35",
+   "fen": "4r1k1/pppn1ppp/3b2b1/8/6Pq/1BNPBQ1P/PPP2PK1/R7 b - - 3 18",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.681791,
+   "b": -0.65855,
+   "ok": [
+    "a7a5",
+    "c7c6",
+    "d7e5",
+    "h7h5"
+   ]
+  },
+  {
+   "id": "lichess-game:njcKq3GO#44",
+   "fen": "3r2k1/1p1q2pp/p1r1p3/2p3P1/2Pb1P2/1P1PB3/P3Q2P/3R1RK1 w - - 1 23",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.86766,
+   "b": -1.889146,
+   "ok": [
+    "e3d4",
+    "f1f2",
+    "g1g2",
+    "g1h1"
+   ]
+  },
+  {
+   "id": "lichess-game:tQHRao4K#48",
+   "fen": "2k4r/1p1b4/4p3/p1q2p1p/2PN1Pr1/3P4/5QPP/RR4K1 w - - 3 25",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.804895,
+   "b": -0.252058,
+   "ok": [
+    "d4f3"
+   ]
+  },
+  {
+   "id": "lichess-game:rzh9E5AR#28",
+   "fen": "r1b2r1k/pp1nq1pp/2pb4/4Np2/2BP1P2/4P3/P5PP/R1BQ1RK1 w - - 1 15",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.125405,
+   "b": -1.610811,
+   "ok": [
+    "a2a4",
+    "d1b3",
+    "d1f3",
+    "f1f3"
+   ]
+  },
+  {
+   "id": "lichess-game:bNdtFfrx#26",
+   "fen": "r1bq1rk1/pp2b1pp/3p4/1N1Ppp2/P1P2P1n/3B4/1P4PP/R1BQ1RK1 w - - 0 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.795175,
+   "b": 1.15355,
+   "ok": [
+    "c4c5"
+   ]
+  },
+  {
+   "id": "lichess-game:dznaMFQZ#24",
+   "fen": "r1b2rk1/p3ppbp/2p3p1/q2pP3/5P1P/2N1B1n1/PPPQ2P1/R3KB1R w KQ - 1 13",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.636405,
+   "b": -3.419513,
+   "ok": [
+    "h1g1"
+   ]
+  },
+  {
+   "id": "lichess-game:dUTX5xdZ#55",
+   "fen": "1q1r1bk1/5pp1/1p2nn1p/pNp1pN2/P3P3/2P1B2P/1P2QPP1/3R2K1 b - - 3 28",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.444747,
+   "b": -1.031987,
+   "ok": [
+    "c5c4",
+    "f6e4"
+   ]
+  },
+  {
+   "id": "lichess-game:cAKBwmsL#28",
+   "fen": "2bq1rk1/3pppbp/6p1/3QP3/2BB4/2P5/Pr3PPP/R3K2R w KQ - 3 15",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.044369,
+   "b": -1.100978,
+   "ok": [
+    "c4b3",
+    "d5c5",
+    "e1g1"
+   ]
+  },
+  {
+   "id": "lichess-game:tlp3lA69#28",
+   "fen": "r2q1rk1/1b3p1p/ppnppp1b/8/2PNP3/2R1N1P1/PP3PBP/3QK2R w K - 10 15",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.632944,
+   "b": 0.955614,
+   "ok": [
+    "e3f5"
+   ]
+  },
+  {
+   "id": "lichess-game:Cu4hMXjG#29",
+   "fen": "r3kb1r/1p1qnppp/p2p1n2/3P4/5B2/1B3Q1P/PP3PP1/2R1R1K1 b kq - 2 15",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.613023,
+   "b": 2.728548,
+   "ok": [
+    "a6a5",
+    "a8b8",
+    "a8c8",
+    "h7h5",
+    "h8g8"
+   ]
+  },
+  {
+   "id": "lichess-game:xyIZDyeV#30",
+   "fen": "r1b2rk1/ppp3pp/4pn2/2b5/5B1q/8/PPP1B1PP/RN1Q1R1K w - - 8 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.064559,
+   "b": -1.294465,
+   "ok": [
+    "b1c3",
+    "b1d2",
+    "f4g3"
+   ]
+  },
+  {
+   "id": "lichess-game:IqfBBEzg#26",
+   "fen": "2kr3r/ppqn1pp1/3bpnp1/2p3B1/2BP4/2P3N1/PP1Q1PPP/2KR3R w - - 0 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.519577,
+   "b": 0.159369,
+   "ok": [
+    "c1b1",
+    "c4b3",
+    "d2e2",
+    "d4c5"
+   ]
+  },
+  {
+   "id": "lichess-game:ufa6SDS6#24",
+   "fen": "rn3rk1/pp1q1pbp/2p1pnp1/3p4/2PP1PBP/1QN1PP2/PP1B4/R3K2R w KQ - 2 13",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.310701,
+   "b": 0.597324,
+   "ok": [
+    "e1c1",
+    "h4h5"
+   ]
+  },
+  {
+   "id": "lichess-game:JPcjagpU#40",
+   "fen": "1r3rk1/1b2b1pp/1q2p3/p1p1Pp2/1nPp1Pn1/BP1P2P1/3QN1BP/RR2N1K1 w - - 6 21",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.044484,
+   "b": -2.416706,
+   "ok": [
+    "a3b4",
+    "g2b7"
+   ]
+  },
+  {
+   "id": "lichess-game:VxVApw1Z#49",
+   "fen": "1r1qr1k1/1p3pbp/p2p2p1/8/1n2P3/1P2BP2/P2R1QPP/2R2BK1 b - - 2 25",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.898655,
+   "b": -3.20145,
+   "ok": [
+    "b8a8",
+    "b8c8",
+    "d8a5",
+    "d8e7",
+    "g7f8"
+   ]
+  },
+  {
+   "id": "lichess-game:uiy70oCi#30",
+   "fen": "1k1r2r1/ppqb1p1p/2n2p2/3pp3/1P1P1b2/1NP2N1P/P1B1QPP1/R4RK1 w - - 2 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.487449,
+   "b": 0.70259,
+   "ok": [
+    "g1h1"
+   ]
+  },
+  {
+   "id": "lichess-game:FkHaQfXV#32",
+   "fen": "2kr3r/ppqn1pp1/2p2np1/8/2BP3P/5QN1/PP1K1PP1/R6R w - - 1 17",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.321263,
+   "b": 3.131675,
+   "ok": [
+    "d2c2",
+    "d2c3"
+   ]
+  },
+  {
+   "id": "lichess-game:P9NRYrqe#27",
+   "fen": "r1b2rk1/pp4pp/3bp3/2p5/2P1P1n1/4qN2/PPQ1B1PP/R2NK2R b KQ - 4 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "e3h6"
+   ]
+  },
+  {
+   "id": "lichess-game:wgTN7Seu#40",
+   "fen": "5rk1/1p3pp1/4p3/Q6p/p6P/P4qP1/1Pr2P2/R4RK1 w - - 4 21",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.378651,
+   "b": -2.532418,
+   "ok": [
+    "a1c1",
+    "a1e1",
+    "a5a4"
+   ]
+  },
+  {
+   "id": "lichess-game:05NQiy5h#23",
+   "fen": "2rqkb1r/3n1pp1/p2pbn2/1p1Np2p/4P3/1N2BP2/PPPQ2PP/1K1R1B1R b k - 1 12",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.848585,
+   "b": -3.32758,
+   "ok": [
+    "e6d5",
+    "f6d5"
+   ]
+  },
+  {
+   "id": "lichess-game:8pQK2vSu#27",
+   "fen": "r2q1rk1/p3bppp/2n1b3/1p1pP3/2pP4/2P1BN1P/P1P1B1P1/R3QRK1 b - - 1 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.495605,
+   "b": -1.660352,
+   "ok": [
+    "b5b4",
+    "e6f5",
+    "f7f6",
+    "g8h8",
+    "h7h6"
+   ]
+  },
+  {
+   "id": "lichess-game:nugyPemk#52",
+   "fen": "2r1b1k1/p4p1p/1p2p1p1/2n5/2P1P3/1Nq2P2/P1B2QPP/3R2K1 w - - 1 27",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.771054,
+   "b": -2.057316,
+   "ok": [
+    "b3c5"
+   ]
+  },
+  {
+   "id": "lichess-game:rAy9kYnG#40",
+   "fen": "2r3k1/1pq1pp1p/1r1p2p1/Q2P4/5P2/8/PPP3PP/R4RK1 w - - 3 21",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.934226,
+   "b": -2.233276,
+   "ok": [
+    "b2b3"
+   ]
+  },
+  {
+   "id": "lichess-game:0hgnE4kM#41",
+   "fen": "3r1b1r/1kq3p1/pnb1p2p/1p1pP2P/3B2P1/2NQ4/PPP3B1/1K1RR3 b - - 5 21",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.433991,
+   "b": -1.907672,
+   "ok": [
+    "b6c4",
+    "c6d7",
+    "c6e8",
+    "d8c8",
+    "f8e7"
+   ]
+  },
+  {
+   "id": "lichess-game:D1Su4BTx#47",
+   "fen": "3q2k1/ppr4p/3pb3/3Np1p1/4Q2b/3B1P2/PPP5/1K5R b - - 3 24",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.053745,
+   "b": -3.614483,
+   "ok": [
+    "c7f7"
+   ]
+  },
+  {
+   "id": "lichess-game:re88gT8M#30",
+   "fen": "r2r2k1/pp2pp1p/1np3p1/3P4/2P3n1/2P3P1/4PPBP/R1BR2K1 w - - 1 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.365225,
+   "b": -1.808005,
+   "ok": [
+    "c1a3"
+   ]
+  },
+  {
+   "id": "lichess-game:ficUYzqt#26",
+   "fen": "r3kb1r/2pq1ppp/p3p1b1/1p1n4/3P1P2/1B4N1/PPP3PP/R1BQ1RK1 w kq - 1 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.127624,
+   "b": -2.794032,
+   "ok": [
+    "a2a4",
+    "d1f3",
+    "f4f5"
+   ]
+  },
+  {
+   "id": "lichess-game:YgWhbbrZ#32",
+   "fen": "r4rk1/pp1qpp1p/n5p1/3pR2n/3P4/2P2NP1/PPQ2PKP/R1B5 w - - 3 17",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.035408,
+   "b": 2.085221,
+   "ok": [
+    "e5h5"
+   ]
+  },
+  {
+   "id": "lichess-game:OLY4wGcO#23",
+   "fen": "rn1qk2r/4ppbp/p1p3p1/1p1n1PB1/3P4/1Q1B1N2/PP3PPP/R4RK1 b kq - 3 12",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.251865,
+   "b": -1.492307,
+   "ok": [
+    "a6a5",
+    "a8a7",
+    "b8d7",
+    "d8d6",
+    "e8g8"
+   ]
+  },
+  {
+   "id": "lichess-game:22ErBlsl#29",
+   "fen": "r2q1r1k/2p1bppp/p2p4/np1PP3/5pbn/PP1B1N2/1BPN2PP/R3QRK1 b - - 0 15",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.436146,
+   "b": -0.709748,
+   "ok": [
+    "g4f5",
+    "h4g6"
+   ]
+  },
+  {
+   "id": "lichess-game:NY4aPzxK#34",
+   "fen": "r3k2r/pp2bpp1/1np1p2p/8/4bP2/1P3NP1/P1P2RBP/2BR2K1 w kq - 1 18",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.659613,
+   "b": -0.234394,
+   "ok": [
+    "f3e5"
+   ]
+  },
+  {
+   "id": "lichess-game:0q2s2Chd#50",
+   "fen": "7r/7p/p1kbQ3/3r4/Pp1p4/4p3/1PP3PP/R5K1 w - - 0 26",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.681791,
+   "b": -0.65855,
+   "ok": [
+    "a1f1"
+   ]
+  },
+  {
+   "id": "lichess-game:xXvsmE1R#29",
+   "fen": "r2qk2r/1b1nbppp/4pn2/8/ppPNP3/3B1N2/PB2QPPP/R4RK1 b kq - 1 15",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.428133,
+   "b": -2.389159,
+   "ok": [
+    "a4a3"
+   ]
+  },
+  {
+   "id": "lichess-game:rYK75KLr#37",
+   "fen": "r2qr1k1/1pp2pbp/3pb1p1/p1nN4/2PBPN2/1P3PP1/P2Q3P/3R1RK1 b - - 4 19",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.48304,
+   "b": -1.422921,
+   "ok": [
+    "c5d7",
+    "e6d5",
+    "g7d4",
+    "g7e5"
+   ]
+  },
+  {
+   "id": "lichess-game:Li3izfOD#77",
+   "fen": "2n5/1r1k4/R2p2p1/3Ppp1p/1bN1PP1P/1P1KB1P1/8/8 b - - 0 39",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.934226,
+   "b": -2.233276,
+   "ok": [
+    "e5f4",
+    "f5e4"
+   ]
+  },
+  {
+   "id": "lichess-game:TJb8iMIp#35",
+   "fen": "2k1rb1r/p1qn3p/1pb1p3/2p1PpN1/2P2B2/3B4/PP2Q1PP/R3R1K1 b - - 4 18",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.930175,
+   "b": -0.66426,
+   "ok": [
+    "f8h6"
+   ]
+  },
+  {
+   "id": "lichess-game:lqIwPG3O#56",
+   "fen": "4q3/1b1n1k2/3B1pp1/1p1P4/2pQ4/2P5/2P2PPP/5BK1 w - - 1 29",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.776049,
+   "b": -1.071871,
+   "ok": [
+    "d6f4",
+    "d6g3",
+    "g2g3",
+    "h2h4"
+   ]
+  },
+  {
+   "id": "lichess-game:nE4U6Am9#50",
+   "fen": "3qr1k1/4npbp/1np3p1/1r6/p2PN3/P1BQ1N1P/5PP1/3RR1K1 w - - 2 26",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.355369,
+   "b": 2.229229,
+   "ok": [
+    "f3e5"
+   ]
+  },
+  {
+   "id": "lichess-game:eQqyXX97#59",
+   "fen": "1r6/np2prkp/pN1p2p1/3P4/P4PP1/1P2K2P/3R4/3R4 b - - 0 30",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.062134,
+   "b": -1.54808,
+   "ok": [
+    "b8e8",
+    "b8f8",
+    "b8h8",
+    "g6g5",
+    "h7h5"
+   ]
+  },
+  {
+   "id": "lichess-game:9uRbZFpB#24",
+   "fen": "r1bq1rk1/pp2p1b1/3p1n1p/2nP1pp1/8/2N2NP1/PPQ1PPBP/R1BR2K1 w - - 0 13",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.452503,
+   "b": -1.434046,
+   "ok": [
+    "c1e3",
+    "h2h4"
+   ]
+  },
+  {
+   "id": "lichess-game:2iaNdFdk#23",
+   "fen": "2kr3r/ppp1nppp/5n2/q2Pp3/1bB5/P1N1BP2/1PPQ1P1P/2KR3R b - - 0 12",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.064559,
+   "b": -1.294465,
+   "ok": [
+    "b4c3"
+   ]
+  },
+  {
+   "id": "lichess-game:UsTpTSe4#50",
+   "fen": "2nk3r/bpq2p2/p1n1pN1p/P2pP1p1/1Pb3P1/5N1P/1Q1B1P2/1B2R1K1 w - - 1 26",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.593656,
+   "b": 2.778645,
+   "ok": [
+    "b1a2",
+    "h3h4"
+   ]
+  },
+  {
+   "id": "lichess-game:j2S95cS4#46",
+   "fen": "3r1rk1/p4ppp/2Bb4/3p1bP1/3P1B2/1P5P/1P3P2/R1R3K1 w - - 1 24",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.612114,
+   "b": -2.957817,
+   "ok": [
+    "f4d2",
+    "f4d6"
+   ]
+  },
+  {
+   "id": "lichess-game:skB8Wpck#48",
+   "fen": "1r2r1k1/1p5p/pq1pN1p1/n1pP1p2/P1Pb1P2/1P1Q2P1/6BP/1RB4K w - - 2 25",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.785889,
+   "b": 2.495006,
+   "ok": [
+    "g3g4"
+   ]
+  },
+  {
+   "id": "lichess-game:1PiRzqIa#46",
+   "fen": "1r4k1/p1r3pp/4p3/3b1p2/3Q4/5PP1/1P2P2P/R5K1 w - - 1 24",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.368893,
+   "b": -1.766331,
+   "ok": [
+    "e2e4",
+    "g3g4",
+    "h2h3"
+   ]
+  },
+  {
+   "id": "lichess-game:BuaicZkq#25",
+   "fen": "r2qnrk1/p2p2pp/bp2pp2/n1pPP3/2P5/P1PB1N2/4QPPP/R1B2RK1 b - - 0 13",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.500926,
+   "b": -3.526368,
+   "ok": [
+    "e6d5"
+   ]
+  },
+  {
+   "id": "lichess-game:NZgDLsga#32",
+   "fen": "2kr3r/pp2nppp/2p1b3/4P3/1b2PB2/2N4P/PP2BPP1/R2R2K1 w - - 5 17",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.906019,
+   "b": -1.318393,
+   "ok": [
+    "d1d8",
+    "f4e3"
+   ]
+  },
+  {
+   "id": "lichess-game:TIlRCNG0#24",
+   "fen": "2rq1rk1/1bp1bppp/pp2p3/3pP3/2P1n3/1PN3P1/PB2PPBP/2RQ1RK1 w - - 1 13",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.706848,
+   "b": -3.145446,
+   "ok": [
+    "c3e4"
+   ]
+  },
+  {
+   "id": "lichess-game:tnPwEDOw#31",
+   "fen": "3r2nr/1pN1kppp/p7/4p3/3n2b1/3BB2P/PPP2PP1/2R1K2R b K - 0 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.595618,
+   "b": -1.133426,
+   "ok": [
+    "g4h5"
+   ]
+  },
+  {
+   "id": "lichess-game:bgkoxZvg#29",
+   "fen": "3rr1k1/1ppq1p2/2n1bn1p/p1bpp3/P3P1p1/2PP2PP/1P1NQPBK/R1B2RN1 b - - 1 15",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.612766,
+   "b": -2.06004,
+   "ok": [
+    "c5e7",
+    "c6e7",
+    "d5d4",
+    "g4h3",
+    "g8h7"
+   ]
+  },
+  {
+   "id": "lichess-game:Ci3kULzL#50",
+   "fen": "r2r1bk1/1p3p2/2pRp1p1/2P1P3/p3PP2/2B3P1/P5K1/7R w - - 0 26",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.89401,
+   "b": 0.254551,
+   "ok": [
+    "g2f2",
+    "g2f3",
+    "g3g4",
+    "h1b1",
+    "h1d1"
+   ]
+  },
+  {
+   "id": "lichess-game:CGARhpML#66",
+   "fen": "1k1r3r/1p3ppp/2q5/3N4/2P5/P2pQ1P1/5P1P/R5K1 w - - 13 34",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.931417,
+   "b": -1.189868,
+   "ok": [
+    "a1d1",
+    "e3d3"
+   ]
+  },
+  {
+   "id": "lichess-game:fyqrbwcd#25",
+   "fen": "r4rk1/pb1nbppp/1q2pn2/1ppP4/2p1P3/2N1BN2/PPQ1BPPP/3RR1K1 b - - 0 13",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.556775,
+   "b": -1.47378,
+   "ok": [
+    "e6d5"
+   ]
+  },
+  {
+   "id": "lichess-game:kn2EICFE#23",
+   "fen": "2r2rk1/pbq1bppp/1pnppn2/8/2PP4/BPN3P1/P3NPBP/R2Q1RK1 b - - 2 12",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.064559,
+   "b": -1.294465,
+   "ok": [
+    "d6d5"
+   ]
+  },
+  {
+   "id": "lichess-game:wzD7G2Jg#23",
+   "fen": "rn1q1rk1/1p2bppp/3pbn2/4p3/p3P3/2N1BP2/PPPQ2PP/1KNR1B1R b - - 1 12",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.326413,
+   "b": -0.282977,
+   "ok": [
+    "a4a3",
+    "a8a5"
+   ]
+  },
+  {
+   "id": "lichess-game:m8HrbeXA#59",
+   "fen": "1qrr2k1/1b3pp1/pp2pb1p/2np4/1PPN4/P3BPP1/2R1P1BP/1Q1R2K1 b - - 0 30",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.478768,
+   "b": 1.357105,
+   "ok": [
+    "c5a4"
+   ]
+  },
+  {
+   "id": "lichess-game:uVP8oHH4#31",
+   "fen": "5rk1/p2nppbp/3p1np1/P1pP4/1rN1P3/2NK1P2/1P4PP/R1B4R b - - 0 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.552076,
+   "b": -1.682646,
+   "ok": [
+    "f6e8",
+    "f8b8"
+   ]
+  },
+  {
+   "id": "lichess-game:qOIHSabY#28",
+   "fen": "r2q1rk1/5pb1/b2p1npp/pBnPp3/4P1P1/2N1B2P/PP1N1P2/R2QK2R w KQ - 1 15",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "b5a6",
+    "d1c2",
+    "e3c5"
+   ]
+  },
+  {
+   "id": "lichess-game:l5MHzFPM#68",
+   "fen": "5bk1/1p4p1/p3N2p/3p4/4b1Q1/1P2P2P/1B3qPK/8 w - - 6 35",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.515989,
+   "b": -0.68401,
+   "ok": [
+    "e6f8"
+   ]
+  },
+  {
+   "id": "lichess-game:BkqKF4nm#29",
+   "fen": "r3kb1r/pp3ppp/2n1p1n1/1N6/1qP1QB2/5N2/PP3PPP/R4RK1 b kq - 5 15",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.575673,
+   "b": -2.178543,
+   "ok": [
+    "e8c8"
+   ]
+  },
+  {
+   "id": "lichess-game:1xB85o0N#24",
+   "fen": "r1bq1rk1/pp3pbp/4p1p1/2pp4/3nPP2/1PNP1NQ1/1PP3PP/R1B2RK1 w - - 3 13",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "f1f2",
+    "f3d4",
+    "f4f5",
+    "g3f2"
+   ]
+  },
+  {
+   "id": "lichess-game:LaYnvH9n#32",
+   "fen": "r6r/ppqkpR1p/2p1p1pb/3nP3/3P2Q1/2BB4/PPP3PP/R5K1 w - - 6 17",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.169016,
+   "b": -0.782143,
+   "ok": [
+    "a1f1",
+    "g1h1",
+    "g4h3"
+   ]
+  },
+  {
+   "id": "lichess-game:LCdfIiuJ#26",
+   "fen": "2rqkb1r/1Q1npppp/p7/3NPb2/8/8/PP3PPP/R1B1K1NR w KQk - 2 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.866085,
+   "b": 1.135742,
+   "ok": [
+    "c1e3"
+   ]
+  },
+  {
+   "id": "lichess-game:HdVMkv4j#28",
+   "fen": "r2n1rk1/pppqb1p1/3p4/3Ppp1p/4P3/1P3NPP/PB1P1PK1/R2QR3 w - - 2 15",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.937355,
+   "b": -3.115116,
+   "ok": [
+    "d2d4"
+   ]
+  },
+  {
+   "id": "lichess-game:GnPgFbvw#30",
+   "fen": "1r1qr1k1/1pp2pbp/2np1np1/p7/2PNP1b1/P4NP1/2Q2PBP/1RBR2K1 w - - 1 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.841934,
+   "b": -1.283162,
+   "ok": [
+    "d1e1",
+    "d4c6"
+   ]
+  },
+  {
+   "id": "lichess-game:qTyJBq8r#23",
+   "fen": "r3r1k1/ppp2ppp/2nq4/3n1b2/3Pp3/2P1B2P/PP1NBPP1/R2Q1RK1 b - - 4 12",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.123974,
+   "b": 0.304864,
+   "ok": [
+    "f5h3"
+   ]
+  },
+  {
+   "id": "lichess-game:SGcfIIB2#31",
+   "fen": "r2qr1k1/pp1b2bp/2nPp1p1/2p1n3/4N3/2N5/PP2B1PP/R1BQ1RK1 b - - 6 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.611003,
+   "b": -2.377149,
+   "ok": [
+    "c5c4",
+    "c6d4",
+    "d8b6",
+    "e5f7",
+    "e8f8"
+   ]
+  },
+  {
+   "id": "lichess-game:45NBRslo#41",
+   "fen": "2k1rr2/ppp3pp/4pp2/2Nn4/3P4/1PP5/P1KR1PPP/4R3 b - - 3 21",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.75719,
+   "b": -1.397792,
+   "ok": [
+    "b7b6",
+    "c7c6",
+    "d5f4",
+    "e6e5",
+    "h7h5"
+   ]
+  },
+  {
+   "id": "lichess-game:6x5hib4S#39",
+   "fen": "5k1r/pp3ppp/2p2n2/4Q3/1q6/5BP1/P2r1PKP/1RR5 b - - 1 20",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.297908,
+   "b": 0.596792,
+   "ok": [
+    "b4d4",
+    "b4d6"
+   ]
+  },
+  {
+   "id": "lichess-game:8MpJeo37#34",
+   "fen": "1r5r/p2k1pb1/3p2pn/1N2p2p/2PnP2P/4BB2/P2K1PP1/1R5R w - - 1 18",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.072288,
+   "b": -2.872889,
+   "ok": [
+    "b5a7",
+    "e3d4"
+   ]
+  },
+  {
+   "id": "lichess-game:QlgiRcLz#26",
+   "fen": "rbbq1rk1/pp3ppp/5nn1/1N1p4/8/1PB1PN2/P3BPPP/R2Q1RK1 w - - 4 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.064559,
+   "b": -1.294465,
+   "ok": [
+    "a1c1",
+    "c3f6"
+   ]
+  },
+  {
+   "id": "lichess-game:vWZOeGmr#51",
+   "fen": "3r2k1/1pq2pp1/p3pn1p/3n4/8/P1P3P1/1PB1QP1P/2BR2K1 b - - 0 26",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.721234,
+   "b": -3.097135,
+   "ok": [
+    "a6a5",
+    "b7b5",
+    "d8c8",
+    "d8e8"
+   ]
+  },
+  {
+   "id": "lichess-game:O6SGrYe4#42",
+   "fen": "4k2r/p3b3/1pq2n2/2p1pQ2/3P2p1/2P3pP/PP6/R1B2RK1 w k - 0 22",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.396166,
+   "b": -1.499278,
+   "ok": [
+    "d4d5"
+   ]
+  },
+  {
+   "id": "lichess-game:UpPjBr6h#41",
+   "fen": "r3r1k1/1ppq1p2/1n1n2pB/p2Pp3/P3P3/1QP4P/3N1PP1/R2R2K1 b - - 2 21",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.619136,
+   "b": -2.929628,
+   "ok": [
+    "d7d8",
+    "d7e7"
+   ]
+  },
+  {
+   "id": "lichess-game:kT8PN5as#49",
+   "fen": "2k5/ppp1pp1p/2q5/8/6P1/2N1b3/PPP3RP/4R2K b - - 4 25",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.937355,
+   "b": -3.115116,
+   "ok": [
+    "c6c5",
+    "c6f3",
+    "e3g5"
+   ]
+  },
+  {
+   "id": "lichess-game:1OtP0SKE#52",
+   "fen": "8/3k2pp/3p1b2/1N2n3/3BP3/8/PPr3PP/5RK1 w - - 3 27",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.729814,
+   "b": -0.304648,
+   "ok": [
+    "a2a4",
+    "f1d1",
+    "h2h3"
+   ]
+  },
+  {
+   "id": "lichess-game:RJnYWfAj#38",
+   "fen": "r1bq2r1/2p1pk2/p1p2p1b/2N2n2/2PPN1pp/3QB3/PP3PPP/R4RK1 w - - 3 20",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.469726,
+   "b": -3.740731,
+   "ok": [
+    "e3h6"
+   ]
+  },
+  {
+   "id": "lichess-game:F20gzKaA#32",
+   "fen": "2rq1rk1/1b2bpp1/pp1pp1np/3nP3/3P4/5NN1/PP1B1PPP/1BRQR1K1 w - - 1 17",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.825855,
+   "b": -3.391005,
+   "ok": [
+    "b1e4",
+    "b1g6",
+    "c1c8",
+    "e5d6",
+    "g3h5"
+   ]
+  },
+  {
+   "id": "lichess-game:DtjeKNDf#66",
+   "fen": "r6r/pp3p2/5pk1/2Pp1pp1/7q/2B3R1/PP4Q1/3R2K1 w - - 2 34",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.376382,
+   "b": -1.747849,
+   "ok": [
+    "d1d4"
+   ]
+  },
+  {
+   "id": "lichess-game:g3gQWfy6#45",
+   "fen": "3r1k2/1prnpbbp/pN1p4/5pP1/2P2P1P/1P2BB2/P2K4/2R4R b - - 4 23",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.386873,
+   "b": -2.100102,
+   "ok": [
+    "a6a5",
+    "d7c5",
+    "e7e5",
+    "e7e6"
+   ]
+  },
+  {
+   "id": "lichess-game:5L7NIJOV#35",
+   "fen": "r2r2k1/2q1bppp/p1p1bn2/1p2p1P1/4P3/P3BP2/1PP1N2P/1KQR1B1R b - - 0 18",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "d8d1",
+    "f6h5"
+   ]
+  },
+  {
+   "id": "lichess-game:ir78CJrw#45",
+   "fen": "2rq1rk1/4b1pp/b4p2/1pn1pP1N/pB1pP1P1/Pn1P1N2/1PR3BP/3Q2RK b - - 9 23",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.665476,
+   "b": -1.236011,
+   "ok": [
+    "a6b7",
+    "c5d7",
+    "d8e8",
+    "g8h8"
+   ]
+  },
+  {
+   "id": "lichess-game:aoIXsOBh#30",
+   "fen": "2rq1rk1/1p3ppp/p1npb3/4p3/4P2P/4N1P1/PPP2P2/R2QKB1R w KQ - 1 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "c2c3",
+    "d1d2",
+    "f1c4",
+    "f1g2"
+   ]
+  },
+  {
+   "id": "lichess-game:ezG4mn2Q#47",
+   "fen": "1r2r1k1/2q2pp1/ppb2n1p/2pBp3/2PnP3/3Q1N1P/PBP2PP1/3RR1K1 b - - 5 24",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.653576,
+   "b": -0.886206,
+   "ok": [
+    "b6b5"
+   ]
+  },
+  {
+   "id": "lichess-game:knboZlff#26",
+   "fen": "r4rk1/pp2ppbp/2n1bnp1/4N2q/3P4/N3P1P1/PB1Q1PBP/R4RK1 w - - 5 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.590492,
+   "b": -2.129149,
+   "ok": [
+    "e5c6",
+    "e5d3"
+   ]
+  },
+  {
+   "id": "lichess-game:SY9f7ya6#38",
+   "fen": "r2r1k2/p3pPbp/1qp1b1p1/2p5/3pP3/5QP1/PP3P1P/R1B1RBK1 w - - 4 20",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.820691,
+   "b": -1.620966,
+   "ok": [
+    "b2b3",
+    "e4e5"
+   ]
+  },
+  {
+   "id": "lichess-game:GfVj31WI#33",
+   "fen": "r2q3r/p2bn1kp/1p1p2p1/1P1PppN1/P3Pn2/2N5/5PPP/2RQRBK1 b - - 1 17",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.848585,
+   "b": -3.32758,
+   "ok": [
+    "e7g8",
+    "h7h6",
+    "h8f8"
+   ]
+  },
+  {
+   "id": "lichess-game:kMGVX3HV#45",
+   "fen": "1r1r2k1/p1q1ppbp/6p1/1p1nN3/2bP4/4PPP1/PB3QBP/2RR2K1 b - - 3 23",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.739963,
+   "b": -1.119018,
+   "ok": [
+    "g7e5"
+   ]
+  },
+  {
+   "id": "lichess-game:2AdyevsG#43",
+   "fen": "r4r2/1b1R1pk1/p5pp/8/1p2PP2/8/PPP2KBP/3R4 b - - 1 22",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.763575,
+   "b": -2.481403,
+   "ok": [
+    "b7c6",
+    "b7c8"
+   ]
+  },
+  {
+   "id": "lichess-game:LaAELCG4#42",
+   "fen": "2b1r3/p1qn1pbk/1pp1rnpp/P3p3/1PP1P3/2NRBNPP/3Q1PB1/3R2K1 w - - 0 22",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.303237,
+   "b": -0.506989,
+   "ok": [
+    "a5b6"
+   ]
+  },
+  {
+   "id": "lichess-game:NoeR6pH1#39",
+   "fen": "rq3rk1/pp1n2p1/2p4p/3p1p1b/3P3N/Q2BP3/PP3PPP/R4RK1 b - - 1 20",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "f5f4",
+    "g7g6"
+   ]
+  },
+  {
+   "id": "lichess-game:18jL68BK#32",
+   "fen": "r1b1r1k1/pp2qp1p/2p3p1/5nPP/PP1p1Q2/2N2B2/2P1PP2/R3K2R w KQ - 0 17",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.415735,
+   "b": -0.704707,
+   "ok": [
+    "c3e4"
+   ]
+  },
+  {
+   "id": "lichess-game:XGKpV8vC#26",
+   "fen": "r2q2k1/pbpn2pp/1p1pp1r1/3P1p2/2P1n3/PP2PN2/1BQ1BPPP/R4RK1 w - - 1 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.412713,
+   "b": 0.916629,
+   "ok": [
+    "a1d1",
+    "f3d4"
+   ]
+  },
+  {
+   "id": "lichess-game:a18oDxMy#30",
+   "fen": "r2k1b1r/1bqn1ppp/p2p1n2/3P1NB1/1p3P2/3B3Q/PPP3PP/2KRR3 w - - 3 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.499157,
+   "b": 0.070425,
+   "ok": [
+    "c1b1",
+    "d3e4",
+    "f5e3",
+    "f5g3"
+   ]
+  },
+  {
+   "id": "lichess-game:o3z3aR0a#37",
+   "fen": "2rq1rk1/4bppp/b3p3/1pnpP3/p3P3/1P4P1/PB1NQPBP/R2R2K1 b - - 4 19",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.876291,
+   "b": 1.810508,
+   "ok": [
+    "d5d4"
+   ]
+  },
+  {
+   "id": "lichess-game:sixsYbVh#29",
+   "fen": "r1b1r1k1/pp1n1pb1/2pR1npp/2P1p3/1P2P3/2N1BN1P/P3BPP1/2K4R b - - 0 15",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.934226,
+   "b": -2.233276,
+   "ok": [
+    "a7a6",
+    "a8b8",
+    "g7f8",
+    "g8h7"
+   ]
+  },
+  {
+   "id": "lichess-game:EjwYFkXp#57",
+   "fen": "3r2k1/1p2prbp/p2p4/8/2P3nP/1PN2p1B/P4B2/2RRK3 b - - 1 29",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.459036,
+   "b": -2.056787,
+   "ok": [
+    "h7h5"
+   ]
+  },
+  {
+   "id": "lichess-game:FdsVJFsV#39",
+   "fen": "r4n1r/1p1bpkb1/p1p3pp/2Pp1p2/1P1P1B1P/2PN2P1/3KPPB1/R6R b - - 0 20",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.556635,
+   "b": -1.128673,
+   "ok": [
+    "a8e8",
+    "d7e6",
+    "f8e6",
+    "f8h7"
+   ]
+  },
+  {
+   "id": "lichess-game:1XUq4ZDL#47",
+   "fen": "r4r1k/1b3pp1/p2qp2p/Ppp4R/6Q1/1B1P4/1PP2PPP/4R1K1 b - - 3 24",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.254506,
+   "b": -0.520214,
+   "ok": [
+    "a8c8",
+    "a8d8",
+    "a8e8"
+   ]
+  },
+  {
+   "id": "lichess-game:5oVZEwni#31",
+   "fen": "r1b1k2r/pp1qnpbp/3pp1p1/5P2/4P3/2NP2P1/2PB2BP/1R1Q1RK1 b kq - 0 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.192549,
+   "b": -1.881035,
+   "ok": [
+    "e6f5",
+    "g6f5"
+   ]
+  },
+  {
+   "id": "lichess-game:hdHOJZ6V#34",
+   "fen": "1rb2rk1/5ppp/p2Rp3/2n5/1p2B3/4N1P1/PP2PP1P/3R2K1 w - - 1 18",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "e4c6",
+    "e4f3",
+    "e4g2",
+    "e4h1"
+   ]
+  },
+  {
+   "id": "lichess-game:Pz8DbVLq#29",
+   "fen": "r1r3k1/1p3ppp/p1n1pn2/3p3b/3P2P1/2PB1N1P/PP1N1P2/2KRR3 b - - 0 15",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "c6b4",
+    "h5g6"
+   ]
+  },
+  {
+   "id": "lichess-game:nwC6RXQL#36",
+   "fen": "6r1/1b1nkpbp/1qpp2p1/5p2/1P1P4/2Q1PN2/3NBPPP/2R3K1 w - - 5 19",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "d2c4"
+   ]
+  },
+  {
+   "id": "lichess-game:0smeevfa#38",
+   "fen": "r4rk1/pp2q1p1/4b2p/2b1Bp1P/2Q1p3/2P5/PP3PP1/R3KB1R w KQ - 3 20",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.586892,
+   "b": 2.797054,
+   "ok": [
+    "c4b5",
+    "c4e2"
+   ]
+  },
+  {
+   "id": "lichess-game:WoEq9jJ6#28",
+   "fen": "1r2kb1r/2p2pp1/pq2pn1p/1p2P1N1/8/5QP1/PPP2PKP/R1B2R2 w k - 0 15",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.952141,
+   "b": -1.459848,
+   "ok": [
+    "e5f6",
+    "g5e6"
+   ]
+  },
+  {
+   "id": "lichess-game:KasYa3kg#24",
+   "fen": "r3k2r/pp2nppp/2p2n2/3p1b2/3P4/2PB2PP/PP1N2P1/R1B1K2R w KQkq - 1 13",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.049204,
+   "b": -1.674733,
+   "ok": [
+    "d3e2",
+    "d3f1",
+    "e1e2"
+   ]
+  },
+  {
+   "id": "lichess-game:OCJyqNEz#23",
+   "fen": "1k1r3r/ppp2ppp/2nbpn2/1N5q/Q1PP2b1/4BN1P/PP2BPP1/R4RK1 b - - 0 12",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.848929,
+   "b": -0.399185,
+   "ok": [
+    "g4h3"
+   ]
+  },
+  {
+   "id": "lichess-game:Z8g1qK8b#23",
+   "fen": "r1b1kb1r/pp3p1p/2p1pp2/8/2BP1q2/2P5/PP2Q1PP/R1B1K2R b KQkq - 0 12",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.873561,
+   "b": -0.856817,
+   "ok": [
+    "f4h4"
+   ]
+  },
+  {
+   "id": "lichess-game:QYjGRH3I#23",
+   "fen": "r2qkb1r/pp3ppp/1n6/3Pp3/3n4/2N1BP2/PP3P1P/R2QKB1R b KQkq - 1 12",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "f8c5"
+   ]
+  },
+  {
+   "id": "lichess-game:NT0i0XOx#30",
+   "fen": "1k1r3r/pp2bpp1/2n1b2p/q2pPp2/N2P3P/4BN2/PP3PP1/2RQ1RK1 w - - 6 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.819523,
+   "b": -0.603199,
+   "ok": [
+    "a2a3",
+    "e3d2",
+    "h4h5"
+   ]
+  },
+  {
+   "id": "lichess-game:teMZQTi9#40",
+   "fen": "1r2r1k1/2qn1p1p/p2bp1p1/1p1pN3/2nP1PP1/P1PB3P/1P2Q3/2B1RRK1 w - - 1 21",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.721964,
+   "b": 1.680742,
+   "ok": [
+    "b2b3",
+    "e2f3",
+    "e2g2",
+    "h3h4"
+   ]
+  },
+  {
+   "id": "lichess-game:NoSnVYXh#36",
+   "fen": "4rr1k/1p1qn1bp/2n1b1p1/1R2pp2/3pPP2/3P2PP/2PNN1BK/2BQ1R2 w - - 1 19",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.573647,
+   "b": -0.46429,
+   "ok": [
+    "c1a3",
+    "d1e1",
+    "f4e5"
+   ]
+  },
+  {
+   "id": "lichess-game:Gvu9bJhJ#38",
+   "fen": "r4r1k/pb4p1/1p2B2p/2p3q1/3b4/2N5/PPP1Q1PP/3R1R1K w - - 3 20",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.431271,
+   "b": 2.163364,
+   "ok": [
+    "e2g4",
+    "e6d7"
+   ]
+  },
+  {
+   "id": "lichess-game:sxsER4TT#39",
+   "fen": "n1r1nrk1/3qp1bp/p4pp1/p1pPP3/2P2B2/2NN4/1P2Q1PP/R4RK1 b - - 1 20",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.436526,
+   "b": 0.363296,
+   "ok": [
+    "a8b6",
+    "d7a7",
+    "d7b7"
+   ]
+  },
+  {
+   "id": "lichess-game:qa4ema5f#25",
+   "fen": "1nbq1rk1/1p4bp/rP1p1np1/p1pNppB1/2P5/3P1NP1/P3PPBP/1R1Q1RK1 b - - 2 13",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.472346,
+   "b": 1.634962,
+   "ok": [
+    "b8c6",
+    "d8d7"
+   ]
+  },
+  {
+   "id": "lichess-game:bPpxS31F#35",
+   "fen": "4r1k1/1pq2pbp/2pprnp1/p1n5/P1P1PN2/1P2BP2/2BQ2PP/3R1RK1 b - - 3 18",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "e6e5",
+    "e6e7"
+   ]
+  },
+  {
+   "id": "lichess-game:2AE0ou5N#29",
+   "fen": "r3k2r/1bqnbpp1/p3pn2/3p3p/2p1PP2/3PB1PP/PPPQN1BK/R2N1R2 b kq - 1 15",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.951985,
+   "b": -2.554091,
+   "ok": [
+    "d5e4"
+   ]
+  },
+  {
+   "id": "lichess-game:PhmBxe7a#45",
+   "fen": "q1r1k2r/Bb2bpp1/p2p4/N3pP2/4P2p/P1NP2nP/1P3QP1/3RR1K1 b k - 8 23",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.677379,
+   "b": -0.195409,
+   "ok": [
+    "d6d5",
+    "e8g8",
+    "f7f6"
+   ]
+  },
+  {
+   "id": "lichess-game:f7hhTcZ5#30",
+   "fen": "2rq1rk1/1p2ppbp/p2p1np1/4n1B1/4P1b1/1NN5/PPPQ1PPP/2R1RBK1 w - - 0 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.06134,
+   "b": -1.364067,
+   "ok": [
+    "c3d5",
+    "f2f4",
+    "h2h3"
+   ]
+  },
+  {
+   "id": "lichess-game:sXSW2nsv#48",
+   "fen": "5rk1/R4ppp/3N1n2/2p5/3P4/P1q1PQ2/1r4PP/3R2K1 w - - 3 25",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "a7c7",
+    "d6f5"
+   ]
+  },
+  {
+   "id": "lichess-game:50ehG7Ah#64",
+   "fen": "r7/2k3pp/P1p5/1p1np3/1B2p1B1/1PP4P/3b1K2/R7 w - - 3 33",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.480742,
+   "b": 0.380314,
+   "ok": [
+    "b4a5"
+   ]
+  },
+  {
+   "id": "lichess-game:p0f5vKAU#41",
+   "fen": "r3r1k1/1b3pbp/1q2nnp1/1N2p3/PPP1P3/5B2/1BQ3PP/R3R2K b - - 0 21",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.44185,
+   "b": 2.894324,
+   "ok": [
+    "b7a6",
+    "b7c6"
+   ]
+  },
+  {
+   "id": "lichess-game:3o2C7VJd#48",
+   "fen": "r3r3/6k1/4Rbpp/p2p4/3P1q2/1PP3N1/6P1/2R1Q1K1 w - - 2 25",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.842093,
+   "b": -0.229936,
+   "ok": [
+    "e6e8"
+   ]
+  },
+  {
+   "id": "lichess-game:qA0TAjSX#44",
+   "fen": "2rr1bk1/3n1p1p/1q2p1p1/pNnbP3/Pp1N4/1P6/1B2QPPP/1B1R1R1K w - - 0 23",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "b1c2",
+    "f2f4"
+   ]
+  },
+  {
+   "id": "lichess-game:rLXTjZ0p#41",
+   "fen": "3rr1k1/pp3p1p/5np1/3Pq3/6b1/2N3P1/PP3QBP/2R2R1K b - - 3 21",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.372682,
+   "b": -0.949859,
+   "ok": [
+    "g4f5"
+   ]
+  },
+  {
+   "id": "lichess-game:IsOlOIFA#53",
+   "fen": "r3qnk1/pp3n2/5bpQ/8/3P4/1B2P3/PP1B3P/R5K1 b - - 3 27",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.048983,
+   "b": 0.704365,
+   "ok": [
+    "a7a5",
+    "e8b5"
+   ]
+  },
+  {
+   "id": "lichess-game:yxtBCe5E#42",
+   "fen": "1r3rk1/1n3ppp/pq1p4/3Rp3/4P3/PpP3P1/1P1Q1P1P/R4BK1 w - - 3 22",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.678081,
+   "b": 1.450062,
+   "ok": [
+    "a1e1",
+    "a3a4",
+    "f1c4",
+    "h2h4"
+   ]
+  },
+  {
+   "id": "lichess-game:sBYlOd3y#23",
+   "fen": "r1bq1rk1/pp2b1pp/2np1n2/1N6/2P1p3/1P6/P3BPPP/RNBQ1RK1 b - - 3 12",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.053745,
+   "b": -3.614483,
+   "ok": [
+    "a7a6",
+    "c6e5",
+    "g8h8"
+   ]
+  },
+  {
+   "id": "lichess-game:RbhqF6OY#38",
+   "fen": "r2br1k1/5ppp/p3b3/4N3/p7/B1P5/5PPP/1R2R1K1 w - - 2 20",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.595326,
+   "b": 0.60772,
+   "ok": [
+    "e5c4"
+   ]
+  },
+  {
+   "id": "lichess-game:SYKep1Ux#26",
+   "fen": "r3k2r/2qpb1pp/p1b1p3/1p3pPn/4P3/4BP2/PPPQN2P/2KR1B1R w kq f6 0 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.70686,
+   "b": -1.823112,
+   "ok": [
+    "e2d4",
+    "e4f5",
+    "f1h3",
+    "g5f6"
+   ]
+  },
+  {
+   "id": "lichess-game:ojX5f1eI#53",
+   "fen": "3r2k1/1q3pp1/pp2pn1p/2p5/2P2P2/1N2R1PP/P1Q4K/3N4 b - - 1 27",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.633999,
+   "b": 2.358489,
+   "ok": [
+    "h6h5"
+   ]
+  },
+  {
+   "id": "lichess-game:9u4L70xQ#37",
+   "fen": "r2q1r1k/p1p3pp/2pb2b1/3p4/3Pp1Q1/7P/PPP2PP1/R1B1RNK1 b - - 9 19",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.455941,
+   "b": -0.474179,
+   "ok": [
+    "a8b8",
+    "c6c5"
+   ]
+  },
+  {
+   "id": "lichess-game:p4vXEi8d#34",
+   "fen": "r5k1/1ppbnpp1/3p3p/1P6/3qP2P/3B4/2Q2PP1/1N3RK1 w - - 0 18",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "c2c7"
+   ]
+  },
+  {
+   "id": "lichess-game:K9AEFO6i#36",
+   "fen": "5rk1/pbqr1pbp/1p2p1p1/3nP1B1/P1p3NP/1nP2NP1/1P2QPB1/R3R1K1 w - - 2 19",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.540227,
+   "b": -0.679675,
+   "ok": [
+    "a1b1",
+    "a1d1"
+   ]
+  },
+  {
+   "id": "lichess-game:XJWgwEh7#24",
+   "fen": "r3kb1r/pp2pppb/1qp4p/3pB2P/3P4/8/PPP1PPP1/R2QKB1R w KQkq - 1 13",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.074746,
+   "b": 1.926118,
+   "ok": [
+    "a2a3",
+    "h1h3"
+   ]
+  },
+  {
+   "id": "lichess-game:Odxq6D1F#28",
+   "fen": "r4rk1/1bqpn1pp/p1n1p3/4Pp2/R2N1P2/2P1B3/2P1B1PP/4QRK1 w - - 1 15",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.006293,
+   "b": -0.15474,
+   "ok": [
+    "d4b3"
+   ]
+  },
+  {
+   "id": "lichess-game:eEC6BnMN#38",
+   "fen": "2kr3r/1bp1q1bp/p3p1p1/1p1n4/3P2Q1/1B4N1/PPP3PP/R1B2RK1 w - - 6 20",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.403367,
+   "b": -1.187515,
+   "ok": [
+    "c2c3"
+   ]
+  },
+  {
+   "id": "lichess-game:X8OKpI14#26",
+   "fen": "r2q1rk1/1p1b1ppp/p1nb1n2/4p1N1/3pPP2/P2B3P/1PP1Q1P1/R1BN1RK1 w - - 1 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.467205,
+   "b": 0.734121,
+   "ok": [
+    "f4f5"
+   ]
+  },
+  {
+   "id": "lichess-game:IgsIDjUa#27",
+   "fen": "2r2rk1/pp1bppbp/3p1np1/q3n3/2P1P3/2N1BN1P/PP2QPP1/1BRR2K1 b - - 12 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "e5c4"
+   ]
+  },
+  {
+   "id": "lichess-game:VXfQHEDG#33",
+   "fen": "r3k2r/3nppbn/p1q3p1/6Pp/3BP3/2NQ4/PPP4P/2KR2NR b kq - 1 17",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.600362,
+   "b": 0.691667,
+   "ok": [
+    "d7e5"
+   ]
+  },
+  {
+   "id": "lichess-game:oNHVCCP8#48",
+   "fen": "4r1k1/p3qpbp/1np1r1p1/1p2n3/4PBP1/P1N4P/1PP1BQ2/1K1RR3 w - - 6 25",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.825855,
+   "b": -3.391005,
+   "ok": [
+    "f2g1",
+    "f2g3",
+    "f4c1",
+    "f4e3",
+    "g4g5"
+   ]
+  },
+  {
+   "id": "lichess-game:AUbBQX8j#45",
+   "fen": "r1r3k1/1p3ppp/1q2p1b1/3pP3/p2P4/6P1/PP1R1PBP/R2Q2K1 b - - 2 23",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.779297,
+   "b": 1.885076,
+   "ok": [
+    "a4a3"
+   ]
+  },
+  {
+   "id": "lichess-game:YE14GNlV#41",
+   "fen": "2kr3r/pp3p1p/2p3pb/2nP1q2/5N2/4QP1P/PP3PKB/R4R2 b - - 2 21",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.129203,
+   "b": -0.799605,
+   "ok": [
+    "h6f4"
+   ]
+  },
+  {
+   "id": "lichess-game:SHbC1FN5#42",
+   "fen": "4r1k1/1p2rppp/p1bp1q2/2p2P2/3PPQ2/6P1/PP4BP/3RR1K1 w - - 5 22",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.316552,
+   "b": 2.244758,
+   "ok": [
+    "e4e5"
+   ]
+  },
+  {
+   "id": "lichess-game:oXCozbSq#29",
+   "fen": "r1bq1r2/pp2bpk1/4p2p/2npP1p1/2p3PP/2P1PNB1/PPBQ1P2/R3K2R b KQ - 0 15",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.544829,
+   "b": 1.453913,
+   "ok": [
+    "f8h8"
+   ]
+  },
+  {
+   "id": "lichess-game:GV9Ed1ud#46",
+   "fen": "r4rk1/p5qp/1pR5/8/3P2n1/4PQ2/PP3PPP/2R3K1 w - - 3 24",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.272108,
+   "b": -0.267258,
+   "ok": [
+    "c6c7"
+   ]
+  },
+  {
+   "id": "lichess-game:nZ3pPUUj#40",
+   "fen": "1r3rk1/2q2pp1/5b1p/3p4/p1nN2b1/2PR1NP1/PPQ2PBP/R5K1 w - - 4 21",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "b2b3",
+    "b2b4"
+   ]
+  },
+  {
+   "id": "lichess-game:ac0yLIB4#31",
+   "fen": "r3r1k1/pp4pp/2p2p2/q1Rn1p2/3P4/PQ1BP3/1P2KPPP/R7 b - - 7 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "a5b6"
+   ]
+  },
+  {
+   "id": "lichess-game:HEOXku3b#55",
+   "fen": "r6k/1p3ppb/pqp2n1p/3p1P2/1P1N2P1/2PP2QP/r5B1/1R2R2K b - - 4 28",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.41578,
+   "b": -0.381502,
+   "ok": [
+    "a2a3",
+    "a6a5",
+    "a8f8"
+   ]
+  },
+  {
+   "id": "lichess-game:LC6Ip7u6#26",
+   "fen": "r2q1rk1/p3pp1p/1pn3p1/2Np1b2/8/1PP2N2/P2QBPPP/b1B2RK1 w - - 0 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.529643,
+   "b": -1.407159,
+   "ok": [
+    "c5a4",
+    "c5d3",
+    "d2h6"
+   ]
+  },
+  {
+   "id": "lichess-game:i2qSjRLg#25",
+   "fen": "r1bq1rk1/p2n1p1p/2p1p1p1/1p1nP3/P1pPN3/2P5/2Q1BPPP/R1B2RK1 b - - 1 13",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.902181,
+   "b": -0.215966,
+   "ok": [
+    "f7f6"
+   ]
+  },
+  {
+   "id": "lichess-game:lg6fBNox#24",
+   "fen": "r1b2rk1/1p1nbppp/pqn1p3/3pP3/3P4/P1N2P2/1PB1N1PP/R1BQ1RK1 w - - 0 13",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.452503,
+   "b": -1.434046,
+   "ok": [
+    "d1d3",
+    "f3f4",
+    "g1h1"
+   ]
+  },
+  {
+   "id": "lichess-game:EyzmavWp#25",
+   "fen": "r3kb1r/1b1n1ppp/p3pq2/P1p5/1p1P4/3BPN2/1P3PPP/R1BQ1RK1 b kq - 0 13",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.92206,
+   "b": -2.606025,
+   "ok": [
+    "b7f3",
+    "c5d4",
+    "f6d8",
+    "f8d6",
+    "h7h6"
+   ]
+  },
+  {
+   "id": "lichess-game:bTFkEeiO#47",
+   "fen": "6r1/pp2kp2/1q2p3/2NpPn1p/1P4rP/P4NP1/3Q1P1K/5R2 b - - 2 24",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.937275,
+   "b": -0.914426,
+   "ok": [
+    "b6b5",
+    "b6c6",
+    "b6c7",
+    "g4c4",
+    "g8c8"
+   ]
+  },
+  {
+   "id": "lichess-game:QMEADrXQ#53",
+   "fen": "r1r2bk1/5p2/p2pn1p1/1p1Rp2p/8/2P1N1PP/PP1N1P2/3R2K1 b - - 3 27",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "c8c6",
+    "e6c5",
+    "e6c7",
+    "f7f5"
+   ]
+  },
+  {
+   "id": "lichess-game:fA95PTgA#24",
+   "fen": "r3kb1r/p1qp2pp/b3p3/1p1nPp2/1nP5/1P3NP1/P3QPBP/RNB1K2R w KQkq - 0 13",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.624957,
+   "b": -0.99468,
+   "ok": [
+    "a2a3"
+   ]
+  },
+  {
+   "id": "lichess-game:U4vJ7dYa#41",
+   "fen": "1r2r1k1/1p3ppp/p2p4/6q1/2PQ4/4PbP1/PB3P1P/R3R1K1 b - - 3 21",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.197177,
+   "b": 2.797113,
+   "ok": [
+    "e8e4"
+   ]
+  },
+  {
+   "id": "lichess-game:qXr1M9Kb#57",
+   "fen": "1r3r2/pp3p1k/5Rnp/2P1P3/2NQ4/6P1/q5BP/6K1 b - - 0 29",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.898832,
+   "b": -1.517966,
+   "ok": [
+    "a2a4",
+    "a2b1"
+   ]
+  },
+  {
+   "id": "lichess-game:AVKCPA5L#48",
+   "fen": "2r2r1k/p2q1p1p/1pNP1Pp1/2pQ4/8/4b3/PP4PP/R4R1K w - - 4 25",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.457873,
+   "b": 1.903864,
+   "ok": [
+    "c6e7"
+   ]
+  },
+  {
+   "id": "lichess-game:qvRg8ICP#41",
+   "fen": "2b3k1/4npb1/pq2p1np/1p1pP1pN/3P4/3QB2P/PP3PPN/1B4K1 b - - 1 21",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.310536,
+   "b": -3.327454,
+   "ok": [
+    "b6a5",
+    "b6c6",
+    "b6c7",
+    "b6d8",
+    "e7f5"
+   ]
+  },
+  {
+   "id": "lichess-game:bNITIrja#45",
+   "fen": "3r1kr1/1b1n3R/p2bp3/1p1p2P1/2nB4/1NN2B2/PPP3P1/2KR4 b - - 2 23",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.299742,
+   "b": -1.227195,
+   "ok": [
+    "g8g5"
+   ]
+  },
+  {
+   "id": "lichess-game:WD8aFsgh#41",
+   "fen": "r2r1k2/pp4pp/4Rb2/2pR4/2B2P2/1P6/P1P3PP/2K5 b - - 2 21",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.368893,
+   "b": -1.766331,
+   "ok": [
+    "b7b6",
+    "d8d5"
+   ]
+  },
+  {
+   "id": "lichess-game:dtqJyEfe#61",
+   "fen": "8/1p1r1npp/2p2p2/p1k2P1P/P1Pp1PP1/1P1Br3/2K5/4R1R1 b - - 8 31",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.298828,
+   "b": 2.24584,
+   "ok": [
+    "c5b4",
+    "e3f3",
+    "e3h3",
+    "h7h6"
+   ]
+  },
+  {
+   "id": "lichess-game:RGrLiWXp#69",
+   "fen": "5bk1/5p1p/p5n1/1p3N2/4p3/P3Q1PP/1P3PBK/4q3 b - - 4 35",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "e1e3"
+   ]
+  },
+  {
+   "id": "lichess-game:NbedB0Tv#33",
+   "fen": "2kr2r1/1ppn1p1p/p1n4q/4p1p1/Q2P2B1/1RP1PP2/P2B1P1P/5R1K b - - 5 17",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.578305,
+   "b": 1.548968,
+   "ok": [
+    "e5d4",
+    "f7f5",
+    "g8f8"
+   ]
+  },
+  {
+   "id": "lichess-game:Dmlwkbdt#33",
+   "fen": "2bq1rk1/3n1rpp/p3p3/1pbpB2Q/5P2/2NB4/PPP3PP/4RR1K b - - 2 17",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "g7g6"
+   ]
+  },
+  {
+   "id": "lichess-game:fEXSW03Q#23",
+   "fen": "rnb1r1k1/pp3pbp/3p1np1/q2P4/4P1PP/2N2B2/PPPB4/R2QK1NR b KQ - 4 12",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.474106,
+   "b": 0.704762,
+   "ok": [
+    "a5b6",
+    "b7b5",
+    "b8d7"
+   ]
+  },
+  {
+   "id": "lichess-game:Af3CxkEp#30",
+   "fen": "r1b1nrk1/bp4p1/p1pp4/4pP2/1PPnN1Pq/P2P4/4NPB1/R1BQ1RK1 w - - 1 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.476022,
+   "b": -3.110024,
+   "ok": [
+    "e2d4"
+   ]
+  },
+  {
+   "id": "lichess-game:oldqwFtF#44",
+   "fen": "3q1rk1/r2b2b1/3p1np1/1pnPp3/p3P2R/P3B3/NP1NBPK1/R2Q4 w - - 2 23",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.196729,
+   "b": -0.314393,
+   "ok": [
+    "d1h1"
+   ]
+  },
+  {
+   "id": "lichess-game:UGNxnIAF#40",
+   "fen": "r4rk1/pp3p1p/3p4/4p3/3qPp2/1PN3P1/1PP4P/2KQ3R w - - 1 21",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.491991,
+   "b": 2.049828,
+   "ok": [
+    "d1h5"
+   ]
+  },
+  {
+   "id": "lichess-game:e41FhTsh#30",
+   "fen": "r4rk1/pp2ppbp/6p1/q2P4/5PQ1/8/PPn3BP/1RB2KNR w - - 1 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.33052,
+   "b": -3.739343,
+   "ok": [
+    "g4e2"
+   ]
+  },
+  {
+   "id": "lichess-game:wP4lI9NL#27",
+   "fen": "3rk2r/pp2bppp/1qn1p1n1/2p1P3/8/2PP1NBP/P3BPP1/1R1Q1RK1 b k - 2 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.750002,
+   "b": -2.307637,
+   "ok": [
+    "b6c7"
+   ]
+  },
+  {
+   "id": "lichess-game:L6gGFQIa#35",
+   "fen": "2r1k2r/bp1b1pp1/p3p3/3pP2p/5Bnq/P1NB3P/1P1QRPP1/5RK1 b k - 2 18",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.506024,
+   "b": 0.411254,
+   "ok": [
+    "a7b6",
+    "a7c5",
+    "a7d4",
+    "d7c6",
+    "e8f8"
+   ]
+  },
+  {
+   "id": "lichess-game:zcuprO0a#53",
+   "fen": "1r3b1k/6pp/4Q3/2ppP1q1/3PpB2/2P1P2P/P7/5R1K b - - 7 27",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.481379,
+   "b": 0.703549,
+   "ok": [
+    "g5h5"
+   ]
+  },
+  {
+   "id": "lichess-game:mIAi6RXg#28",
+   "fen": "r2q1rk1/pp1b2pp/2n5/3pp3/3PnP2/R1PB1NP1/7P/1N1QK2R w K - 0 15",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.69141,
+   "b": 0.689427,
+   "ok": [
+    "d3e4",
+    "d4e5",
+    "f4e5"
+   ]
+  },
+  {
+   "id": "lichess-game:YhWHBrZ0#37",
+   "fen": "1k1r4/pp2bppp/2b1p3/P2rP3/3BB3/2P2P2/4K1PP/R6R b - - 4 19",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.863645,
+   "b": -0.460497,
+   "ok": [
+    "c6b5",
+    "d5b5"
+   ]
+  },
+  {
+   "id": "lichess-game:T9nO0nsG#24",
+   "fen": "r1bq1rk1/pp3pbp/6p1/2p1Pp2/2Bn4/1PN2N2/P2P1PPP/R2QR1K1 w - - 3 13",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.356809,
+   "b": -2.119901,
+   "ok": [
+    "f3d4"
+   ]
+  },
+  {
+   "id": "lichess-game:KZRQKqaO#69",
+   "fen": "2r1rb2/7p/p7/2pRBpk1/2P5/1P1R4/P5P1/6K1 b - - 1 35",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.302152,
+   "b": -0.288157,
+   "ok": [
+    "c8c6",
+    "f5f4"
+   ]
+  },
+  {
+   "id": "lichess-game:jQi2xGzY#35",
+   "fen": "r1r3k1/p2q1ppp/1pp1p3/P7/3PPn2/P5P1/1BQ2P1P/R3KR2 b Q - 0 18",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "f4g6",
+    "f4h3",
+    "f4h5"
+   ]
+  },
+  {
+   "id": "lichess-game:37nlQH1o#53",
+   "fen": "r6r/p2k4/b3Np1p/3ppP2/1Rp3B1/P3P1n1/6P1/1R4K1 b - - 1 27",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.809489,
+   "b": -3.439343,
+   "ok": [
+    "d7d6",
+    "h8g8"
+   ]
+  },
+  {
+   "id": "lichess-game:MTa5mcUi#48",
+   "fen": "2kr4/B2n1Q2/1p1qp3/3p4/8/P2R4/1PP2P2/2K5 w - - 0 25",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.908319,
+   "b": 2.270018,
+   "ok": [
+    "d3b3",
+    "d3h3"
+   ]
+  },
+  {
+   "id": "lichess-game:n1O6NrEG#49",
+   "fen": "r4r1k/6pp/1p3n2/2Pp1N2/p2P4/5P2/PP5P/1K1R1R2 b - - 0 25",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.99555,
+   "b": 0.063041,
+   "ok": [
+    "f6d7"
+   ]
+  },
+  {
+   "id": "lichess-game:9J2z8JiF#55",
+   "fen": "4r1k1/4qpb1/5np1/p1pp4/P1b4P/B3P1NP/2Q2PK1/1R1R4 b - - 4 28",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.453775,
+   "b": 0.918503,
+   "ok": [
+    "e7e6"
+   ]
+  },
+  {
+   "id": "lichess-game:89lqXUys#28",
+   "fen": "r2q1rk1/4ppbp/p3bnp1/np1p4/2pPP3/2P2P2/PPB1N1PP/R1BQNRK1 w - - 1 15",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.427494,
+   "b": 0.541493,
+   "ok": [
+    "e4e5",
+    "h2h3"
+   ]
+  },
+  {
+   "id": "lichess-game:5StWeGQh#40",
+   "fen": "r3qrk1/1p3bp1/pBn5/3pp1bp/6B1/2P4P/PP2QPPN/R2R2K1 w - - 0 21",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.339094,
+   "b": 2.033071,
+   "ok": [
+    "h3h4"
+   ]
+  },
+  {
+   "id": "lichess-game:aHfQcyDS#42",
+   "fen": "r4r2/4qpkp/p2p2p1/2pnn2P/Pp6/1P3P2/2P1NKP1/R1QN3R w - - 1 22",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.056941,
+   "b": -0.836189,
+   "ok": [
+    "c1d2",
+    "e2f4"
+   ]
+  },
+  {
+   "id": "lichess-game:QlcNHUFD#27",
+   "fen": "r1b1k2r/2q2ppp/p1nbp3/1p6/4NP2/4B3/PPP1BQPP/R4RK1 b kq - 1 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.740009,
+   "b": -3.037422,
+   "ok": [
+    "d6e7"
+   ]
+  },
+  {
+   "id": "lichess-game:GnGgcEFB#57",
+   "fen": "r2r1qk1/5p1p/2p1b1p1/p2nP1Q1/2p1B3/P5P1/2P2R1P/B3R1K1 b - - 1 29",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "f8a3"
+   ]
+  },
+  {
+   "id": "lichess-game:eM69ycXq#68",
+   "fen": "1kb4r/ppp5/8/3Ppp2/1PP1P2p/3NbP2/P7/1K3B1R w - - 0 35",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.826605,
+   "b": -0.238868,
+   "ok": [
+    "b1c2",
+    "f1h3"
+   ]
+  },
+  {
+   "id": "lichess-game:2T4kRV6k#24",
+   "fen": "r2q1rk1/pb1nbppp/1p1pp3/8/3BP1P1/2N2P2/PPPQ3P/1K1R1B1R w - - 4 13",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.892702,
+   "b": 1.572074,
+   "ok": [
+    "a2a3",
+    "f1e2",
+    "h1g1",
+    "h2h4"
+   ]
+  },
+  {
+   "id": "lichess-game:U9qHPIEz#51",
+   "fen": "r1b3k1/p6p/2pq2p1/4p1P1/3b2P1/3Q1B2/P5K1/1R5R b - - 1 26",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.264517,
+   "b": -1.402315,
+   "ok": [
+    "c8d7",
+    "c8e6",
+    "d6e6"
+   ]
+  },
+  {
+   "id": "lichess-game:rhqMJ0Ps#39",
+   "fen": "r2q1rk1/pbn1p1bp/1p2Pnp1/2pp2N1/5B2/1NP3P1/PP3PBP/R2QR1K1 b - - 1 20",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "a7a5",
+    "b7c6",
+    "d8b8",
+    "d8c8",
+    "f6h5"
+   ]
+  },
+  {
+   "id": "lichess-game:6pYh2Zc9#28",
+   "fen": "r1b2rk1/2q2pbp/p2p1np1/1ppPn3/4P3/PNN1BP2/1P1QB1PP/R3K2R w KQ - 0 15",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.582755,
+   "b": -1.765413,
+   "ok": [
+    "d2c1",
+    "d2c2",
+    "e1g1",
+    "e3h6"
+   ]
+  },
+  {
+   "id": "lichess-game:BTEUiOWo#40",
+   "fen": "1r1r2k1/1pq2bp1/p1nbp2p/5p2/2PP4/1Q4N1/PB2BPPP/2RR2K1 w - - 1 21",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.886025,
+   "b": -2.674397,
+   "ok": [
+    "d4d5"
+   ]
+  },
+  {
+   "id": "lichess-game:1biAyISF#60",
+   "fen": "2rrb2k/2q2pbp/3p4/3Rp2Q/1p5P/1P6/PB2PPB1/3R2K1 w - - 4 31",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "d1c1",
+    "g2e4",
+    "h5f5"
+   ]
+  },
+  {
+   "id": "lichess-game:0rTLjooa#47",
+   "fen": "rq1r2k1/pp3pb1/6pp/3P1P2/3pQ3/P5P1/1P5P/1BR2RK1 b - - 0 24",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "b8d6",
+    "d8e8"
+   ]
+  },
+  {
+   "id": "lichess-game:N87o3WiL#54",
+   "fen": "4bkr1/1pq2pp1/p2p4/3Pp1Q1/8/P2B4/1PP5/1K3R2 w - - 1 28",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.681791,
+   "b": -0.65855,
+   "ok": [
+    "f1h1",
+    "g5h4",
+    "g5h5"
+   ]
+  },
+  {
+   "id": "lichess-game:Y6YyB61q#41",
+   "fen": "r3k2r/pp1b1pp1/4p2p/n2pP2P/2pP1P1P/P1P1B2B/1P3K2/2R2R2 b kq - 2 21",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.317832,
+   "b": -0.626602,
+   "ok": [
+    "a5c6",
+    "e8g8"
+   ]
+  },
+  {
+   "id": "lichess-game:jIyS9qHK#46",
+   "fen": "1r1r4/4k1p1/p3b1np/4p3/4P3/1BP2P2/P2N2PP/R3K2R w KQ - 1 24",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.444747,
+   "b": -1.031987,
+   "ok": [
+    "a1b1",
+    "g2g3"
+   ]
+  },
+  {
+   "id": "lichess-game:kvi8iP65#39",
+   "fen": "3r3r/1kn1bq2/pp2p1pn/1p1pPp2/P2P1N2/2NQ4/2PBKPP1/RR6 b - - 0 20",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.809345,
+   "b": -2.845241,
+   "ok": [
+    "b5b4"
+   ]
+  },
+  {
+   "id": "lichess-game:2jRqInLx#34",
+   "fen": "r1b1kr2/1pq2pQ1/p3p2p/2b5/4B3/8/PPP3PP/1K1R1R2 w q - 1 18",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.740661,
+   "b": 0.375445,
+   "ok": [
+    "e4g6"
+   ]
+  },
+  {
+   "id": "lichess-game:OuxU1zek#48",
+   "fen": "2rr4/1b2kpp1/4pq2/pB3n1p/3N1P2/2P4P/PP3QP1/R1R4K w - - 1 25",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.989324,
+   "b": -2.494743,
+   "ok": [
+    "b5e2",
+    "d4b3",
+    "d4f5",
+    "h1g1"
+   ]
+  },
+  {
+   "id": "lichess-game:sVqOHP2x#23",
+   "fen": "rn2k2r/pp4pp/2p2n2/8/1b1pq3/1B6/PPPN2PP/R1BQ1K1R b kq - 1 12",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.064559,
+   "b": -1.294465,
+   "ok": [
+    "b4d2",
+    "e4e7"
+   ]
+  },
+  {
+   "id": "lichess-game:1OnS4568#47",
+   "fen": "2rr2k1/pb3q1p/1p2pPp1/1B1pn1P1/4n3/1N2B2Q/PPP5/2KR3R b - - 6 24",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.591752,
+   "b": -1.055445,
+   "ok": [
+    "e5c4"
+   ]
+  },
+  {
+   "id": "lichess-game:RAtbud40#26",
+   "fen": "r2qr1k1/pp1n1pp1/3bbn1p/2pp4/3P3B/2NBPP1P/PPQ1N1P1/R4RK1 w - - 1 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.484757,
+   "b": 0.966403,
+   "ok": [
+    "f3f4"
+   ]
+  },
+  {
+   "id": "lichess-game:yPYoVVjB#23",
+   "fen": "r1bqrbk1/pp3ppp/2pp1n2/4nNB1/2B1P3/2N5/PPP1QPPP/R3R1K1 b - - 5 12",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.028499,
+   "b": 0.286533,
+   "ok": [
+    "d6d5"
+   ]
+  },
+  {
+   "id": "lichess-game:r21kaWXe#24",
+   "fen": "r2qk2r/1p1nbpp1/p1npb3/4p1P1/4P3/1NN5/PPP1BP2/R1BQK1R1 w Qkq - 1 13",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.611147,
+   "b": -0.712094,
+   "ok": [
+    "c1e3"
+   ]
+  },
+  {
+   "id": "lichess-game:tMsJetgL#30",
+   "fen": "2r1k2r/3bbp1p/p2ppp2/1p3P2/3NP3/2N5/PPP3PP/2KR1R2 w k - 0 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.877762,
+   "b": -0.012643,
+   "ok": [
+    "a2a3"
+   ]
+  },
+  {
+   "id": "lichess-game:BR7o013T#27",
+   "fen": "2r1kb1r/5ppp/p1p1pn2/8/5B2/2P2B2/PP3PPP/1R1R2K1 b k - 1 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.213079,
+   "b": -2.232342,
+   "ok": [
+    "f6d5",
+    "f8e7",
+    "h7h5",
+    "h7h6",
+    "h8g8"
+   ]
+  },
+  {
+   "id": "lichess-game:79PBG7X9#37",
+   "fen": "r4rk1/pp1q4/3p1npb/2pPpbNp/2Pn4/5P2/PP1BBNPP/2RQ1RK1 b - - 6 19",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.250289,
+   "b": -2.649769,
+   "ok": [
+    "d7e7",
+    "d7e8",
+    "d7g7",
+    "g8g7",
+    "h6g7"
+   ]
+  },
+  {
+   "id": "lichess-game:0PgGnM8J#70",
+   "fen": "6k1/r1n1n1p1/4p1p1/2P2p2/3PB3/p1N4P/5PP1/R5K1 w - - 0 36",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.687331,
+   "b": -2.69031,
+   "ok": [
+    "e4c2",
+    "e4f3"
+   ]
+  },
+  {
+   "id": "lichess-game:rLKZRmnO#42",
+   "fen": "5r2/pppq2bk/3p1rpp/4np2/3N3P/PPNB2Q1/1BP3P1/5R1K w - - 3 22",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.921711,
+   "b": -2.177719,
+   "ok": [
+    "c3d5"
+   ]
+  },
+  {
+   "id": "lichess-game:uh8fZKa3#31",
+   "fen": "rr4k1/q3bppp/2p1p1n1/p1PpPb2/1P1N4/P1P3B1/3NQPPP/R4RK1 b - - 2 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.714434,
+   "b": -2.182255,
+   "ok": [
+    "a5b4",
+    "a7a6",
+    "a7b7",
+    "a7d7",
+    "b8c8"
+   ]
+  },
+  {
+   "id": "lichess-game:WnJ2PkoL#33",
+   "fen": "r2q1k1r/pp3pp1/4p3/1QpnP2p/5P1b/2P5/PP1N2B1/R1B2K1R b - - 1 17",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.552968,
+   "b": -0.607769,
+   "ok": [
+    "d5f4"
+   ]
+  },
+  {
+   "id": "lichess-game:bhp7QcJW#37",
+   "fen": "2kr4/ppp1pp1p/5npP/4nq2/5P2/2Nr2P1/PPPBQ1B1/2KR4 b - - 0 19",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.324898,
+   "b": -2.142183,
+   "ok": [
+    "d3d2"
+   ]
+  },
+  {
+   "id": "lichess-game:8vuLGTUx#29",
+   "fen": "r1b1r1k1/pp1n2bp/3Bp1p1/4pp2/2P5/1PN1P3/P3BPPP/3R1RK1 b - - 2 15",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.624053,
+   "b": -3.475038,
+   "ok": [
+    "a7a6",
+    "d7b8",
+    "g7f8"
+   ]
+  },
+  {
+   "id": "lichess-game:Q7uD23f8#45",
+   "fen": "r3r1k1/1pp1qpp1/6p1/p2Pn3/Pb1QNR2/1B2P2P/1P4P1/5RK1 b - - 6 23",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.543986,
+   "b": 0.922862,
+   "ok": [
+    "b4d6"
+   ]
+  },
+  {
+   "id": "lichess-game:7WRQjkzN#47",
+   "fen": "2kr1r2/1p1np3/q5pb/1Np4p/P4N2/2P1Q1P1/5P1P/R3R1K1 b - - 0 24",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "e7e5"
+   ]
+  },
+  {
+   "id": "lichess-game:PxqXLE7M#31",
+   "fen": "2k2b1r/1p3ppp/np2pnb1/1N1pN3/3P2PP/P7/1P1BPP2/4KB1R b K - 0 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.216138,
+   "b": -1.54843,
+   "ok": [
+    "f6d7"
+   ]
+  },
+  {
+   "id": "lichess-game:UmFg31Kc#71",
+   "fen": "8/1p2Rrk1/3pR3/p1pP4/P2b1rp1/3B4/7N/1K6 b - - 5 36",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.451228,
+   "b": -1.725192,
+   "ok": [
+    "c5c4",
+    "f7e7"
+   ]
+  },
+  {
+   "id": "lichess-game:YZzwbzUD#29",
+   "fen": "r2q1r1k/p5pp/2Q5/3p4/3b2n1/2N1B3/PPP2PPP/R4RK1 b - - 2 15",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.006828,
+   "b": -1.067211,
+   "ok": [
+    "d8h4"
+   ]
+  },
+  {
+   "id": "lichess-game:tB7Acf4Y#47",
+   "fen": "rr4k1/1q3p1p/p1p1p3/p1P2p2/P2P4/2P1B1P1/4QP1P/5RK1 b - - 1 24",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.29569,
+   "b": -0.407273,
+   "ok": [
+    "b7b2",
+    "b7d7",
+    "b7e7",
+    "f7f6"
+   ]
+  },
+  {
+   "id": "lichess-game:LIwd7qCG#29",
+   "fen": "2rq1rk1/1p4pp/p1npb3/4pp2/2PnP3/1P1BB3/P1N2PPP/R2Q1RK1 b - - 1 15",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.131023,
+   "b": -1.315634,
+   "ok": [
+    "d4c2"
+   ]
+  },
+  {
+   "id": "lichess-game:apHBnt3Y#36",
+   "fen": "r1b3k1/1p1n1pbp/3B1qp1/8/2BpP1nP/pP3N2/P1Q2P2/2KR3R w - - 1 19",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.282705,
+   "b": -0.201368,
+   "ok": [
+    "c4f7",
+    "f3g5"
+   ]
+  },
+  {
+   "id": "lichess-game:8HKWoIif#37",
+   "fen": "rn3rk1/ppp1q1pp/3p4/2PP1p2/1P1Rp1n1/2N1P2P/PB2QPP1/1R4K1 b - - 0 19",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "g4e5"
+   ]
+  },
+  {
+   "id": "lichess-game:0KSBcOv9#41",
+   "fen": "r4rk1/1b3pbp/4p1p1/p3N3/1pPP4/1P2B3/P4PPP/3R1RK1 b - - 1 21",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.895898,
+   "b": -1.521425,
+   "ok": [
+    "a5a4",
+    "a8d8",
+    "f8d8",
+    "f8e8",
+    "h7h5"
+   ]
+  },
+  {
+   "id": "lichess-game:FIGyMTKE#48",
+   "fen": "5rk1/1p3pp1/pN5p/7Q/4q3/8/2r2PPP/RR4K1 w - - 1 25",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.393598,
+   "b": -2.115797,
+   "ok": [
+    "b1d1",
+    "b1e1",
+    "h5d1",
+    "h5d5"
+   ]
+  },
+  {
+   "id": "lichess-game:ESa7DozH#55",
+   "fen": "3r2k1/pp2qpb1/3N2p1/2P5/3p4/P2B4/1PQ2Pb1/3K2R1 b - - 3 28",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.391714,
+   "b": 0.342981,
+   "ok": [
+    "g2d5",
+    "g2f3"
+   ]
+  },
+  {
+   "id": "lichess-game:CXtcAXbW#31",
+   "fen": "2rqr1k1/pp3pbp/2n1b1p1/8/1N1p1B2/6P1/PP1QPPBP/R3R1K1 b - - 7 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.897114,
+   "b": -2.652633,
+   "ok": [
+    "c6b4"
+   ]
+  },
+  {
+   "id": "lichess-game:s5r4mtdy#27",
+   "fen": "r1b2rk1/ppq1ppbp/1n4p1/4P3/1n2BP2/2N1BN2/PP4PP/R2Q1RK1 b - - 10 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.858475,
+   "b": -1.085752,
+   "ok": [
+    "b4c6",
+    "c8e6",
+    "c8f5",
+    "c8g4"
+   ]
+  },
+  {
+   "id": "lichess-game:Y7obsNT1#52",
+   "fen": "2r5/2r2kpp/p1nRpp2/1pP5/1P6/P3PB2/6PP/2R3K1 w - - 5 27",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.111062,
+   "b": -0.120543,
+   "ok": [
+    "c1d1",
+    "g1f1",
+    "h2h3"
+   ]
+  },
+  {
+   "id": "lichess-game:9WxxMaaE#46",
+   "fen": "5rk1/pb2brpp/8/8/Pp6/1Pq2NP1/2P1Q1BP/R4R1K w - - 4 24",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.508299,
+   "b": -0.685436,
+   "ok": [
+    "f3g1"
+   ]
+  },
+  {
+   "id": "lichess-game:78qW4Uon#35",
+   "fen": "r2r2k1/4bppp/p1q1pn2/1p4B1/6PP/5P2/PPP1Q1B1/1K1R3R b - - 1 18",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.061609,
+   "b": -2.000135,
+   "ok": [
+    "a8b8",
+    "a8c8",
+    "c6c5",
+    "c6c7",
+    "d8d1"
+   ]
+  },
+  {
+   "id": "lichess-game:sA6uRge4#23",
+   "fen": "2kr2nr/pp2ppb1/2n3p1/4Pb1p/3P4/4NN1P/PP3PP1/R1B1KB1R b KQ - 2 12",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.976886,
+   "b": -2.513881,
+   "ok": [
+    "g8h6"
+   ]
+  },
+  {
+   "id": "lichess-game:1HU1gBx9#25",
+   "fen": "r3qrk1/1p1b1pbp/2pp1np1/p1nPp1BP/2P1P1P1/2N5/PP1NBP2/R2QK2R b KQ - 0 13",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.586781,
+   "b": -3.065978,
+   "ok": [
+    "a5a4",
+    "c6d5",
+    "g6h5",
+    "h7h6"
+   ]
+  },
+  {
+   "id": "lichess-game:WD6rXfpu#38",
+   "fen": "2r1kb1r/pp2ppp1/3p4/3Pn1Pp/8/1N5P/P1PK1PB1/R6R w k - 2 20",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.611003,
+   "b": -2.377149,
+   "ok": [
+    "a1b1",
+    "b3a5",
+    "b3d4",
+    "h1b1"
+   ]
+  },
+  {
+   "id": "lichess-game:JmvXXB1U#27",
+   "fen": "rn1qr1k1/pp3pb1/3p2pp/2pP4/2P1bB2/5N1P/PP1QBPP1/R4RK1 b - - 1 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.740009,
+   "b": -3.037422,
+   "ok": [
+    "g6g5"
+   ]
+  },
+  {
+   "id": "lichess-game:qAcCUf91#41",
+   "fen": "2r1r1k1/2qb2pp/p3pn2/1p1p4/3N1P2/3BQ2P/PPP3P1/1K1RR3 b - - 2 21",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.442747,
+   "b": -1.174619,
+   "ok": [
+    "b5b4",
+    "c8a8",
+    "c8b8",
+    "f6h5",
+    "g7g6"
+   ]
+  },
+  {
+   "id": "lichess-game:3Ui3QaI7#39",
+   "fen": "r4rk1/1pp3bn/3p3p/p2Ppb2/2P1N1Bq/4B2P/PPQ2P2/2K3RR b - - 4 20",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.750002,
+   "b": -2.307637,
+   "ok": [
+    "f5e4"
+   ]
+  },
+  {
+   "id": "lichess-game:TRUjjnaN#50",
+   "fen": "6k1/pr3pp1/5n1p/2p1b3/2P1p3/P3N1P1/1P1B1P1P/1R4K1 w - - 3 26",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "b2b3",
+    "b2b4"
+   ]
+  },
+  {
+   "id": "lichess-game:VSdnxHiy#40",
+   "fen": "2r3br/p2kbp2/2p1p1pp/3pPP1N/2nP2P1/7B/PPPB3P/1K1R1R2 w - - 0 21",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "f5e6",
+    "f5g6",
+    "h5f4",
+    "h5f6"
+   ]
+  },
+  {
+   "id": "lichess-game:LGrdvSgY#27",
+   "fen": "r1b2rk1/pppp1pp1/8/3Bp1p1/3nP3/2PP2N1/PP4PP/R5KR b - - 0 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.78329,
+   "b": -2.03317,
+   "ok": [
+    "d4c2",
+    "d4e6"
+   ]
+  },
+  {
+   "id": "lichess-game:Wxmc2sq1#31",
+   "fen": "r2k3r/1p1n1pp1/2pBpnp1/p1Pp4/1b1P4/1P2P2P/1P1NKPP1/R3N2R b - - 3 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.284695,
+   "b": -1.815874,
+   "ok": [
+    "b4d2"
+   ]
+  },
+  {
+   "id": "lichess-game:slJCauhP#38",
+   "fen": "5rk1/r2nbppp/4p3/p1ppP3/P7/1P4N1/1BP2PPP/3R1R1K w - - 0 20",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.062134,
+   "b": -1.54808,
+   "ok": [
+    "b2a1",
+    "f1e1",
+    "f2f4",
+    "g3e2",
+    "h2h3"
+   ]
+  },
+  {
+   "id": "lichess-game:LeCET30m#30",
+   "fen": "r1b1r1k1/pp3p1p/2pp1np1/2n1b3/2PNP2q/2N2P2/PP2B1PP/R2Q1RBK w - - 12 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.538781,
+   "b": -0.679927,
+   "ok": [
+    "d1e1"
+   ]
+  },
+  {
+   "id": "lichess-game:YFf7uVlO#27",
+   "fen": "2r2rk1/pp2qpp1/2nbbn1p/3pp3/8/1PN1PNP1/PBP1QPBP/R4RK1 b - - 4 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.83931,
+   "b": -2.31836,
+   "ok": [
+    "e5e4",
+    "f8d8"
+   ]
+  },
+  {
+   "id": "lichess-game:lMMU6bvI#32",
+   "fen": "r1b2rk1/1pq2pp1/p1nbpn1p/2p5/2P2B2/2NP1NPP/PP2QPB1/2RR2K1 w - - 2 17",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "f4d2",
+    "f4d6",
+    "f4e3"
+   ]
+  },
+  {
+   "id": "lichess-game:pJ1j558y#27",
+   "fen": "r1b3k1/ppp1qrbp/2n5/2P1pp1R/8/1QN1P3/PP1BNPP1/R3K3 b Q - 2 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.01447,
+   "b": 2.255856,
+   "ok": [
+    "a7a5",
+    "c8e6",
+    "e7e8"
+   ]
+  },
+  {
+   "id": "lichess-game:DV1BHECb#47",
+   "fen": "2b3k1/3p2p1/2pPp2p/prP2r2/2R2p2/1P3N2/P4PPP/2R3K1 b - - 3 24",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "b5b4",
+    "f5d5",
+    "f5h5",
+    "g7g5"
+   ]
+  },
+  {
+   "id": "lichess-game:lRz5c5PD#50",
+   "fen": "r1br4/1p4k1/p2p3p/2q1pppP/2P5/2RQ2P1/4PPB1/3R2K1 w - - 4 26",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.176394,
+   "b": 1.684727,
+   "ok": [
+    "d3b1",
+    "d3c2",
+    "g3g4"
+   ]
+  },
+  {
+   "id": "lichess-game:BFNcMsUe#53",
+   "fen": "1r3r1k/4Q1pp/R4n2/7q/1p1p1P2/p5P1/PPP1B2P/1K1R4 b - - 3 27",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "h5h2"
+   ]
+  },
+  {
+   "id": "lichess-game:KTqHAaqa#47",
+   "fen": "r5rk/1b1p1p1p/p2P1q1N/1p2b2Q/8/P5P1/1P3P1P/R1B2RK1 b - - 2 24",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.452824,
+   "b": 0.028864,
+   "ok": [
+    "g8f8",
+    "g8g6"
+   ]
+  },
+  {
+   "id": "lichess-game:9yEvJ7oS#53",
+   "fen": "7r/1p1kbp2/p1r1p3/q2pPp1p/3B1P2/1Pn2NP1/P1RQ3P/2R4K b - - 1 27",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.184945,
+   "b": -1.808992,
+   "ok": [
+    "e7a3"
+   ]
+  },
+  {
+   "id": "lichess-game:mIj0NcLm#48",
+   "fen": "r4rk1/1p5p/1qn5/p3Pp2/1Pp2B2/2Pp1NPP/P4bP1/R1Q2K1R w - - 0 25",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.846458,
+   "b": 1.112523,
+   "ok": [
+    "a1b1",
+    "a2a3",
+    "a2a4"
+   ]
+  },
+  {
+   "id": "lichess-game:c8JDGY51#63",
+   "fen": "4r1k1/1p5p/p5pq/2pPN3/P2b1P2/6Q1/1PP1rRB1/5RK1 b - - 6 32",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "e2c2",
+    "e2f2",
+    "e8f8"
+   ]
+  },
+  {
+   "id": "lichess-game:yuC24LlF#39",
+   "fen": "1kr2b1r/pp3p2/4b2p/3PPpp1/1P6/2N2N1P/1BQ2PP1/q4RK1 b - - 2 20",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.722112,
+   "b": -1.144454,
+   "ok": [
+    "a1a6"
+   ]
+  },
+  {
+   "id": "lichess-game:4VVfacQH#48",
+   "fen": "1r4k1/p3nr1p/2n1RppB/2pp4/8/1pP2NP1/qP3PBP/2Q3K1 w - - 1 25",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.819394,
+   "b": 2.101385,
+   "ok": [
+    "c3c4",
+    "g2h3"
+   ]
+  },
+  {
+   "id": "lichess-game:MJdGlDw5#56",
+   "fen": "5r2/1pN3k1/2rp4/p2Bbb2/2P2ppP/1P3P2/P5K1/2R4R w - - 3 29",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.920158,
+   "b": 1.771476,
+   "ok": [
+    "c7b5",
+    "c7e6",
+    "f3g4"
+   ]
+  },
+  {
+   "id": "lichess-game:prGvQuGD#26",
+   "fen": "r1bqr1k1/pp3ppp/5b2/2pP4/2P2Bn1/2N5/PP2B1PP/R2QK2R w KQ - 5 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.472245,
+   "b": 0.78893,
+   "ok": [
+    "e1g1"
+   ]
+  },
+  {
+   "id": "lichess-game:ij5nTnpz#23",
+   "fen": "r2qk2r/p3ppb1/2p2np1/1p5p/P1p2P2/1P2PQP1/1BPP3P/RN2K2R b KQkq - 1 12",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.113145,
+   "b": 0.39693,
+   "ok": [
+    "c4b3"
+   ]
+  },
+  {
+   "id": "lichess-game:Ou6Ei1bo#30",
+   "fen": "r3k1nr/bp4pp/p1nqbp2/P3p3/3p4/1N4P1/1PQBPPBP/R3NRK1 w kq - 4 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "a1c1",
+    "e1d3"
+   ]
+  },
+  {
+   "id": "lichess-game:ctkanxAO#27",
+   "fen": "1rb1kb1r/1p1p2pp/pNq1p3/5p2/3QnB2/5B2/PPP2PPP/R4RK1 b k - 1 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.656516,
+   "b": 2.538011,
+   "ok": [
+    "c6c5"
+   ]
+  },
+  {
+   "id": "lichess-game:3wSIiJyt#43",
+   "fen": "5r1k/p3b1pp/8/2prqpP1/2B1p2P/1P2P3/P4P2/1RQ1K2R b K - 1 22",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.535127,
+   "b": -0.041217,
+   "ok": [
+    "d5d8"
+   ]
+  },
+  {
+   "id": "lichess-game:yxypewlL#30",
+   "fen": "3rk1nr/1b3ppp/p1p5/1pB1p3/P3P3/5PP1/1PP3P1/R3KB1R w KQk - 1 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.935019,
+   "b": -1.797059,
+   "ok": [
+    "a4b5",
+    "c2c4",
+    "e1f2"
+   ]
+  },
+  {
+   "id": "lichess-game:cElm2sUg#35",
+   "fen": "5rk1/1p2bppp/p1q1p3/8/1P1PpB2/P3P3/5PPP/1Q3RK1 b - - 1 18",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.179813,
+   "b": -1.571839,
+   "ok": [
+    "f8c8"
+   ]
+  },
+  {
+   "id": "lichess-game:EFrWPGyR#24",
+   "fen": "r1b1r1k1/1pqn1pbp/p2p1np1/P1pP4/2N5/2N5/1PP1BPPP/R1BQ1RK1 w - - 1 13",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.781952,
+   "b": -2.438292,
+   "ok": [
+    "c1f4",
+    "c3a4"
+   ]
+  },
+  {
+   "id": "lichess-game:3q40UGU0#35",
+   "fen": "rn2r1k1/ppqn1p1p/2pp2pB/4b3/2P1N3/5BP1/PPQ2P1P/3RR1K1 b - - 5 18",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "b8a6",
+    "e8e7"
+   ]
+  },
+  {
+   "id": "lichess-game:WVOA7ea4#40",
+   "fen": "1b1r1rk1/pp2qp1p/1np3p1/8/4N3/1P2PBPb/P3QP2/2RRB1K1 w - - 2 21",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.780476,
+   "b": -2.03864,
+   "ok": [
+    "e1c3",
+    "e2b2"
+   ]
+  },
+  {
+   "id": "lichess-game:xulqNEbI#39",
+   "fen": "3r2k1/p3bpp1/2Q2p2/8/Nq6/8/Pr3PPP/R4RK1 b - - 3 20",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.492788,
+   "b": -2.448737,
+   "ok": [
+    "b2d2",
+    "b2e2"
+   ]
+  },
+  {
+   "id": "lichess-game:FQ51roHp#46",
+   "fen": "2q3k1/1p1n1rbp/8/Q1Pp1pp1/3Pp3/4P3/1B2BPPP/5RK1 w - - 1 24",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.047711,
+   "b": 0.290474,
+   "ok": [
+    "b2c3",
+    "f1a1",
+    "h2h3"
+   ]
+  },
+  {
+   "id": "lichess-game:i75UbjF3#49",
+   "fen": "4r2k/3p2pp/p1rP1q2/1pp5/8/P3P1Q1/1P1R1PPP/4R1K1 b - - 3 25",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.866404,
+   "b": -1.255196,
+   "ok": [
+    "c5c4",
+    "e8e4",
+    "e8e5",
+    "e8e6",
+    "f6f8"
+   ]
+  },
+  {
+   "id": "lichess-game:heuGomNQ#62",
+   "fen": "6k1/4bp2/4pnp1/1pNq3p/1P2p3/8/R1Q2PPP/6K1 w - - 0 32",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.707832,
+   "b": 0.215237,
+   "ok": [
+    "c2d2",
+    "c2e2",
+    "g2g3",
+    "h2h3"
+   ]
+  },
+  {
+   "id": "lichess-game:mCqWxahW#27",
+   "fen": "r1bq1rk1/p3npb1/1p4pp/3p4/2pP4/PPN2NP1/4PPBP/2RQ1RK1 b - - 0 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.780827,
+   "b": -2.037955,
+   "ok": [
+    "a7a6",
+    "a8b8",
+    "b6b5",
+    "c8a6",
+    "c8e6"
+   ]
+  },
+  {
+   "id": "lichess-game:s5wggCyH#66",
+   "fen": "1r4k1/4ppb1/3p1n2/3P2qp/2P5/3Q1BB1/2R3PK/8 w - - 8 34",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.141194,
+   "b": -1.598982,
+   "ok": [
+    "c2e2",
+    "c4c5",
+    "d3d2",
+    "g3f2"
+   ]
+  },
+  {
+   "id": "lichess-game:2ZhhZs9Z#27",
+   "fen": "r1bqr2k/p2pp1bp/2p2np1/2P5/2BQ4/2N5/PP1B1PPP/R3K2R b KQ - 4 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.934226,
+   "b": -2.233276,
+   "ok": [
+    "d7d5"
+   ]
+  },
+  {
+   "id": "lichess-game:y96oImHA#45",
+   "fen": "r3r1k1/ppq4p/2pp1p2/4nN2/4PBpP/1P4Q1/1PP3P1/5RK1 b - - 1 23",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "a8d8",
+    "e8f8",
+    "g8h8",
+    "h7h5"
+   ]
+  },
+  {
+   "id": "lichess-game:V9uiXzSO#80",
+   "fen": "2r3k1/2rn2pp/1p3p2/2pP4/PPR5/8/4NPPP/2R2K2 w - - 1 41",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.316471,
+   "b": 1.683897,
+   "ok": [
+    "e2d4"
+   ]
+  },
+  {
+   "id": "lichess-game:4XJPI115#52",
+   "fen": "4r1k1/p4p1p/1p2q1p1/8/8/1P2r1P1/P1R1PQ1P/3R2K1 w - - 8 27",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.916894,
+   "b": -2.61542,
+   "ok": [
+    "d1d2"
+   ]
+  },
+  {
+   "id": "lichess-game:sLI2YKKc#56",
+   "fen": "k2q3r/p1r2pp1/R1pNpnp1/1pP1Q3/3P2P1/7P/PP3P2/2KR4 w - - 2 29",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.484597,
+   "b": 0.381683,
+   "ok": [
+    "a6a3",
+    "g4g5"
+   ]
+  },
+  {
+   "id": "lichess-game:sFXm3LhH#31",
+   "fen": "r1bq1r2/4n1bk/1Nnp2pp/2p1pp2/2P1P3/3P1NP1/3B1PBP/1R1Q1RK1 b - - 1 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.407425,
+   "b": -2.039558,
+   "ok": [
+    "a8a2",
+    "a8a3",
+    "a8a7",
+    "a8b8",
+    "f5e4"
+   ]
+  },
+  {
+   "id": "lichess-game:fcbuk3GB#72",
+   "fen": "8/6n1/p5p1/2pPk3/1pP1p1P1/1Pb1P3/P3KB2/n4N2 w - - 1 37",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.72976,
+   "b": 1.674164,
+   "ok": [
+    "f2g3"
+   ]
+  },
+  {
+   "id": "lichess-game:3mO0azeO#45",
+   "fen": "3rr1k1/1pp2ppp/p5b1/2PP4/1PB2q2/1Q3P2/P5PP/2R1R1K1 b - - 6 23",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.741082,
+   "b": -0.87295,
+   "ok": [
+    "a6a5",
+    "b7b5",
+    "f4d4"
+   ]
+  },
+  {
+   "id": "lichess-game:FHvrvC2T#30",
+   "fen": "r3k2r/pp1b2b1/2np1q2/2pB1p2/2Q2Bpp/2PP2P1/PP3P1P/R3NRK1 w kq - 4 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.410007,
+   "b": 0.916508,
+   "ok": [
+    "c4b3",
+    "d3d4"
+   ]
+  },
+  {
+   "id": "lichess-game:AJ1YpLZl#34",
+   "fen": "r2qr1k1/1pp2nb1/p2p1pp1/7p/2BNPPbP/2N5/PPPQ4/1K4RR w - - 0 18",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.838038,
+   "b": -1.088695,
+   "ok": [
+    "f4f5",
+    "g1g4"
+   ]
+  },
+  {
+   "id": "lichess-game:NQ6GYwcM#46",
+   "fen": "3r1rk1/4q2p/4ppp1/1p1b4/1np3Q1/1P2P1B1/5PPP/1BR2RK1 w - - 1 24",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "e3e4"
+   ]
+  },
+  {
+   "id": "lichess-game:QIwowxP1#39",
+   "fen": "r2q1rk1/1p1Q1p2/p6p/2p1p3/7P/6P1/PPP2P2/3RR1K1 b - - 0 20",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.095109,
+   "b": -1.339541,
+   "ok": [
+    "d8d7"
+   ]
+  },
+  {
+   "id": "lichess-game:eXjMuxQR#33",
+   "fen": "r2qr1k1/pppb1pbp/1n1p2p1/8/2PPN3/1P2BQNP/P4PP1/2R2RK1 b - - 5 17",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.371394,
+   "b": -1.77427,
+   "ok": [
+    "d6d5"
+   ]
+  },
+  {
+   "id": "lichess-game:0KPg1zDK#59",
+   "fen": "1r4k1/5pp1/p3p2p/n7/P1pPNQ2/1qP4P/1r3PP1/R3R1K1 b - - 10 30",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.295013,
+   "b": 0.28165,
+   "ok": [
+    "a5c6",
+    "b8d8",
+    "b8f8"
+   ]
+  },
+  {
+   "id": "lichess-game:Be0Skq6y#32",
+   "fen": "r4rk1/pp3ppp/3b4/5b2/3p4/3N4/PPPB1PPP/R3R1K1 w - - 1 17",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.966336,
+   "b": -1.159423,
+   "ok": [
+    "a1c1",
+    "a1d1",
+    "d2b4",
+    "d3c5",
+    "d3e5"
+   ]
+  },
+  {
+   "id": "lichess-game:MwwUcMMv#31",
+   "fen": "r1b2rk1/ppp1qnbp/5np1/3BNpB1/2PQ4/6PP/PPN1PP2/R4RK1 b - - 4 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.24245,
+   "b": -1.253411,
+   "ok": [
+    "c8e6"
+   ]
+  },
+  {
+   "id": "lichess-game:rsb0JiAT#25",
+   "fen": "2kr1b1r/1pp2ppp/p4n2/5bB1/1q1p1Q2/2N3P1/PPP2PBP/R4RK1 b - - 1 13",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.630549,
+   "b": -2.008892,
+   "ok": [
+    "f5c2",
+    "f5g6"
+   ]
+  },
+  {
+   "id": "lichess-game:SPu6nYok#29",
+   "fen": "2kr1bnr/pp4p1/2p2p1p/4n2P/5N2/3P2N1/PPK2PP1/R1B1R3 b - - 3 15",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "f8c5",
+    "g8e7"
+   ]
+  },
+  {
+   "id": "lichess-game:9BmF6kzI#26",
+   "fen": "r1bqr1k1/1ppn1pp1/3p1n1p/p1bPp1B1/2P5/P1N3P1/1P1NPPBP/R2Q1RK1 w - - 0 14",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.473203,
+   "b": -0.471154,
+   "ok": [
+    "g5f6"
+   ]
+  },
+  {
+   "id": "lichess-game:6zSRzCnb#23",
+   "fen": "rn1q1rk1/pbp1bppp/1p1p4/3Pp2n/4P1P1/2PBBN2/PPQN1P1P/2KR3R b - - 0 12",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.434668,
+   "b": 2.153183,
+   "ok": [
+    "h5f6"
+   ]
+  },
+  {
+   "id": "lichess-game:dIrEzpCq#36",
+   "fen": "r2q1rk1/1b3p1p/3p1bp1/n1pPnN2/1p2P3/5N2/1PB2PPP/R1BQR1K1 w - - 0 19",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.053745,
+   "b": -3.614483,
+   "ok": [
+    "f3e5",
+    "f5h6"
+   ]
+  },
+  {
+   "id": "lichess-game:ZN9yVo5l#34",
+   "fen": "2kr3r/5ppp/p1pb4/4R1P1/8/1N5b/PPPB1P2/R2K4 w - - 1 18",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.352693,
+   "b": 0.338639,
+   "ok": [
+    "e5e3",
+    "e5e4"
+   ]
+  },
+  {
+   "id": "lichess-game:4nJzmuwK#66",
+   "fen": "r3r3/4Pk1p/4nP2/4p1B1/PpP5/6NP/5P2/R5K1 w - - 1 34",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.012465,
+   "b": -1.710184,
+   "ok": [
+    "g5d2",
+    "h3h4"
+   ]
+  },
+  {
+   "id": "lichess-game:9N10pL9x#39",
+   "fen": "r2q2k1/p4ppp/1pP2n2/4r3/2Pp4/P5P1/1PQ1BPKP/3R3R b - - 1 20",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.664026,
+   "b": -1.020818,
+   "ok": [
+    "d8d6",
+    "g7g5"
+   ]
+  },
+  {
+   "id": "lichess-game:YqMcspUk#55",
+   "fen": "1r4k1/5pp1/8/2p1r3/2Bp2bp/1P4P1/P2KPP1P/R3R3 b - - 1 28",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.284699,
+   "b": 2.050745,
+   "ok": [
+    "g4e6"
+   ]
+  },
+  {
+   "id": "lichess-game:ifscNkXK#48",
+   "fen": "3r3r/p1pk1ppp/Q1p1p3/2P2q2/2P2P2/7R/PP3P2/1R3KNb w - - 5 25",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.396166,
+   "b": -1.499278,
+   "ok": [
+    "b1c1",
+    "b1e1"
+   ]
+  },
+  {
+   "id": "lichess-game:IuN5u9mq#34",
+   "fen": "3q1rk1/p4pbp/4p1p1/2NpPb2/3P4/4Q2P/Pr1N1PP1/R3K2R w KQ - 1 18",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.989324,
+   "b": -2.494743,
+   "ok": [
+    "g2g4"
+   ]
+  },
+  {
+   "id": "lichess-game:sPKRL72h#48",
+   "fen": "3r3r/1pk1n1p1/p5p1/4pp2/4B1P1/2P1K2P/PP6/2R4R w - - 0 25",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.839178,
+   "b": -0.732756,
+   "ok": [
+    "e4b1",
+    "e4c2"
+   ]
+  },
+  {
+   "id": "lichess-game:NTw19PoW#56",
+   "fen": "1b2b1k1/pQq4p/1p4p1/1Pp2p2/2Pp1N2/1N1P2PP/P4P2/6K1 w - - 2 29",
+   "category": "positional",
+   "group": "positional",
+   "a": 2.50906,
+   "b": 0.411341,
+   "ok": [
+    "b7a8",
+    "b7d5",
+    "b7f3",
+    "b7g2",
+    "b7h1"
+   ]
+  },
+  {
+   "id": "lichess-game:arpRRJwa#46",
+   "fen": "b2rk2r/2Rnbpp1/p2q4/1p2p2p/3pP2P/5NP1/3BQPB1/1R4K1 w k - 4 24",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.618414,
+   "b": 2.715255,
+   "ok": [
+    "d2a5"
+   ]
+  },
+  {
+   "id": "lichess-game:yeF1s8hm#29",
+   "fen": "3q1rk1/3bppbp/p2p1np1/2pNn3/1rP1P3/1N2BP2/PP1QB1PP/2R1K2R b K - 3 15",
+   "category": "positional",
+   "group": "positional",
+   "a": 0.492531,
+   "b": -3.581099,
+   "ok": [
+    "f6d5"
+   ]
+  },
+  {
+   "id": "lichess-game:0P7iN4xn#30",
+   "fen": "2kr4/ppp2ppp/2n5/8/1b3B2/2NrP3/PPK2PPP/R6R w - - 2 16",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "a1d1",
+    "h1d1"
+   ]
+  },
+  {
+   "id": "lichess-game:pQi18jSA#79",
+   "fen": "8/1R3pk1/3P4/4q1b1/2Pp2Pr/5BQ1/6K1/8 b - - 2 40",
+   "category": "positional",
+   "group": "positional",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "e5a5",
+    "e5e3"
+   ]
+  },
+  {
+   "id": "lichess-game:EKYr9jKc#81",
+   "fen": "3k4/6p1/1p3pN1/p6p/P2P1P2/1P3RP1/1r3P1P/4b1K1 b - - 5 41",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.362731,
+   "b": -2.308494,
+   "ok": [
+    "d8c7",
+    "d8d7"
+   ]
+  },
+  {
+   "id": "lichess-game:6zltanpJ#77",
+   "fen": "4B3/p5bk/1p1N1p2/3p3p/3Pb2P/P3P1K1/1P6/8 b - - 1 39",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.691098,
+   "b": -0.880232,
+   "ok": [
+    "g7h6"
+   ]
+  },
+  {
+   "id": "lichess-game:uxdmvjOq#55",
+   "fen": "4k1r1/4bp2/p3p3/2p5/1P6/P5B1/7P/1KR5 b - - 0 28",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.310863,
+   "b": -1.136861,
+   "ok": [
+    "e8d7",
+    "g8g5"
+   ]
+  },
+  {
+   "id": "lichess-game:prGvQuGD#60",
+   "fen": "8/ppk3pp/3r4/2pP1Q2/3b2P1/8/P5KP/8 w - - 2 31",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.712189,
+   "b": -0.318816,
+   "ok": [
+    "a2a4",
+    "f5f7",
+    "g4g5",
+    "h2h4"
+   ]
+  },
+  {
+   "id": "lichess-game:Jlx4jYul#119",
+   "fen": "8/6pk/3R3p/5K1P/2r2PP1/8/1n6/8 b - - 2 60",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.741594,
+   "b": -1.422429,
+   "ok": [
+    "c4c5"
+   ]
+  },
+  {
+   "id": "lichess-game:4kPkB79X#78",
+   "fen": "8/8/3n2k1/4bppp/1Np5/5KP1/P6P/2B5 w - - 0 40",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.934226,
+   "b": -2.233276,
+   "ok": [
+    "a2a4",
+    "b4c6",
+    "f3g2"
+   ]
+  },
+  {
+   "id": "lichess-game:4kPkB79X#63",
+   "fen": "8/5pbk/Np1n3p/2p3p1/1P6/2P3P1/P6P/2B3K1 b - - 0 32",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.310216,
+   "b": -0.074345,
+   "ok": [
+    "c5c4"
+   ]
+  },
+  {
+   "id": "lichess-game:pG3pMzGj#54",
+   "fen": "1r4k1/R7/4p2p/8/p5P1/4P3/r4PKP/5R2 w - - 2 28",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.724669,
+   "b": 1.280134,
+   "ok": [
+    "g2f3",
+    "g2g3",
+    "h2h3"
+   ]
+  },
+  {
+   "id": "lichess-game:8CUTqy0C#114",
+   "fen": "8/r7/P5P1/5k2/3Kp3/1p6/1P3p2/R7 w - - 2 58",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 2.013041,
+   "b": -1.848011,
+   "ok": [
+    "g6g7"
+   ]
+  },
+  {
+   "id": "lichess-game:jttdX9sh#53",
+   "fen": "6rk/5p2/1pp4p/p2pP2p/2pP4/2Pb3P/PP1N1P1K/6R1 b - - 1 27",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.459036,
+   "b": -2.056787,
+   "ok": [
+    "g8g1"
+   ]
+  },
+  {
+   "id": "lichess-game:dzh33nhZ#48",
+   "fen": "7r/1p6/p7/4k2p/3pr1p1/8/PPPR1PPP/2KR4 w - - 0 25",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.155657,
+   "b": -0.787809,
+   "ok": [
+    "a2a3",
+    "d1f1",
+    "d1h1",
+    "f2f3"
+   ]
+  },
+  {
+   "id": "lichess-game:doj5lP4E#50",
+   "fen": "6k1/pp1n1pp1/2p4p/5N2/3P2n1/2P1B3/PPK2PP1/8 w - - 4 26",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "f5d6"
+   ]
+  },
+  {
+   "id": "lichess-game:qfbBj7Dp#77",
+   "fen": "8/6B1/2N1k2p/5pp1/8/5KP1/r4P1P/8 b - - 3 39",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.342961,
+   "b": -3.601594,
+   "ok": [
+    "g5g4",
+    "h6h5"
+   ]
+  },
+  {
+   "id": "lichess-game:Afs9A7QP#70",
+   "fen": "8/2Q2bk1/2p2pp1/1pq1p2p/4P2P/5BP1/2P2PK1/8 w - - 4 36",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 2.563084,
+   "b": 0.792281,
+   "ok": [
+    "g3g4"
+   ]
+  },
+  {
+   "id": "lichess-game:k27z5ouE#86",
+   "fen": "6k1/5bpp/R3p3/3pPp1q/2pP3P/2P1P3/5QPK/8 w - - 2 44",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 2.552968,
+   "b": -0.607769,
+   "ok": [
+    "a6a8",
+    "e3e4"
+   ]
+  },
+  {
+   "id": "lichess-game:0ojt4SCE#68",
+   "fen": "4R3/5rk1/1p5p/pP6/6p1/3p2P1/1b3P1P/3B2K1 w - - 2 35",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.10451,
+   "b": -1.62717,
+   "ok": [
+    "e8d8"
+   ]
+  },
+  {
+   "id": "lichess-game:ofQ0SONc#86",
+   "fen": "8/1R5p/8/P7/8/6P1/1p3PKP/rk6 w - - 0 44",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "b7h7"
+   ]
+  },
+  {
+   "id": "lichess-game:GETPk4uB#71",
+   "fen": "6k1/5p2/4p2b/p3P2p/1p1p1P2/PP5P/1P1B1n2/2K2B2 b - - 4 36",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 2.013041,
+   "b": -1.848011,
+   "ok": [
+    "f2e4",
+    "f7f5",
+    "f7f6",
+    "g8h8",
+    "h5h4"
+   ]
+  },
+  {
+   "id": "lichess-game:F7bSObda#79",
+   "fen": "8/8/r1p5/4kppp/p1R5/P1K5/1P4PP/8 b - - 9 40",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.761602,
+   "b": -2.486181,
+   "ok": [
+    "e5d5",
+    "e5d6",
+    "h5h4"
+   ]
+  },
+  {
+   "id": "lichess-game:1sOZ4yr1#82",
+   "fen": "8/8/3r1p2/p1rP1kp1/P2R1P1p/2pR3P/2P1KP2/8 w - - 0 42",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.84458,
+   "b": -0.9957,
+   "ok": [
+    "f4g5"
+   ]
+  },
+  {
+   "id": "lichess-game:QefRA4pf#69",
+   "fen": "8/3b4/1rpPpk2/4Rp1p/Pp1K1Pp1/1B6/6PP/8 b - - 1 35",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.186485,
+   "b": -0.100602,
+   "ok": [
+    "c6c5"
+   ]
+  },
+  {
+   "id": "lichess-game:HxlPkvUY#53",
+   "fen": "2b3k1/5ppp/p3p3/3pP3/5P2/P2P3P/3QNqP1/7K b - - 0 27",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.088687,
+   "b": 2.138099,
+   "ok": [
+    "h7h6"
+   ]
+  },
+  {
+   "id": "lichess-game:uh8fZKa3#57",
+   "fen": "6k1/5ppp/2P1p3/3pPb2/8/r5B1/5PPP/2R3K1 b - - 1 29",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "a3a8"
+   ]
+  },
+  {
+   "id": "lichess-game:Aqp4HHil#110",
+   "fen": "8/R7/5rB1/5PkP/p2K4/8/r7/8 w - - 0 56",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.843237,
+   "b": -1.588772,
+   "ok": [
+    "d4e4",
+    "d4e5",
+    "g6e8",
+    "g6f7",
+    "h5h6"
+   ]
+  },
+  {
+   "id": "lichess-game:6tx7TwXU#85",
+   "fen": "8/1R2n3/3p1k2/P2Pp1p1/4PpP1/2N5/P6r/4K3 b - - 1 43",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.312408,
+   "b": -3.306632,
+   "ok": [
+    "h2c2",
+    "h2h1"
+   ]
+  },
+  {
+   "id": "lichess-game:BFNcMsUe#100",
+   "fen": "2r5/8/P4p2/1KP2P2/8/5k2/8/8 w - - 3 51",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 2.27875,
+   "b": -1.042796,
+   "ok": [
+    "b5b6",
+    "c5c6"
+   ]
+  },
+  {
+   "id": "lichess-game:UNiIRulM#83",
+   "fen": "5r1k/p3R1p1/6Pp/2Nb4/8/1P2K3/P5P1/8 b - - 2 42",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.749816,
+   "b": -1.1056,
+   "ok": [
+    "f8f6"
+   ]
+  },
+  {
+   "id": "lichess-game:5U4hWoBK#59",
+   "fen": "6k1/p1r4p/1p2p1p1/P4p2/2P5/6P1/4PP1P/2R3K1 b - - 0 30",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 2.070824,
+   "b": 2.424682,
+   "ok": [
+    "b6b5"
+   ]
+  },
+  {
+   "id": "lichess-game:1XUq4ZDL#118",
+   "fen": "8/3Pk3/p1K2R2/Pp4P1/8/2p5/3r4/8 w - - 4 60",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.022009,
+   "b": 0.070739,
+   "ok": [
+    "f6f1"
+   ]
+  },
+  {
+   "id": "lichess-game:UkLkC1vH#92",
+   "fen": "2r5/2r5/8/3k1pp1/1P1p4/1K1R2PP/8/5R2 w - - 6 47",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.679056,
+   "b": 3.046397,
+   "ok": [
+    "h3h4"
+   ]
+  },
+  {
+   "id": "lichess-game:wgTN7Seu#92",
+   "fen": "8/8/8/4k1K1/4pR2/4r3/8/8 w - - 3 47",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.825855,
+   "b": -3.391005,
+   "ok": [
+    "f4f5",
+    "g5g4"
+   ]
+  },
+  {
+   "id": "lichess-game:DPAW9d5a#79",
+   "fen": "8/p4p1p/1p2k3/4b3/2P5/1P3KP1/P3N2P/8 b - - 2 40",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.540335,
+   "b": -2.767485,
+   "ok": [
+    "a7a5",
+    "e5a1",
+    "e5g7",
+    "e6f5",
+    "f7f5"
+   ]
+  },
+  {
+   "id": "lichess-game:kU169Uc8#80",
+   "fen": "2bk4/5p1p/5P2/1p1NP3/1Bpn1K2/P7/7P/8 w - - 0 41",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.67122,
+   "b": -2.741733,
+   "ok": [
+    "b4a5",
+    "d5c3",
+    "f4e3",
+    "f4e4"
+   ]
+  },
+  {
+   "id": "lichess-game:81oeGfCC#84",
+   "fen": "1R6/k2r1p2/p3p1p1/2b4p/2P2B1P/5KP1/5P2/8 w - - 20 43",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.934226,
+   "b": -2.233276,
+   "ok": [
+    "b8b1",
+    "b8b2",
+    "b8c8"
+   ]
+  },
+  {
+   "id": "lichess-game:eQqyXX97#78",
+   "fen": "8/4prkp/p2p4/3R1P2/P1r4P/4K3/8/3R4 w - - 1 40",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.474138,
+   "b": -3.708531,
+   "ok": [
+    "d1d4"
+   ]
+  },
+  {
+   "id": "lichess-game:kcR46IHM#47",
+   "fen": "5rk1/p2Q2p1/2p2q1p/1p2p3/4R3/P1P2P1P/1P4P1/6K1 b - - 1 24",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "a7a5",
+    "a7a6",
+    "f8a8",
+    "f8d8"
+   ]
+  },
+  {
+   "id": "lichess-game:oxmFygjv#53",
+   "fen": "2k2r2/pp5p/8/2p5/3bN3/8/P4PPP/3R1K2 b - - 1 27",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.04113,
+   "b": -2.421154,
+   "ok": [
+    "c8c7",
+    "h7h6"
+   ]
+  },
+  {
+   "id": "lichess-game:CSpbTycQ#83",
+   "fen": "5k2/2R5/1p6/1Pb3p1/P1n3P1/4p2P/4K3/8 b - - 7 42",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 2.30471,
+   "b": 0.40473,
+   "ok": [
+    "c4a5"
+   ]
+  },
+  {
+   "id": "lichess-game:SvRAgbMN#85",
+   "fen": "5k2/R7/4p1p1/2r3Pp/4P2P/4KP2/8/8 b - - 5 43",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.640169,
+   "b": 2.346886,
+   "ok": [
+    "e6e5"
+   ]
+  },
+  {
+   "id": "lichess-game:GDKRdvRQ#70",
+   "fen": "8/1R3p2/4pkp1/8/3P2Pp/4PK1P/5P2/r7 w - - 0 36",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.459036,
+   "b": -2.056787,
+   "ok": [
+    "g4g5"
+   ]
+  },
+  {
+   "id": "lichess-game:fcbuk3GB#89",
+   "fen": "8/3k2n1/6p1/2pP4/1pP1pBP1/pP2P3/K2b3N/8 b - - 1 45",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.409139,
+   "b": -0.018792,
+   "ok": [
+    "d2c3",
+    "d7e7",
+    "g7e8"
+   ]
+  },
+  {
+   "id": "lichess-game:ETV6a13n#89",
+   "fen": "1r3n2/1P5p/5k2/1R1B1p2/3pp2P/1P4P1/5K2/8 b - - 0 45",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.825855,
+   "b": -3.391005,
+   "ok": [
+    "f6e5",
+    "f8d7"
+   ]
+  },
+  {
+   "id": "lichess-game:eodng69i#60",
+   "fen": "4r3/1p1kbp2/pB2p2p/2P1P3/4KP2/8/P6P/6R1 w - - 3 31",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.808841,
+   "b": -3.441307,
+   "ok": [
+    "g1g7"
+   ]
+  },
+  {
+   "id": "lichess-game:LgAtNVhm#53",
+   "fen": "2k5/1p3p2/p4N2/4p3/7P/2P1nP2/PP4r1/2K4R b - - 0 27",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.025452,
+   "b": 2.177095,
+   "ok": [
+    "e3f5"
+   ]
+  },
+  {
+   "id": "lichess-game:Ac2NxZlb#98",
+   "fen": "8/8/3k4/pp2p1p1/2b1P3/P1KN1PP1/8/8 w - - 8 50",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.499119,
+   "b": 0.736357,
+   "ok": [
+    "d3f2"
+   ]
+  },
+  {
+   "id": "lichess-game:dt4lCO8E#98",
+   "fen": "2Q5/5q2/5nk1/5p1p/8/4BK2/8/8 w - - 5 50",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.477109,
+   "b": -2.14307,
+   "ok": [
+    "c8c6",
+    "e3d2",
+    "f3e2"
+   ]
+  },
+  {
+   "id": "lichess-game:2AdyevsG#67",
+   "fen": "8/5p2/p6k/4r3/1p6/1P1P1K2/P2R3P/8 b - - 1 34",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.564723,
+   "b": 1.453151,
+   "ok": [
+    "f7f5"
+   ]
+  },
+  {
+   "id": "lichess-game:3jcXHdBC#71",
+   "fen": "7k/p5p1/1p1qp3/3p2rp/3P1P2/1NP1Q2P/PP4PK/8 b - - 0 36",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.059257,
+   "b": -1.091136,
+   "ok": [
+    "g5f5"
+   ]
+  },
+  {
+   "id": "lichess-game:tFM9Gaty#54",
+   "fen": "8/4ppk1/3p2p1/1p4Pp/p1r1PPbP/P1P5/1K1R4/4R3 w - - 0 28",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.820385,
+   "b": 0.691911,
+   "ok": [
+    "d2d4"
+   ]
+  },
+  {
+   "id": "lichess-game:3j4IfGjV#45",
+   "fen": "8/1pp1rkpp/p1n2p2/7P/5P2/2P2N2/PP1R4/2K5 b - - 3 23",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.916787,
+   "b": -1.203531,
+   "ok": [
+    "e7e3"
+   ]
+  },
+  {
+   "id": "lichess-game:9189hwrt#83",
+   "fen": "8/6p1/k1K2b1p/p6P/N1P5/8/6P1/8 b - - 4 42",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.456871,
+   "b": 2.463118,
+   "ok": [
+    "a6a7"
+   ]
+  },
+  {
+   "id": "lichess-game:3ofkAGQx#106",
+   "fen": "8/2K5/1P6/2nk4/4p3/3p4/3B4/8 w - - 0 54",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.92206,
+   "b": -2.606025,
+   "ok": [
+    "d2c1",
+    "d2e3",
+    "d2f4",
+    "d2g5",
+    "d2h6"
+   ]
+  },
+  {
+   "id": "lichess-game:QvcqAAi3#70",
+   "fen": "8/2k2pp1/P3p3/1P1pP3/2nP1pPP/8/4K3/8 w - - 1 36",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.580612,
+   "b": -0.899243,
+   "ok": [
+    "h4h5"
+   ]
+  },
+  {
+   "id": "lichess-game:nwC6RXQL#106",
+   "fen": "8/5p1p/6k1/2PRP1b1/3P2p1/6P1/3r3P/5K2 w - - 1 54",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.942542,
+   "b": -0.413704,
+   "ok": [
+    "d5d6"
+   ]
+  },
+  {
+   "id": "lichess-game:t8xeBUny#75",
+   "fen": "8/pp5p/8/2P5/1P3kp1/3K4/P6P/8 b - - 0 38",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.250289,
+   "b": -2.649769,
+   "ok": [
+    "a7a6",
+    "f4e5",
+    "f4f5",
+    "h7h5"
+   ]
+  },
+  {
+   "id": "lichess-game:ChgfQZIs#50",
+   "fen": "3r2k1/p1p2pp1/8/2P4p/3P4/P5P1/5P1P/5RK1 w - - 1 26",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "f1d1"
+   ]
+  },
+  {
+   "id": "lichess-game:Q2p7pMIg#57",
+   "fen": "4r1k1/p2R2b1/1pp1p2p/5p1P/5p2/2PN4/PP3PP1/6K1 b - - 1 29",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.667185,
+   "b": -1.559304,
+   "ok": [
+    "e6e5"
+   ]
+  },
+  {
+   "id": "lichess-game:cSTMmwdg#67",
+   "fen": "8/5p1k/4p1p1/5r1p/P1Q4P/1p2P1P1/1R3PK1/4q3 b - - 5 34",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.681791,
+   "b": -0.65855,
+   "ok": [
+    "f5d5",
+    "g6g5"
+   ]
+  },
+  {
+   "id": "lichess-game:Ngz22QMB#61",
+   "fen": "6k1/5pp1/p3p3/1p1rP1p1/2rPK1P1/3R3P/P4P2/7R b - - 1 31",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 2.08317,
+   "b": -0.624338,
+   "ok": [
+    "c4c2"
+   ]
+  },
+  {
+   "id": "lichess-game:IlAlnfPD#66",
+   "fen": "8/1p1r4/p2k2pp/3p4/3K4/2P3P1/PP3P2/4R3 w - - 3 34",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.974116,
+   "b": -1.15303,
+   "ok": [
+    "e1e5"
+   ]
+  },
+  {
+   "id": "lichess-game:Yu2DSfTC#122",
+   "fen": "8/p7/8/1P6/1k3K2/8/8/8 w - - 1 62",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.934226,
+   "b": -2.233276,
+   "ok": [
+    "f4e3",
+    "f4e4",
+    "f4f3"
+   ]
+  },
+  {
+   "id": "lichess-game:zW2nUrLV#72",
+   "fen": "8/1pp4k/3pB1pp/2PP1b2/1P1K4/P3pr2/7P/4R3 w - - 4 37",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.452503,
+   "b": -1.434046,
+   "ok": [
+    "e6f5"
+   ]
+  },
+  {
+   "id": "lichess-game:1HQRnrgx#97",
+   "fen": "8/6K1/5P1p/1k6/4n2P/1p1N4/8/8 b - - 0 49",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "e4d6",
+    "e4f6"
+   ]
+  },
+  {
+   "id": "lichess-game:9ZSCX6Xe#62",
+   "fen": "3r4/4k2p/4p1pP/4b1P1/pPp1Pp2/2P2P2/K3N3/4R3 w - - 1 32",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.750002,
+   "b": -2.307637,
+   "ok": [
+    "a2a3"
+   ]
+  },
+  {
+   "id": "lichess-game:AUOwNyeQ#54",
+   "fen": "6k1/2N2pp1/p4n2/7p/P1p5/4P2P/1q3PP1/3Q2K1 w - - 0 28",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.267365,
+   "b": -0.516573,
+   "ok": [
+    "d1d8"
+   ]
+  },
+  {
+   "id": "lichess-game:whOw5UDH#70",
+   "fen": "8/5pk1/1R6/5pPP/pp4r1/8/PPP5/2K5 w - - 1 36",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.301106,
+   "b": -2.819273,
+   "ok": [
+    "b6a6",
+    "h5h6"
+   ]
+  },
+  {
+   "id": "lichess-game:RKGYtGJg#81",
+   "fen": "4b3/1p4k1/p1p3pp/P7/1P6/4PBKP/5P2/8 b - - 1 41",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 2.186311,
+   "b": -0.619282,
+   "ok": [
+    "g7f6"
+   ]
+  },
+  {
+   "id": "lichess-game:EuD3ZsSm#96",
+   "fen": "8/8/3k1bp1/1p1pp3/1P1pP2P/3P1K2/8/4B3 w - - 1 49",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.118142,
+   "b": 2.595338,
+   "ok": [
+    "f3g2",
+    "f3g3",
+    "f3g4"
+   ]
+  },
+  {
+   "id": "lichess-game:w9xlaxn9#77",
+   "fen": "8/6pk/4n1np/1R6/4pP2/2P3P1/1P4K1/8 b - - 0 39",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.649829,
+   "b": -2.814662,
+   "ok": [
+    "e6c7",
+    "e6d8",
+    "e6f8",
+    "g6f8",
+    "g6h8"
+   ]
+  },
+  {
+   "id": "lichess-game:454mbqJn#69",
+   "fen": "8/pk4p1/6rp/3Pp3/2RpP3/4q2P/P5PK/5Q2 b - - 2 35",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.182015,
+   "b": 1.487657,
+   "ok": [
+    "g6f6"
+   ]
+  },
+  {
+   "id": "lichess-game:zM5BnWjv#82",
+   "fen": "6R1/8/8/1k2p1P1/r3p3/2p1P3/5PK1/8 w - - 0 42",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 2.013041,
+   "b": -1.848011,
+   "ok": [
+    "g5g6",
+    "g8c8"
+   ]
+  },
+  {
+   "id": "lichess-game:WPwiO56M#69",
+   "fen": "8/p2r1k1p/1pR3p1/1n1P1p2/2p2P2/2P3P1/P1B2K1P/8 b - - 3 35",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "b5a3",
+    "d7d5"
+   ]
+  },
+  {
+   "id": "lichess-game:yIcqzMwX#77",
+   "fen": "5b2/p6k/2Q1p2p/p3Pp2/P1PP1P2/3K1N1P/6q1/8 b - - 2 39",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.375168,
+   "b": -0.273402,
+   "ok": [
+    "g2f1"
+   ]
+  },
+  {
+   "id": "lichess-game:AaJcN9AA#70",
+   "fen": "4R3/5pkp/3p2p1/3n4/p2N4/P6P/1rP3P1/6K1 w - - 2 36",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 2.062134,
+   "b": -1.54808,
+   "ok": [
+    "e8c8",
+    "e8d8"
+   ]
+  },
+  {
+   "id": "lichess-game:FB5mRsOt#62",
+   "fen": "6R1/ppr1kp1p/5pp1/7P/5PK1/8/P5P1/8 w - - 0 32",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.198255,
+   "b": 2.084062,
+   "ok": [
+    "g8b8"
+   ]
+  },
+  {
+   "id": "lichess-game:ZIdWLCJd#54",
+   "fen": "3r2k1/p3Rp2/5R2/2p4r/3p4/8/PP4PP/7K w - - 0 28",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "b2b3",
+    "f6f1",
+    "f6f2",
+    "f6f7",
+    "g2g4"
+   ]
+  },
+  {
+   "id": "lichess-game:1zy6ciHw#79",
+   "fen": "7k/6pp/p1N5/P1pP4/5r2/8/1PP3PK/8 b - - 1 40",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.84223,
+   "b": 0.007788,
+   "ok": [
+    "f4f2"
+   ]
+  },
+  {
+   "id": "lichess-game:uh8fZKa3#76",
+   "fen": "r1kB4/2P2ppp/4p3/3pP3/3K4/1R6/2b2PPP/8 w - - 15 39",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 2.451513,
+   "b": -0.610187,
+   "ok": [
+    "b3b2"
+   ]
+  },
+  {
+   "id": "lichess-game:G3S5UFsA#115",
+   "fen": "8/7p/2k1K3/6P1/7P/n7/8/8 b - - 4 58",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.719875,
+   "b": -3.1016,
+   "ok": [
+    "a3b5",
+    "a3c4"
+   ]
+  },
+  {
+   "id": "lichess-game:jEdUpPFg#67",
+   "fen": "2n5/1p1nkp2/3p3p/PB1Pp1p1/4P1PP/4BP2/5K2/8 b - - 0 34",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.607917,
+   "b": -0.135558,
+   "ok": [
+    "f7f6"
+   ]
+  },
+  {
+   "id": "lichess-game:YUxG0nyW#61",
+   "fen": "8/3r2k1/5pp1/p7/1pPpR3/3P3r/P1P5/5RK1 b - - 1 31",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.599919,
+   "b": 0.139186,
+   "ok": [
+    "f6f5"
+   ]
+  },
+  {
+   "id": "lichess-game:OnA0Te3p#86",
+   "fen": "8/5rk1/Q2p2p1/4q3/2P1p3/1P3p1P/6P1/3R3K w - - 0 44",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.668276,
+   "b": -2.890106,
+   "ok": [
+    "g2f3"
+   ]
+  },
+  {
+   "id": "lichess-game:BGVSbBPb#110",
+   "fen": "8/6p1/4Pb1p/3K1P2/pkN5/7P/8/8 w - - 2 56",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.212954,
+   "b": -0.764778,
+   "ok": [
+    "c4e3"
+   ]
+  },
+  {
+   "id": "lichess-game:TrimFIuM#83",
+   "fen": "3b4/8/5k2/3p1pp1/3P2P1/4PKBP/8/8 b - - 6 42",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.934226,
+   "b": -2.233276,
+   "ok": [
+    "d8a5",
+    "d8b6",
+    "d8e7",
+    "f6e6",
+    "f6g6"
+   ]
+  },
+  {
+   "id": "lichess-game:8Lh9EAbe#69",
+   "fen": "8/1p3k2/p7/2BPbp1p/1P4p1/P2K1P1P/6P1/8 b - - 0 35",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.421332,
+   "b": -0.703422,
+   "ok": [
+    "g4f3",
+    "g4h3"
+   ]
+  },
+  {
+   "id": "lichess-game:QsOUdm0A#97",
+   "fen": "8/2R5/1p1p2k1/pP1N1p2/n3nPp1/6Pp/7P/6K1 b - - 4 49",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.808343,
+   "b": -2.847739,
+   "ok": [
+    "a4c5"
+   ]
+  },
+  {
+   "id": "lichess-game:Zz9K6D2m#82",
+   "fen": "8/4r3/R3pk2/3p4/7P/5K2/8/8 w - - 1 42",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 0.657157,
+   "b": -0.942396,
+   "ok": [
+    "a6a1",
+    "a6a8",
+    "h4h5"
+   ]
+  },
+  {
+   "id": "lichess-game:1KiQPXDQ#58",
+   "fen": "r5k1/R5p1/p1b3p1/1p3p2/3P4/3B4/PP3P1P/6K1 w - - 1 30",
+   "category": "endgame",
+   "group": "endgame",
+   "a": 1.023917,
+   "b": -2.444564,
+   "ok": [
+    "a7a8"
+   ]
+  }
+ ]
+}
