@@ -85,7 +85,7 @@ accepts H0. `chess-cli help` lists all options.
 ## GitHub Action
 
 ```yaml
-- uses: iman-zamani/Chess-GUI-for-UCI@v2.0.0
+- uses: iman-zamani/Chess-GUI-for-UCI@v1.1.0
   with:
     engine: ./my-engine
     checks: uci-check,perft
