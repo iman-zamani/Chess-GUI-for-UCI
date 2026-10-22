@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.1 (2026-10-22)
+
+### Fixed
+- macOS: the downloaded app was reported as "damaged" and could not be opened. Its data
+  files sat next to the executable, so the bundle had no valid signature. They now live in
+  `Contents/Resources`, and the whole bundle is signed (ad hoc). The app is still not
+  notarized: on first launch use **Open Anyway** in System Settings > Privacy & Security.
+
 ## 1.1.0 (2026-10-22)
 
 A rebuild aimed at engine developers.
