@@ -86,6 +86,8 @@ jobs:
           STAGING="dist"
           mkdir -p "$STAGING"
           # The .app bundle carries Info.plist (Retina) and its own Resources.
+          # A bundle without a valid signature opens as "damaged" once downloaded.
+          codesign --verify --deep --strict --verbose=2 "build/Chess GUI for UCI.app"
           cp -R "build/Chess GUI for UCI.app" "$STAGING/"
           cp LICENSE "$STAGING/"
           # chess-cli finds the Elo model in Resources/ next to itself
