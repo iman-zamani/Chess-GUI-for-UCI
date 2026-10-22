@@ -68,6 +68,12 @@ cmake --build build -j
 Then **Engines > Manage engines** to add your engine, and see the
 [engine developer guide](docs/engine-developer-guide.md).
 
+**macOS, first launch:** the app is not notarized (that needs a paid Apple Developer ID),
+so macOS says Apple could not verify it. Click **Done**, then open **System Settings >
+Privacy & Security** and click **Open Anyway** next to "Chess GUI for UCI". This is needed
+once. From a terminal, `xattr -dr com.apple.quarantine "/Applications/Chess GUI for UCI.app"`
+does the same (for `chess-cli`, run it on the `chess-cli` folder).
+
 ## Command line
 
 ```
@@ -85,7 +91,7 @@ accepts H0. `chess-cli help` lists all options.
 ## GitHub Action
 
 ```yaml
-- uses: iman-zamani/Chess-GUI-for-UCI@v1.1.0
+- uses: iman-zamani/Chess-GUI-for-UCI@v1.1.1
   with:
     engine: ./my-engine
     checks: uci-check,perft

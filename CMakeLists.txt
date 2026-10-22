@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(ChessGUIForUCI VERSION 1.1.0 LANGUAGES CXX)
+project(ChessGUIForUCI VERSION 1.1.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -224,13 +224,16 @@ if(APPLE)
         MACOSX_BUNDLE_GUI_IDENTIFIER "org.chessgui.uci"
         MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/BundleInfo.plist.in")
 
-    # The app chdirs to its own executable dir at startup, so copying
-    # Resources next to the binary (Contents/MacOS/) makes it self-contained.
+    # Data goes to Contents/Resources (the app runs from Contents/ when it finds it
+    # there). Then the whole bundle is signed ad hoc: the linker signs only the
+    # executable, and a downloaded bundle whose resources are not sealed is reported
+    # by macOS as "damaged". (Not a Developer ID signature: see docs/building.md.)
     add_custom_command(TARGET chess-gui-app POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_SOURCE_DIR}/Resources
-            "$<TARGET_FILE_DIR:chess-gui-app>/Resources"
-        COMMENT "Copying Resources into the app bundle...")
+            "$<TARGET_BUNDLE_CONTENT_DIR:chess-gui-app>/Resources"
+        COMMAND codesign --force --sign - "$<TARGET_BUNDLE_DIR:chess-gui-app>"
+        COMMENT "Copying Resources into the app bundle and signing it...")
 endif()
 endif() # CHESSGUI_BUILD_GUI
 

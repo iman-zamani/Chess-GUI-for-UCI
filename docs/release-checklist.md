@@ -20,7 +20,7 @@ A release is made by pushing a version tag. The steps:
 - Social preview: a screenshot of the match screen with a running SPRT.
 
 ## Distribution (each needs an account or review on the other side)
-- **macOS notarization**: the DMGs are unsigned, so Gatekeeper warns. Signing and notarizing
+- **macOS notarization**: the app is signed ad hoc only, so Gatekeeper warns on first launch. Signing and notarizing
   needs an Apple Developer ID (`codesign`, `xcrun notarytool`); the workflow can do it with
   the certificate and an app-specific password stored as repository secrets.
 - **Homebrew**: a tap (`homebrew-tap` repository) with a cask for the DMG and a formula for
