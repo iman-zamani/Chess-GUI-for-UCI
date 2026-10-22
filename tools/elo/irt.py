@@ -223,3 +223,38 @@ def unusable_positions(d, threshold):
         if n_ok > MAX_ACCEPTABLE or (decided and d["categories"][i] in ("positional", "endgame")):
             bad[i] = True
     return bad
+
+
+# ------------------------------------------------------------------ accuracy by rating band
+BANDS = [(0, 2000), (2000, 2500), (2500, 9999)]
+
+
+def band_errors(pred, ratings):
+    """{(lo, hi): (n, mae, bias)} from {engine: predicted Elo} and {engine: CCRL Elo}."""
+    out = {}
+    for lo, hi in BANDS:
+        e = [pred[k] - ratings[k] for k in pred if lo <= ratings[k] < hi]
+        if e:
+            out[(lo, hi)] = (len(e), float(np.mean(np.abs(e))), float(np.mean(e)))
+    return out
+
+
+def error_bands(pred, ratings, min_engines=3):
+    """Cross-validated RMSE by *estimated* Elo (what is known when a new engine is tested):
+    [{"from", "to", "engines", "rmse"}]; a band with fewer than min_engines merges upwards
+    (the last one downwards)."""
+    out, start, errs = [], 0, []
+    for lo, hi in BANDS:
+        errs += [pred[k] - ratings[k] for k in pred if lo <= pred[k] < hi]
+        if len(errs) >= min_engines:
+            out.append({"from": start, "to": hi, "engines": len(errs), "rmse": float(np.sqrt(np.mean(np.square(errs))))})
+            start, errs = hi, []
+    if errs and out:
+        last = out.pop()
+        e = [pred[k] - ratings[k] for k in pred if last["from"] <= pred[k]]
+        out.append({"from": last["from"], "to": BANDS[-1][1], "engines": len(e), "rmse": float(np.sqrt(np.mean(np.square(e))))})
+    return out
+
+
+def band_name(lo, hi):
+    return "below %d" % hi if lo == 0 else ("%d and above" % lo if hi >= 9999 else "%d-%d" % (lo, hi))
