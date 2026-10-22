@@ -22,7 +22,8 @@
 // Run relative to the executable, not the caller's working directory.
 // This makes Resources/ load correctly when the app is double-clicked
 // (Finder/Explorer launch with cwd = / or home) and inside a macOS .app
-// bundle (binary lives in Contents/MacOS, Resources/ is copied next to it).
+// bundle (binary in Contents/MacOS, data in Contents/Resources: run from Contents/,
+// since data files in Contents/MacOS would break the bundle's code signature).
 static void chdirToExeDir(){
 #ifdef _WIN32
     char buf[MAX_PATH];
@@ -36,7 +37,11 @@ static void chdirToExeDir(){
     char buf[PATH_MAX]; uint32_t sz = sizeof(buf);
     if (_NSGetExecutablePath(buf, &sz) == 0){
         char real[PATH_MAX];
-        if (realpath(buf, real)){ int rc = chdir(dirname(real)); (void)rc; }
+        if (realpath(buf, real)){
+            int rc = chdir(dirname(real));
+            if (rc == 0 && access("Resources", F_OK) != 0 && access("../Resources", F_OK) == 0) rc = chdir("..");
+            (void)rc;
+        }
     }
 #else
     char buf[PATH_MAX];

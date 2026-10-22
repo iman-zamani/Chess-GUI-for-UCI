@@ -17,7 +17,10 @@ Platform packages:
 
 - **Linux** (Debian/Ubuntu): `sudo apt install cmake g++ libx11-dev libxrandr-dev libxcursor-dev libxi-dev libudev-dev libgl1-mesa-dev libfreetype-dev`
 - **macOS**: the Xcode command line tools and `brew install cmake`. The build also
-  produces `build/Chess GUI for UCI.app`.
+  produces `build/Chess GUI for UCI.app`, with its data in `Contents/Resources` and an
+  ad hoc signature over the whole bundle (without it, a downloaded copy is reported as
+  "damaged"). It is not a Developer ID signature, so downloaded copies still need
+  **Open Anyway** once (see the README).
 - **Windows**: Visual Studio 2022 with the C++ workload, and CMake. Binaries land in
   `build/Release/`.
 
