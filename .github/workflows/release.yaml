@@ -88,7 +88,8 @@ jobs:
           # The .app bundle carries Info.plist (Retina) and its own Resources.
           cp -R "build/Chess GUI for UCI.app" "$STAGING/"
           cp LICENSE "$STAGING/"
-          cp build/chess-cli "$STAGING/"
+          # chess-cli finds the Elo model in Resources/ next to itself
+          mkdir "$STAGING/chess-cli" && cp build/chess-cli "$STAGING/chess-cli/" && cp -R Resources "$STAGING/chess-cli/Resources"
           ln -s /Applications "$STAGING/Applications"
           hdiutil create -volname "ChessGUI" -srcfolder "$STAGING" -ov -format UDZO "$DMG_NAME"
           # the command-line tool on its own (fixed name: the GitHub Action downloads it)
@@ -218,6 +219,14 @@ jobs:
     needs: [build-windows, build-macos, build-linux]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+
+      - name: Release notes from CHANGELOG.md
+        run: |
+          # the first section (from the first "## " heading to the next one)
+          awk '/^## /{n++} n==1 && !/^## /' CHANGELOG.md > release_notes.md
+          test -s release_notes.md
+
       - name: Download All Artifacts
         uses: actions/download-artifact@v7
         with:
@@ -229,4 +238,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: artifacts/*
+          body_path: release_notes.md
           generate_release_notes: true
