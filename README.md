@@ -19,7 +19,7 @@ GPL-2.0 · C++17 · Windows, macOS, Linux
 | **SPRT and matches** | Games in parallel, colour-swapped pairs from EPD/PGN books, match / round-robin / gauntlet, resign / draw / Syzygy adjudication, Elo and normalized Elo with 95% intervals, LOS, pentanomial counts, GSPRT with fastchess's conventions, a "dev vs base" preset, resumable runs. |
 | **Perft bisection** | Your engine's `go perft` against a verified generator; on a mismatch it walks down to the position where your generator lists the wrong moves and names them. |
 | **UCI compliance** | 13 protocol checks (handshake, `isready` during search, `stop`, go modes, mates, no legal moves, ponder, time management, ...) with an explanation and the engine log for each. |
-| **Elo estimate** | Estimates a CCRL-Blitz-equivalent rating from test positions in minutes. Cross-validated error about 60 Elo for engines rated 2500 and above; much less accurate below that (see below). |
+| **Elo estimate** | Estimates a CCRL-Blitz-equivalent rating from test positions in minutes. Cross-validated error 76 Elo (mean, whole engine family left out) for the calibration engines rated 2000-3487; much less accurate below 2000, and past 3487 it reports a bound instead of a number (see below). |
 | **UCI console** | Every running engine, live, with a command line (Ctrl+U). |
 | **Search statistics** | Depth, seldepth, nodes, NPS, hash and time per move, with graphs. |
 | **CLI and CI** | `chess-cli` runs all of the above headless with `--json` and exit codes; a GitHub Action runs it in your engine's workflow. |
@@ -51,7 +51,7 @@ What each tool offers out of the box, as far as we know (October 2026; correctio
 | SPRT | yes (GUI and CLI) | no | yes (cutechess-cli) | yes | no |
 | Engine perft check and bisection | yes | no | no | no | no |
 | UCI compliance checker | yes | no | no | no | no |
-| Position-based Elo estimate | yes (accurate from about 2500 CCRL Blitz) | no | no | no | no |
+| Position-based Elo estimate | yes (numbers for CCRL Blitz 1578-3487, most accurate from 2000) | no | no | no | no |
 | Licence | GPL-2.0 | freeware | GPL-3.0 | MIT | GPL-3.0 |
 
 ## Quick start
@@ -106,20 +106,40 @@ fitted on calibration engines with known CCRL Blitz ratings turns which position
 solves into a rating, with a 95% interval that includes the model's cross-validated
 error. Quick mode is adaptive (it stops once the estimate is precise enough).
 
-**Accuracy** (cross-validation on 29 calibration engines from 7 families, CCRL Blitz
+The engine gets the same amount of search as the calibration engines did: before the test, two
+reference engines that ship with the program (Stockfish 11 and Blunder 8.0.0) repeat searches
+recorded on the calibration machine, which measures how fast this computer runs engines; the
+move time is set from that. Every minute during the test and after it, the reference engines
+repeat some of those searches and your engine repeats one fixed search of its own, to catch a
+change of speed (throttling, other load). On Linux and Windows every engine is pinned to one
+core of the fastest class (a P-core on hybrid CPUs); on Apple silicon the share of its time on
+performance cores is measured. A run where the speed changed, or where the engine didn't use its
+time, used more than one thread, busy-waited for input or made illegal moves, gets a warning or
+no number at all.
+
+**Accuracy** (cross-validation on 32 calibration engines from 9 families, CCRL Blitz
 1271-3563; every fold refits and reselects the positions without the engines it predicts):
 
 | CCRL Blitz | engines | error, engine left out (MAE) | error, whole family left out (MAE) |
 |---|---|---|---|
-| 2500 and above | 18 | 60 | 59 |
-| 2000-2500 | 6 | 57 | 177 |
-| below 2000 | 5 | 239 | 508 |
+| 2500 and above | 18 | 76 | 81 |
+| 2000-2500 | 6 | 55 | 55 |
+| below 2000 | 8 | 174 | 249 |
 
-Below 2500 the estimate is too high, often by hundreds of Elo, for an engine whose family the
-model has not seen: few calibration engines are that weak. The GUI and `chess-cli` print a
-warning when an estimate lands there. A held-out engine, Berserk 3.2.0 (CCRL Blitz 2910), was
-kept out of everything and then estimated with the shipped model: 2877 +/- 173 (full) and
-2886 +/- 180 (quick, 168 positions).
+Estimates are numbers only inside the calibrated range, 1578-3487. An estimate past either end
+is a bound instead: "above the calibrated range: at least 3487" for Stockfish 16 or 19, or, when
+the interval still reaches into the range, its lower end: "past the top of the calibrated range
+(3487): at least 3368" for Ethereal 14 (CCRL Blitz 3647).
+Engines much stronger than about 3600 solve almost every position, so the positions can't
+tell them apart. Below 2000 the estimate tends to be too high for an engine whose family the
+model has not seen, and a warning is printed. Engines kept out of every fit and then
+estimated with the shipped model on the calibration machine (Linux) and an Apple M4: all 34
+runs correct. Fatalii 0.2.0-0.5.0 (CCRL Blitz 1599-2208), Weiss 1.0-2.0 (2896-3319) and
+Berserk 3.2.0 (2910) got numbers within 147 Elo, mean 54, each inside its 95% interval;
+Koivisto, Obsidian, Seer, PlentyChess, Stockfish 16 and Ethereal 14 (3632-3774) got bounds
+(their solve rates also set the ceiling, so that is a consistency check). On GitHub's
+Linux, Windows and macOS runners, Weiss, Fatalii and Berserk 3.2.0 (built there) were inside
+their intervals in all 14 runs that gave a number.
 It is an estimate from positions, not a rating from games; time management is not measured.
 
 Method, full results and limits: [docs/elo-estimator.md](docs/elo-estimator.md).

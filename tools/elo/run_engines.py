@@ -16,11 +16,19 @@ Work is split into batches of (engine, positions); a pool of worker processes
 runs one single-threaded engine each. Results are appended to the CSV after
 every batch, so an interrupted run resumes where it stopped.
 
+Speed-matched runs (--speed): on any machine other than the calibration machine
+each batch first replays the reference engines' recorded searches in the same
+worker (tools/elo/speed_reference.py, the same measurement as the C++
+estimator), and the batch's move time is the base time divided by the speed
+measured. The speed is recorded per answer.
+
 Usage:
   run_engines.py --status BUILD_STATUS.json --positions candidates.jsonl --out responses.csv
                  [--movetime 500] [--factor 1.0] [--workers 4] [--only ID ...]
+                 [--speed speed.json --reference-dir Resources/reference] [--background]
+--background: run every engine in the macOS background band (efficiency cores), like the estimator does.
 """
-import argparse, csv, json, multiprocessing as mp, os, queue, re, subprocess, sys, threading, time
+import argparse, csv, json, multiprocessing as mp, os, queue, re, statistics, subprocess, sys, threading, time, zlib
 
 import chess
 
@@ -30,7 +38,9 @@ MOVE_OVERHEAD_MS = 10   # value for an engine's "Move Overhead" option, when it 
 GRACE_MS = 50      # "stop" is sent this long after the move time if the engine is still thinking
 STOP_WAIT_S = 5    # after "stop", an engine with no bestmove this long is treated as hung and restarted
 FIELDS = ["engine", "position", "move", "depth", "seldepth", "nodes", "time_ms", "wall_ms", "score_cp", "score_mate",
-          "movetime_ms", "error"]
+          "movetime_ms", "error", "speed"]
+SPEED_POSITIONS = 10    # reference replays per engine before each batch
+WARMUP_S = 10           # replays before a worker's first measurement, discarded
 
 
 def sleep_clock():
@@ -53,8 +63,9 @@ class Uci:
     engine sends an illegal bestmove). It speaks the same protocol as the C++
     estimator."""
 
-    def __init__(self, binary, hash_mb):
-        self.p = subprocess.Popen([binary], cwd=os.path.dirname(binary), stdin=subprocess.PIPE,
+    def __init__(self, binary, hash_mb, background=False):
+        cmd = (["/usr/sbin/taskpolicy", "-b"] if background else []) + [binary]
+        self.p = subprocess.Popen(cmd, cwd=os.path.dirname(binary), stdin=subprocess.PIPE,
                                   stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, bufsize=1)
         self.q = queue.Queue()
         threading.Thread(target=self._reader, daemon=True).start()
@@ -146,6 +157,23 @@ class Uci:
                 best = parts[1] if len(parts) > 1 else ""
         return best, info, int((time.monotonic() - t0) * 1000)
 
+    def replay(self, fen, nodes=0, depth=0, timeout=30):
+        """A recorded reference search: "go nodes" / "go depth"; the engine's reported time in ms, or None."""
+        self.send("ucinewgame")
+        self.ready()
+        self.send("position fen " + fen)
+        self.send("go nodes %d" % nodes if nodes else "go depth %d" % depth)
+        info = {}
+        for line in self._until(lambda l: l.startswith("bestmove"), timeout):
+            t = line.split()
+            if t[0] == "info":
+                for key in ("depth", "time"):
+                    if key in t[:-1]:
+                        info[key] = int(t[t.index(key) + 1])
+        if not nodes and info.get("depth", 0) < depth:
+            return None
+        return info.get("time") or None
+
     def close(self):
         try:
             self.send("quit")
@@ -177,12 +205,54 @@ def normalised_move(board, uci):
     return None
 
 
+_warm = False
+
+
+def measure_speed(speed, refdir, background, start):
+    """Reference replays in this worker: calibration time / time here, geometric mean over the engines."""
+    global _warm
+    import math
+    logs = []
+    for ref in speed["references"]:
+        binary = os.path.join(refdir, ref["file"] + (".exe" if os.name == "nt" else ""))
+        u = Uci(binary, 64, background)
+        try:
+            items = ref["items"]
+            if not _warm:
+                end = time.monotonic() + WARMUP_S
+                i = 0
+                while time.monotonic() < end:
+                    it = items[i % len(items)]; i += 1
+                    u.replay(it["fen"], it.get("nodes", 0), it.get("depth", 0))
+            ratios = []
+            for k in range(SPEED_POSITIONS):
+                it = items[(start + k) % len(items)]
+                ms = u.replay(it["fen"], it.get("nodes", 0), it.get("depth", 0))
+                if ms:
+                    ratios.append(it["calMs"] / ms)
+            if ratios:
+                logs.append(math.log(statistics.median(ratios)))   # as the estimator (src/elo_speed.cpp)
+        finally:
+            u.close()
+    _warm = True
+    if not logs:
+        raise RuntimeError("no reference engine could be measured")
+    return math.exp(sum(logs) / len(logs))
+
+
 def run_batch(job):
-    """job = (engine id, binary, [(position id, fen)], movetime ms, hash MB) -> rows"""
-    eid, binary, positions, movetime, hash_mb = job
+    """job = (engine id, binary, [(position id, fen)], movetime ms, hash MB[, speed spec]) -> rows"""
+    eid, binary, positions, movetime, hash_mb = job[:5]
+    sp = job[5] if len(job) > 5 else None
+    background = bool(sp and sp.get("background"))
+    speed = ""
+    if sp and sp.get("speed"):
+        speed = measure_speed(sp["speed"], sp["refdir"], background, zlib.crc32(positions[0][0].encode()) % 1000)
+        movetime = max(50, int(round(sp["base"] / speed)))
     rows, eng, failed_starts = [], None, 0
     for pid, fen in positions:
-        row = {"engine": eid, "position": pid, "movetime_ms": movetime, "error": ""}
+        row = {"engine": eid, "position": pid, "movetime_ms": movetime, "error": "",
+               "speed": round(speed, 4) if speed else ""}
         for attempt in range(4):                      # restarts after a crash, a hang or a system sleep
             if failed_starts >= 2:
                 row.update(move="", error="the engine does not start")
@@ -191,7 +261,7 @@ def run_batch(job):
                 slept0 = sleep_clock()
                 if eng is None:
                     try:
-                        eng = Uci(binary, hash_mb)
+                        eng = Uci(binary, hash_mb, background)
                     except EngineGone:
                         failed_starts += 1
                         raise
@@ -230,7 +300,18 @@ def main():
     ap.add_argument("--batch", type=int, default=50)
     ap.add_argument("--hash", type=int, default=64)
     ap.add_argument("--only", nargs="*")
+    ap.add_argument("--speed", help="speed block (speed_reference.py): measure the speed before each batch")
+    ap.add_argument("--reference-dir", help="where the reference engines are (build_reference_engines.py)")
+    ap.add_argument("--background", action="store_true", help="macOS: efficiency cores (background band)")
     a = ap.parse_args()
+    spec = None
+    if a.speed:
+        if not a.reference_dir:
+            sys.exit("--speed needs --reference-dir")
+        spec = {"speed": json.load(open(a.speed)), "refdir": a.reference_dir, "base": a.movetime,
+                "background": a.background}
+    elif a.background:
+        spec = {"background": True}
 
     engines = json.load(open(ENGINES))["engines"]
     status = json.load(open(a.status))
@@ -258,7 +339,7 @@ def main():
         for eid, binary in todo_engines:
             left = [(p["id"], p["fen"]) for p in chunk if (eid, p["id"]) not in done]
             if left:
-                jobs.append((eid, binary, left, movetime, a.hash))
+                jobs.append((eid, binary, left, movetime, a.hash, spec))
     total = sum(len(j[2]) for j in jobs)
     print("%d engines, %d positions, %d answers already recorded, %d to go in %d batches, %d workers, movetime %d ms"
           % (len(todo_engines), len(positions), len(done), total, len(jobs), a.workers, movetime),

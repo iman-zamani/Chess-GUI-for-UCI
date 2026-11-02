@@ -14,7 +14,8 @@ and are never scored. Reports MAE, RMSE, max error and Spearman rho.
 Usage: validate.py --data DIR [--thresholds 2 3 5 7 10] [--models anchored joint]
                    [--items 1000] [--holdout ID ...] [--out cv.json]
 DIR holds reference.jsonl and responses.csv; engines come from data/elo/engines.json.
-Engines given with --holdout are left out of everything (kept for the final check).
+Engines given with --holdout, and those engines.json marks heldOut or aboveScale, are left
+out of everything (kept for the final checks).
 """
 import argparse, json, os, sys
 
@@ -65,6 +66,7 @@ def main():
     ap.add_argument("--out", default=None)
     ap.add_argument("--engines", default=ENGINES)
     a = ap.parse_args()
+    a.holdout = sorted(set(a.holdout) | set(irt.kept_out(a.engines)))
     d = irt.load_dataset(a.engines, os.path.join(a.data, "reference.jsonl"), os.path.join(a.data, "responses.csv"))
     keep = np.array([e not in a.holdout for e in d["engines"]])
     have = ~np.all(np.isnan(d["L"]), axis=1)

@@ -1,0 +1,61 @@
+name: Elo validation
+
+# The Elo estimator on computers other than the calibration machine: held-out and
+# NNUE calibration engines built from their pinned tags replay recorded searches
+# (how well the reference engines' speed stands for theirs) and are estimated with
+# the shipped model (tools/elo/ci_validation.py). Results are in the run's
+# annotations. About an hour per runner, so it runs on demand and on ci/ branches.
+on:
+  workflow_dispatch:
+  push:
+    branches: ["ci/**"]
+
+concurrency:
+  group: elo-validation-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: validate (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.10"
+          cache: false
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Reference engines
+        shell: bash
+        run: python tools/build_reference_engines.py
+
+      - name: Build chess-cli (no GUI)
+        shell: bash
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCHESSGUI_BUILD_GUI=OFF
+          cmake --build build --config Release --parallel --target chess-cli copy-resources
+
+      - name: Build the validation engines
+        shell: bash
+        run: python tools/elo/ci_validation.py build --work val
+
+      - name: Speed replay
+        shell: bash
+        run: python tools/elo/ci_validation.py replay --work val
+
+      - name: Estimates
+        shell: bash
+        run: |
+          cli=build/chess-cli
+          if [ "$RUNNER_OS" = "Windows" ]; then cli=$(cygpath -m "$PWD/build/Release/chess-cli.exe"); fi
+          python tools/elo/ci_validation.py estimate --work val --cli "$cli"

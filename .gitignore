@@ -4,3 +4,5 @@ build/*
 
 Resources/engines
 __pycache__/
+Resources/reference/*
+!Resources/reference/README.md

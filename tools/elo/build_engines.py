@@ -129,6 +129,11 @@ def main():
     for e in data["engines"]:
         if a.only and e["id"] not in a.only:
             continue
+        if recipe(e, "build") is None:
+            # e.g. engines whose NNUE code needs x86 SIMD: calibrated on the x86 machine only
+            print("%-22s skipped: no build for %s (platforms: %s)" % (e["id"], platform_key(),
+                  ", ".join(e.get("platforms", []))), flush=True)
+            continue
         log = os.path.join(a.workdir, e["id"] + ".build.log")
         r = build(e, a.workdir, a.jobs, log)
         if r.get("commit") and e.get("commit") and e["commit"] != r["commit"]:
@@ -144,7 +149,7 @@ def main():
         with open(ENGINES, "w") as f:
             json.dump(data, f, indent=1)
             f.write("\n")
-    return 0 if all(status[e["id"]]["ok"] for e in data["engines"] if e["id"] in status) else 1
+    return 0 if all(status[e["id"]]["ok"] for e in data["engines"] if e["id"] in status and recipe(e, "build")) else 1
 
 
 if __name__ == "__main__":

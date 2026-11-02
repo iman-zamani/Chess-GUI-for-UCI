@@ -1,0 +1,4513 @@
+{
+"description": "Recorded searches of calibration engines, for repeating them on another computer.",
+"engines": {
+"stockfish-11": [
+{
+"pos": "lichess-puzzle:EeROy",
+"fen": "8/8/4k3/2rR4/p1P4P/P7/1P6/2K5 b - - 0 44",
+"calNodes": 1314567,
+"calMs": 501.0,
+"calDepth": 28,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:qukzL",
+"fen": "3r2k1/p5bp/1p4pB/2q1p3/8/2P1Q3/PP4PP/4R1K1 b - - 13 30",
+"calNodes": 1002799,
+"calMs": 501.0,
+"calDepth": 21,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:UmFg31Kc#100",
+"fen": "8/1p6/3p4/3P4/P4b2/1K1k1Bp1/2p5/5N2 w - - 0 51",
+"calNodes": 1418856,
+"calMs": 501.0,
+"calDepth": 20,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:zWuipFdA#26",
+"fen": "1r1qkb1r/pQp2ppp/6n1/2p1P3/2b2P2/2N3P1/PPP3BP/R3K1NR w KQk - 1 14",
+"calNodes": 928155,
+"calMs": 501.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:9BmF6kzI#84",
+"fen": "r7/6p1/1p3k2/1PpPpP2/1rP3PP/p1K5/R7/5R2 w - - 2 43",
+"calNodes": 892646,
+"calMs": 501.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:yuC24LlF#99",
+"fen": "8/8/1k1B3p/4Pp2/3b4/6pP/4r1P1/3R3K b - - 12 50",
+"calNodes": 979279,
+"calMs": 501.0,
+"calDepth": 22,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:hsVQhK6n#26",
+"fen": "1r1q1rk1/1p2ppbp/p2p1np1/1Pp5/2P5/P1NPPBPb/5P1P/1RBQ1RK1 w - - 1 14",
+"calNodes": 762950,
+"calMs": 501.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:AUOwNyeQ#97",
+"fen": "1n6/2K2pp1/8/P5k1/8/4P1P1/8/8 b - - 7 49",
+"calNodes": 1477477,
+"calMs": 501.0,
+"calDepth": 35,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:eodng69i#29",
+"fen": "2kr1b1r/pp3ppp/2b1p3/4P3/8/2PBBP2/P3K1PP/R6R b - - 1 15",
+"calNodes": 800966,
+"calMs": 501.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:6XhN0Bk7#33",
+"fen": "r1b2r1k/2q1bp1p/p1pp1p2/4pP2/2P1P3/2NQ4/PPB3PP/3R1RK1 b - - 0 17",
+"calNodes": 732347,
+"calMs": 501.0,
+"calDepth": 20,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:2inuMZeV#41",
+"fen": "2r2rk1/pb1n2pp/1p2p2q/2pPPp2/2P2P1b/P2BB1N1/2Q3PP/R4RK1 b - - 0 21",
+"calNodes": 712603,
+"calMs": 501.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:fbKoTXrL#77",
+"fen": "8/6kp/3b1p2/3P4/4PPB1/3n1K2/3B3P/8 b - - 5 39",
+"calNodes": 923929,
+"calMs": 501.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:oMUcHSh1#24",
+"fen": "rnbr2k1/pp2bppp/2p5/2q5/3N4/5B2/PPP2PPP/R1BQR1K1 w - - 6 13",
+"calNodes": 735602,
+"calMs": 501.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:NKNeOdqN#97",
+"fen": "1k6/5pp1/1pQ1b3/p2pP3/5Np1/4q1P1/7P/5K2 b - - 7 49",
+"calNodes": 1009835,
+"calMs": 502.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:mBrS9",
+"fen": "r3kb1r/pp1n1pp1/1qp1P2p/8/8/1Q4P1/PP3PbP/R1B2RK1 w kq - 0 15",
+"calNodes": 812310,
+"calMs": 501.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:dB7ZadV9#71",
+"fen": "8/8/4R1p1/p4k1p/2Bp3P/1P1P2P1/2q2PK1/8 b - - 3 36",
+"calNodes": 1028097,
+"calMs": 501.0,
+"calDepth": 21,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:SM9gO",
+"fen": "3r3k/pp3B1p/nbp5/6Q1/4P3/5P2/P6P/7K b - - 0 25",
+"calNodes": 1351949,
+"calMs": 501.0,
+"calDepth": 21,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:g7OtC76s#72",
+"fen": "6k1/2r2pp1/7p/8/3p4/3Q2P1/5PKP/8 w - - 2 37",
+"calNodes": 1001086,
+"calMs": 501.0,
+"calDepth": 23,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:RP9xxxgy#70",
+"fen": "5bk1/p2q1p1p/1p1Pp1p1/2p5/2P4P/P2Q2P1/1P6/7K w - - 1 36",
+"calNodes": 1020818,
+"calMs": 501.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:yymac",
+"fen": "4r1k1/p1p2pp1/1bp3p1/3q4/8/1PP4P/PB2NnP1/3RQ1K1 w - - 0 22",
+"calNodes": 953991,
+"calMs": 501.0,
+"calDepth": 20,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:vsjlDnkP#75",
+"fen": "5k2/2r1p3/5npp/8/6P1/1B2R2P/5PK1/8 b - - 0 38",
+"calNodes": 868839,
+"calMs": 501.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:9EsZl",
+"fen": "6k1/5p2/P3p3/6pp/1N2p3/4P1P1/1P3P2/2K2b2 b - - 0 37",
+"calNodes": 1340487,
+"calMs": 501.0,
+"calDepth": 25,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:WGZQyeIl#50",
+"fen": "rn6/pp4k1/4p1p1/2p5/B2P1r2/2P2P2/1P6/2KR2N1 w - - 0 26",
+"calNodes": 878897,
+"calMs": 501.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:AizD5",
+"fen": "8/2k2p2/1p4pp/1K5P/5PP1/8/8/8 w - - 0 40",
+"calNodes": 1603012,
+"calMs": 501.0,
+"calDepth": 25,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:abNo0",
+"fen": "5rk1/pp3p1p/1q3P2/7R/1b2QP2/1K6/PP1r3P/5B1R b - - 0 24",
+"calNodes": 1114184,
+"calMs": 501.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:n8Xl6VYW#39",
+"fen": "4rrk1/p1n2ppp/b2p4/2pPnQ2/7q/P1N1R1NP/BP3PP1/R5K1 b - - 6 20",
+"calNodes": 739317,
+"calMs": 501.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:HkSqyDrt#68",
+"fen": "8/1ppk4/pr4p1/6R1/3P2pP/2P5/PP4P1/6K1 w - - 3 35",
+"calNodes": 1028514,
+"calMs": 501.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:ZpojH758#82",
+"fen": "8/p6p/4kbp1/5p2/7P/N2K1P2/1p4P1/8 w - - 2 42",
+"calNodes": 922148,
+"calMs": 501.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:ifscNkXK#48",
+"fen": "3r3r/p1pk1ppp/Q1p1p3/2P2q2/2P2P2/7R/PP3P2/1R3KNb w - - 5 25",
+"calNodes": 786084,
+"calMs": 501.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:1OtP0SKE#52",
+"fen": "8/3k2pp/3p1b2/1N2n3/3BP3/8/PPr3PP/5RK1 w - - 3 27",
+"calNodes": 858335,
+"calMs": 501.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:904Mfkqa#28",
+"fen": "2k1r2r/ppp2ppp/2n2n2/8/3P4/P1q1BB2/5PPP/R2Q1K1R w - - 2 15",
+"calNodes": 710113,
+"calMs": 501.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:1HQRnrgx#54",
+"fen": "8/3n1pp1/p2kn2p/1pp1p3/1P2P3/1PPNKP2/6PP/3N4 w - - 0 28",
+"calNodes": 985762,
+"calMs": 501.0,
+"calDepth": 21,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:FRzfD3kN#40",
+"fen": "1r5r/pR5p/3p2pk/3Pn3/4N3/8/PPP3PP/5RK1 w - - 1 21",
+"calNodes": 903786,
+"calMs": 501.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:cH08gfLk#29",
+"fen": "r2q1rk1/1b2bppp/p2ppn2/7N/Pp2P3/1P1B1Q2/1B1P1PPP/R4RK1 b - - 4 15",
+"calNodes": 734343,
+"calMs": 501.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:N87o3WiL#79",
+"fen": "8/1p2q3/p2p1pk1/3P2p1/8/P7/1PP1p3/2K1Q3 b - - 1 40",
+"calNodes": 1337070,
+"calMs": 501.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:cGRlOf2x#70",
+"fen": "4n3/4kp2/p1rp2p1/1p2p1p1/4P3/P3RP1P/1P4P1/3R1K2 w - - 1 36",
+"calNodes": 719194,
+"calMs": 501.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:bNITIrja#45",
+"fen": "3r1kr1/1b1n3R/p2bp3/1p1p2P1/2nB4/1NN2B2/PPP3P1/2KR4 b - - 2 23",
+"calNodes": 568747,
+"calMs": 501.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:1KiQPXDQ#58",
+"fen": "r5k1/R5p1/p1b3p1/1p3p2/3P4/3B4/PP3P1P/6K1 w - - 1 30",
+"calNodes": 1052761,
+"calMs": 501.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:0xqKq",
+"fen": "8/p7/8/1P2k2p/P2p2p1/4P3/3K3P/8 w - - 0 30",
+"calNodes": 1127919,
+"calMs": 501.0,
+"calDepth": 24,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:KxhwpZtH#44",
+"fen": "r1q1n1k1/4bppp/1pP1p3/1N1p4/3P1P2/5NP1/1Q3P1P/2R3K1 w - - 3 23",
+"calNodes": 792326,
+"calMs": 501.0,
+"calDepth": 18,
+"source": "responses.csv"
+}
+],
+"blunder-8.0.0": [
+{
+"pos": "lichess-puzzle:EeROy",
+"fen": "8/8/4k3/2rR4/p1P4P/P7/1P6/2K5 b - - 0 44",
+"calNodes": 166632,
+"calMs": 400.0,
+"calDepth": 26,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:jMLMx",
+"fen": "3k4/8/R2P4/1pPK4/1r3bP1/8/7p/8 w - - 0 54",
+"calNodes": 287640,
+"calMs": 323.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:ZiN7F",
+"fen": "8/8/8/5P1p/1pR4P/5kP1/1r6/5K2 b - - 0 46",
+"calNodes": 302348,
+"calMs": 362.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:qukzL",
+"fen": "3r2k1/p5bp/1p4pB/2q1p3/8/2P1Q3/PP4PP/4R1K1 b - - 13 30",
+"calNodes": 258710,
+"calMs": 383.0,
+"calDepth": 15,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:UmFg31Kc#100",
+"fen": "8/1p6/3p4/3P4/P4b2/1K1k1Bp1/2p5/5N2 w - - 0 51",
+"calNodes": 150142,
+"calMs": 366.0,
+"calDepth": 21,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:zWuipFdA#26",
+"fen": "1r1qkb1r/pQp2ppp/6n1/2p1P3/2b2P2/2N3P1/PPP3BP/R3K1NR w KQk - 1 14",
+"calNodes": 74989,
+"calMs": 287.0,
+"calDepth": 12,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:9BmF6kzI#84",
+"fen": "r7/6p1/1p3k2/1PpPpP2/1rP3PP/p1K5/R7/5R2 w - - 2 43",
+"calNodes": 121010,
+"calMs": 365.0,
+"calDepth": 14,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:yuC24LlF#99",
+"fen": "8/8/1k1B3p/4Pp2/3b4/6pP/4r1P1/3R3K b - - 12 50",
+"calNodes": 381443,
+"calMs": 356.0,
+"calDepth": 12,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:hsVQhK6n#26",
+"fen": "1r1q1rk1/1p2ppbp/p2p1np1/1Pp5/2P5/P1NPPBPb/5P1P/1RBQ1RK1 w - - 1 14",
+"calNodes": 105436,
+"calMs": 303.0,
+"calDepth": 12,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:AUOwNyeQ#97",
+"fen": "1n6/2K2pp1/8/P5k1/8/4P1P1/8/8 b - - 7 49",
+"calNodes": 159286,
+"calMs": 406.0,
+"calDepth": 21,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:eodng69i#29",
+"fen": "2kr1b1r/pp3ppp/2b1p3/4P3/8/2PBBP2/P3K1PP/R6R b - - 1 15",
+"calNodes": 95858,
+"calMs": 280.0,
+"calDepth": 11,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:6XhN0Bk7#33",
+"fen": "r1b2r1k/2q1bp1p/p1pp1p2/4pP2/2P1P3/2NQ4/PPB3PP/3R1RK1 b - - 0 17",
+"calNodes": 108216,
+"calMs": 297.0,
+"calDepth": 11,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:2inuMZeV#41",
+"fen": "2r2rk1/pb1n2pp/1p2p2q/2pPPp2/2P2P1b/P2BB1N1/2Q3PP/R4RK1 b - - 0 21",
+"calNodes": 201140,
+"calMs": 384.0,
+"calDepth": 12,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:oMUcHSh1#24",
+"fen": "rnbr2k1/pp2bppp/2p5/2q5/3N4/5B2/PPP2PPP/R1BQR1K1 w - - 6 13",
+"calNodes": 149609,
+"calMs": 475.0,
+"calDepth": 11,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:NKNeOdqN#97",
+"fen": "1k6/5pp1/1pQ1b3/p2pP3/5Np1/4q1P1/7P/5K2 b - - 7 49",
+"calNodes": 101862,
+"calMs": 344.0,
+"calDepth": 14,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:mBrS9",
+"fen": "r3kb1r/pp1n1pp1/1qp1P2p/8/8/1Q4P1/PP3PbP/R1B2RK1 w kq - 0 15",
+"calNodes": 163084,
+"calMs": 313.0,
+"calDepth": 14,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:dB7ZadV9#71",
+"fen": "8/8/4R1p1/p4k1p/2Bp3P/1P1P2P1/2q2PK1/8 b - - 3 36",
+"calNodes": 120239,
+"calMs": 462.0,
+"calDepth": 15,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:SM9gO",
+"fen": "3r3k/pp3B1p/nbp5/6Q1/4P3/5P2/P6P/7K b - - 0 25",
+"calNodes": 111884,
+"calMs": 462.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:KYWaL",
+"fen": "4rr1k/5p1p/p2p3p/1ppP4/4q3/7P/PP4Q1/K5R1 w - - 0 31",
+"calNodes": 236440,
+"calMs": 301.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:g7OtC76s#72",
+"fen": "6k1/2r2pp1/7p/8/3p4/3Q2P1/5PKP/8 w - - 2 37",
+"calNodes": 389094,
+"calMs": 395.0,
+"calDepth": 14,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:RP9xxxgy#70",
+"fen": "5bk1/p2q1p1p/1p1Pp1p1/2p5/2P4P/P2Q2P1/1P6/7K w - - 1 36",
+"calNodes": 140127,
+"calMs": 325.0,
+"calDepth": 12,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:yymac",
+"fen": "4r1k1/p1p2pp1/1bp3p1/3q4/8/1PP4P/PB2NnP1/3RQ1K1 w - - 0 22",
+"calNodes": 206668,
+"calMs": 440.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:vsjlDnkP#75",
+"fen": "5k2/2r1p3/5npp/8/6P1/1B2R2P/5PK1/8 b - - 0 38",
+"calNodes": 159342,
+"calMs": 404.0,
+"calDepth": 12,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:9EsZl",
+"fen": "6k1/5p2/P3p3/6pp/1N2p3/4P1P1/1P3P2/2K2b2 b - - 0 37",
+"calNodes": 180799,
+"calMs": 337.0,
+"calDepth": 20,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:txMAi",
+"fen": "6r1/p3R1pk/1b2N2p/5p2/7Q/P4PP1/1q3RKP/8 b - - 0 34",
+"calNodes": 225272,
+"calMs": 363.0,
+"calDepth": 12,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:WGZQyeIl#50",
+"fen": "rn6/pp4k1/4p1p1/2p5/B2P1r2/2P2P2/1P6/2KR2N1 w - - 0 26",
+"calNodes": 150870,
+"calMs": 427.0,
+"calDepth": 13,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:AizD5",
+"fen": "8/2k2p2/1p4pp/1K5P/5PP1/8/8/8 w - - 0 40",
+"calNodes": 152898,
+"calMs": 405.0,
+"calDepth": 21,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:abNo0",
+"fen": "5rk1/pp3p1p/1q3P2/7R/1b2QP2/1K6/PP1r3P/5B1R b - - 0 24",
+"calNodes": 220677,
+"calMs": 321.0,
+"calDepth": 12,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:n8Xl6VYW#39",
+"fen": "4rrk1/p1n2ppp/b2p4/2pPnQ2/7q/P1N1R1NP/BP3PP1/R5K1 b - - 6 20",
+"calNodes": 122809,
+"calMs": 332.0,
+"calDepth": 11,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:HkSqyDrt#68",
+"fen": "8/1ppk4/pr4p1/6R1/3P2pP/2P5/PP4P1/6K1 w - - 3 35",
+"calNodes": 263602,
+"calMs": 449.0,
+"calDepth": 14,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:ZpojH758#82",
+"fen": "8/p6p/4kbp1/5p2/7P/N2K1P2/1p4P1/8 w - - 2 42",
+"calNodes": 92987,
+"calMs": 386.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:ifscNkXK#48",
+"fen": "3r3r/p1pk1ppp/Q1p1p3/2P2q2/2P2P2/7R/PP3P2/1R3KNb w - - 5 25",
+"calNodes": 97272,
+"calMs": 314.0,
+"calDepth": 13,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:xkRSS8Tr#106",
+"fen": "Q4K2/3k4/3P3p/1P5P/5R2/8/8/8 w - - 1 54",
+"calNodes": 509993,
+"calMs": 402.0,
+"calDepth": 13,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:1OtP0SKE#52",
+"fen": "8/3k2pp/3p1b2/1N2n3/3BP3/8/PPr3PP/5RK1 w - - 3 27",
+"calNodes": 74549,
+"calMs": 258.0,
+"calDepth": 12,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:904Mfkqa#28",
+"fen": "2k1r2r/ppp2ppp/2n2n2/8/3P4/P1q1BB2/5PPP/R2Q1K1R w - - 2 15",
+"calNodes": 72666,
+"calMs": 461.0,
+"calDepth": 10,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:1HQRnrgx#54",
+"fen": "8/3n1pp1/p2kn2p/1pp1p3/1P2P3/1PPNKP2/6PP/3N4 w - - 0 28",
+"calNodes": 109051,
+"calMs": 312.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:npvWV",
+"fen": "5rk1/p1p4p/1p1p2p1/6B1/2PN2n1/5PPq/PP2P2P/R4QK1 b - - 0 21",
+"calNodes": 274426,
+"calMs": 395.0,
+"calDepth": 14,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:FRzfD3kN#40",
+"fen": "1r5r/pR5p/3p2pk/3Pn3/4N3/8/PPP3PP/5RK1 w - - 1 21",
+"calNodes": 108017,
+"calMs": 326.0,
+"calDepth": 14,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:cH08gfLk#29",
+"fen": "r2q1rk1/1b2bppp/p2ppn2/7N/Pp2P3/1P1B1Q2/1B1P1PPP/R4RK1 b - - 4 15",
+"calNodes": 161587,
+"calMs": 347.0,
+"calDepth": 10,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:cGRlOf2x#70",
+"fen": "4n3/4kp2/p1rp2p1/1p2p1p1/4P3/P3RP1P/1P4P1/3R1K2 w - - 1 36",
+"calNodes": 92348,
+"calMs": 256.0,
+"calDepth": 14,
+"source": "responses.csv"
+}
+],
+"zahak-6.2": [
+{
+"pos": "lichess-game:2inuMZeV#41",
+"fen": "2r2rk1/pb1n2pp/1p2p2q/2pPPp2/2P2P1b/P2BB1N1/2Q3PP/R4RK1 b - - 0 21",
+"calNodes": 265242,
+"calMs": 453.3,
+"calDepth": 14,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:n8Xl6VYW#39",
+"fen": "4rrk1/p1n2ppp/b2p4/2pPnQ2/7q/P1N1R1NP/BP3PP1/R5K1 b - - 6 20",
+"calNodes": 514134,
+"calMs": 451.4,
+"calDepth": 14,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:ifscNkXK#48",
+"fen": "3r3r/p1pk1ppp/Q1p1p3/2P2q2/2P2P2/7R/PP3P2/1R3KNb w - - 5 25",
+"calNodes": 227314,
+"calMs": 451.3,
+"calDepth": 14,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:1OtP0SKE#52",
+"fen": "8/3k2pp/3p1b2/1N2n3/3BP3/8/PPr3PP/5RK1 w - - 3 27",
+"calNodes": 427547,
+"calMs": 452.4,
+"calDepth": 13,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:904Mfkqa#28",
+"fen": "2k1r2r/ppp2ppp/2n2n2/8/3P4/P1q1BB2/5PPP/R2Q1K1R w - - 2 15",
+"calNodes": 426903,
+"calMs": 452.4,
+"calDepth": 14,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:bNITIrja#45",
+"fen": "3r1kr1/1b1n3R/p2bp3/1p1p2P1/2nB4/1NN2B2/PPP3P1/2KR4 b - - 2 23",
+"calNodes": 310318,
+"calMs": 450.8,
+"calDepth": 13,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:1KiQPXDQ#58",
+"fen": "r5k1/R5p1/p1b3p1/1p3p2/3P4/3B4/PP3P1P/6K1 w - - 1 30",
+"calNodes": 538415,
+"calMs": 448.5,
+"calDepth": 17,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:0xqKq",
+"fen": "8/p7/8/1P2k2p/P2p2p1/4P3/3K3P/8 w - - 0 30",
+"calNodes": 707348,
+"calMs": 450.3,
+"calDepth": 19,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:zA2uF",
+"fen": "5rk1/1p2n1p1/4p2p/R2pP3/2qPbPP1/P3Q3/3B3P/R5K1 b - - 0 27",
+"calNodes": 343974,
+"calMs": 451.3,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:NoeR6pH1#39",
+"fen": "rq3rk1/pp1n2p1/2p4p/3p1p1b/3P3N/Q2BP3/PP3PPP/R4RK1 b - - 1 20",
+"calNodes": 459153,
+"calMs": 452.4,
+"calDepth": 14,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:lihox",
+"fen": "8/8/8/2p2Pb1/2k1K3/p1p5/P5R1/8 b - - 6 52",
+"calNodes": 719877,
+"calMs": 453.4,
+"calDepth": 23,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:qAcCUf91#41",
+"fen": "2r1r1k1/2qb2pp/p3pn2/1p1p4/3N1P2/3BQ2P/PPP3P1/1K1RR3 b - - 2 21",
+"calNodes": 558162,
+"calMs": 451.8,
+"calDepth": 14,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:EuD3ZsSm#96",
+"fen": "8/8/3k1bp1/1p1pp3/1P1pP2P/3P1K2/8/4B3 w - - 1 49",
+"calNodes": 559863,
+"calMs": 449.5,
+"calDepth": 21,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:bhp7QcJW#37",
+"fen": "2kr4/ppp1pp1p/5npP/4nq2/5P2/2Nr2P1/PPPBQ1B1/2KR4 b - - 0 19",
+"calNodes": 616657,
+"calMs": 450.8,
+"calDepth": 16,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:FeAqh",
+"fen": "1rr3k1/5pp1/2n1p1p1/1qPp4/pPn2B2/P2B1P2/K4QPP/3R3R b - - 8 31",
+"calNodes": 371144,
+"calMs": 455.3,
+"calDepth": 12,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:QsOUdm0A#97",
+"fen": "8/2R5/1p1p2k1/pP1N1p2/n3nPp1/6Pp/7P/6K1 b - - 4 49",
+"calNodes": 582411,
+"calMs": 449.5,
+"calDepth": 18,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:nE4U6Am9#50",
+"fen": "3qr1k1/4npbp/1np3p1/1r6/p2PN3/P1BQ1N1P/5PP1/3RR1K1 w - - 2 26",
+"calNodes": 558155,
+"calMs": 452.4,
+"calDepth": 13,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:rzh9E5AR#28",
+"fen": "r1b2r1k/pp1nq1pp/2pb4/4Np2/2BP1P2/4P3/P5PP/R1BQ1RK1 w - - 1 15",
+"calNodes": 431318,
+"calMs": 451.4,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:Eyv9T81V#69",
+"fen": "5r2/6k1/5p2/R5pp/4P2P/5P2/5KP1/8 b - - 0 35",
+"calNodes": 649649,
+"calMs": 453.2,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:AUUQiJCl#52",
+"fen": "2r3k1/4ppb1/1p4pp/n1Np2P1/3P1P1P/r1P2NK1/5P2/2R2R2 w - - 0 27",
+"calNodes": 512467,
+"calMs": 450.4,
+"calDepth": 14,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:9wTphB32#53",
+"fen": "5rk1/4bppp/p2pp3/5P2/4P3/6QP/4q1P1/2R2R1K b - - 2 27",
+"calNodes": 523528,
+"calMs": 453.2,
+"calDepth": 14,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:1AUbZ",
+"fen": "5Q2/1p1k1p2/1rr1p1p1/3pP3/8/5qP1/5P1P/1R3RK1 w - - 5 33",
+"calNodes": 430395,
+"calMs": 452.3,
+"calDepth": 17,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:yyPYU",
+"fen": "8/8/2k4p/2P2pp1/p2K3P/P5P1/1P6/8 b - - 0 43",
+"calNodes": 505942,
+"calMs": 451.3,
+"calDepth": 21,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:PFbag0Wa#73",
+"fen": "8/2p3pp/1k6/p1p5/4K3/P2r3P/1P2R1P1/8 b - - 4 37",
+"calNodes": 685381,
+"calMs": 451.3,
+"calDepth": 16,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:fdHfz",
+"fen": "2b5/8/1p6/1Pk3p1/2PpppP1/P2P1P2/2B2K2/8 b - - 1 47",
+"calNodes": 714478,
+"calMs": 452.5,
+"calDepth": 23,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:1OIQh",
+"fen": "7r/r4pkp/1R6/8/5P2/8/1PP3PP/1K2R3 b - - 2 23",
+"calNodes": 626965,
+"calMs": 452.5,
+"calDepth": 16,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:Kugc2",
+"fen": "6rk/4Rp1p/p7/1p1p4/3P2n1/2NB1K2/PPP4r/6R1 b - - 6 34",
+"calNodes": 548654,
+"calMs": 452.5,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:Ptf4Y",
+"fen": "r2q2k1/3n1rP1/2pb1p2/5PR1/1P1Pp3/4B3/1qPQ4/2NK2R1 w - - 1 28",
+"calNodes": 415976,
+"calMs": 451.3,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:PccSA",
+"fen": "r1b2rk1/pp3pbp/2p3p1/4p3/1P2P1qP/P7/1BQPB3/R3K1NR b KQ - 1 15",
+"calNodes": 420119,
+"calMs": 453.4,
+"calDepth": 16,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:BkbiX",
+"fen": "8/p7/4p3/1p2Kp2/5P2/1P4kP/P7/8 w - - 9 46",
+"calNodes": 485483,
+"calMs": 451.3,
+"calDepth": 20,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:prGvQuGD#60",
+"fen": "8/ppk3pp/3r4/2pP1Q2/3b2P1/8/P5KP/8 w - - 2 31",
+"calNodes": 667621,
+"calMs": 453.2,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:kU169Uc8#80",
+"fen": "2bk4/5p1p/5P2/1p1NP3/1Bpn1K2/P7/7P/8 w - - 0 41",
+"calNodes": 653481,
+"calMs": 450.3,
+"calDepth": 16,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:TBQFguA4#116",
+"fen": "4B3/8/3K3n/p1p5/Ppk1P3/6P1/8/8 w - - 2 59",
+"calNodes": 817352,
+"calMs": 450.3,
+"calDepth": 19,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:ir78CJrw#45",
+"fen": "2rq1rk1/4b1pp/b4p2/1pn1pP1N/pB1pP1P1/Pn1P1N2/1PR3BP/3Q2RK b - - 9 23",
+"calNodes": 507726,
+"calMs": 450.4,
+"calDepth": 14,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:FDbJk",
+"fen": "rb3rk1/5p2/p2q3p/B1p1n1pQ/3p4/R2P3P/1P3PPN/4R1K1 w - - 2 26",
+"calNodes": 446719,
+"calMs": 452.5,
+"calDepth": 13,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:de2em",
+"fen": "8/p2r4/1p6/8/1N6/3p1k2/PK6/3R4 b - - 1 66",
+"calNodes": 293833,
+"calMs": 455.2,
+"calDepth": 21,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:cGlVAY3z#56",
+"fen": "2rb4/3q1pkp/3p2p1/Rp1Bp3/1P6/3PP1PP/Q4PK1/8 w - - 4 29",
+"calNodes": 558999,
+"calMs": 451.8,
+"calDepth": 18,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:QM5Yk",
+"fen": "3r1r2/1p2qpk1/p1b1p1pp/4P3/5P2/2pQ2R1/PPB3PP/4R1K1 w - - 0 23",
+"calNodes": 429429,
+"calMs": 453.4,
+"calDepth": 14,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:olR4LUWb#44",
+"fen": "r4rk1/1p3ppp/p3p3/q7/2p1P3/1P6/1QP2PPP/2KRR3 w - - 2 23",
+"calNodes": 507752,
+"calMs": 452.4,
+"calDepth": 13,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:hqeyj",
+"fen": "6k1/1pr2bp1/p4p1p/q2P4/3QP1P1/3B1P1P/P5K1/1R6 b - - 0 32",
+"calNodes": 337152,
+"calMs": 453.4,
+"calDepth": 14,
+"source": "responses_v2.csv"
+}
+],
+"zahak-8.0": [
+{
+"pos": "lichess-game:2inuMZeV#41",
+"fen": "2r2rk1/pb1n2pp/1p2p2q/2pPPp2/2P2P1b/P2BB1N1/2Q3PP/R4RK1 b - - 0 21",
+"calNodes": 540008,
+"calMs": 452.3,
+"calDepth": 13,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:n8Xl6VYW#39",
+"fen": "4rrk1/p1n2ppp/b2p4/2pPnQ2/7q/P1N1R1NP/BP3PP1/R5K1 b - - 6 20",
+"calNodes": 734863,
+"calMs": 452.3,
+"calDepth": 14,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:ifscNkXK#48",
+"fen": "3r3r/p1pk1ppp/Q1p1p3/2P2q2/2P2P2/7R/PP3P2/1R3KNb w - - 5 25",
+"calNodes": 448336,
+"calMs": 450.3,
+"calDepth": 13,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:1OtP0SKE#52",
+"fen": "8/3k2pp/3p1b2/1N2n3/3BP3/8/PPr3PP/5RK1 w - - 3 27",
+"calNodes": 680201,
+"calMs": 454.2,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:904Mfkqa#28",
+"fen": "2k1r2r/ppp2ppp/2n2n2/8/3P4/P1q1BB2/5PPP/R2Q1K1R w - - 2 15",
+"calNodes": 204342,
+"calMs": 451.4,
+"calDepth": 13,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:bNITIrja#45",
+"fen": "3r1kr1/1b1n3R/p2bp3/1p1p2P1/2nB4/1NN2B2/PPP3P1/2KR4 b - - 2 23",
+"calNodes": 575711,
+"calMs": 449.7,
+"calDepth": 12,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:1KiQPXDQ#58",
+"fen": "r5k1/R5p1/p1b3p1/1p3p2/3P4/3B4/PP3P1P/6K1 w - - 1 30",
+"calNodes": 425440,
+"calMs": 450.1,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:0xqKq",
+"fen": "8/p7/8/1P2k2p/P2p2p1/4P3/3K3P/8 w - - 0 30",
+"calNodes": 703797,
+"calMs": 453.1,
+"calDepth": 20,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:zA2uF",
+"fen": "5rk1/1p2n1p1/4p2p/R2pP3/2qPbPP1/P3Q3/3B3P/R5K1 b - - 0 27",
+"calNodes": 460802,
+"calMs": 454.0,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:NoeR6pH1#39",
+"fen": "rq3rk1/pp1n2p1/2p4p/3p1p1b/3P3N/Q2BP3/PP3PPP/R4RK1 b - - 1 20",
+"calNodes": 662919,
+"calMs": 452.3,
+"calDepth": 14,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:lihox",
+"fen": "8/8/8/2p2Pb1/2k1K3/p1p5/P5R1/8 b - - 6 52",
+"calNodes": 800068,
+"calMs": 449.5,
+"calDepth": 18,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:qAcCUf91#41",
+"fen": "2r1r1k1/2qb2pp/p3pn2/1p1p4/3N1P2/3BQ2P/PPP3P1/1K1RR3 b - - 2 21",
+"calNodes": 199087,
+"calMs": 450.7,
+"calDepth": 13,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:EuD3ZsSm#96",
+"fen": "8/8/3k1bp1/1p1pp3/1P1pP2P/3P1K2/8/4B3 w - - 1 49",
+"calNodes": 702227,
+"calMs": 450.1,
+"calDepth": 23,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:bhp7QcJW#37",
+"fen": "2kr4/ppp1pp1p/5npP/4nq2/5P2/2Nr2P1/PPPBQ1B1/2KR4 b - - 0 19",
+"calNodes": 623262,
+"calMs": 449.7,
+"calDepth": 16,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:FeAqh",
+"fen": "1rr3k1/5pp1/2n1p1p1/1qPp4/pPn2B2/P2B1P2/K4QPP/3R3R b - - 8 31",
+"calNodes": 243348,
+"calMs": 452.5,
+"calDepth": 13,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:QsOUdm0A#97",
+"fen": "8/2R5/1p1p2k1/pP1N1p2/n3nPp1/6Pp/7P/6K1 b - - 4 49",
+"calNodes": 443357,
+"calMs": 451.1,
+"calDepth": 17,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:nE4U6Am9#50",
+"fen": "3qr1k1/4npbp/1np3p1/1r6/p2PN3/P1BQ1N1P/5PP1/3RR1K1 w - - 2 26",
+"calNodes": 383646,
+"calMs": 452.3,
+"calDepth": 13,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:rzh9E5AR#28",
+"fen": "r1b2r1k/pp1nq1pp/2pb4/4Np2/2BP1P2/4P3/P5PP/R1BQ1RK1 w - - 1 15",
+"calNodes": 564613,
+"calMs": 452.3,
+"calDepth": 16,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:Eyv9T81V#69",
+"fen": "5r2/6k1/5p2/R5pp/4P2P/5P2/5KP1/8 b - - 0 35",
+"calNodes": 633439,
+"calMs": 450.3,
+"calDepth": 16,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:AUUQiJCl#52",
+"fen": "2r3k1/4ppb1/1p4pp/n1Np2P1/3P1P1P/r1P2NK1/5P2/2R2R2 w - - 0 27",
+"calNodes": 579287,
+"calMs": 453.3,
+"calDepth": 14,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:9wTphB32#53",
+"fen": "5rk1/4bppp/p2pp3/5P2/4P3/6QP/4q1P1/2R2R1K b - - 2 27",
+"calNodes": 547315,
+"calMs": 454.0,
+"calDepth": 14,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:1AUbZ",
+"fen": "5Q2/1p1k1p2/1rr1p1p1/3pP3/8/5qP1/5P1P/1R3RK1 w - - 5 33",
+"calNodes": 455083,
+"calMs": 454.0,
+"calDepth": 19,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:yyPYU",
+"fen": "8/8/2k4p/2P2pp1/p2K3P/P5P1/1P6/8 b - - 0 43",
+"calNodes": 641891,
+"calMs": 453.1,
+"calDepth": 22,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:PFbag0Wa#73",
+"fen": "8/2p3pp/1k6/p1p5/4K3/P2r3P/1P2R1P1/8 b - - 4 37",
+"calNodes": 489271,
+"calMs": 450.3,
+"calDepth": 14,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:fdHfz",
+"fen": "2b5/8/1p6/1Pk3p1/2PpppP1/P2P1P2/2B2K2/8 b - - 1 47",
+"calNodes": 1055119,
+"calMs": 451.5,
+"calDepth": 21,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:1OIQh",
+"fen": "7r/r4pkp/1R6/8/5P2/8/1PP3PP/1K2R3 b - - 2 23",
+"calNodes": 774122,
+"calMs": 452.5,
+"calDepth": 16,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:Kugc2",
+"fen": "6rk/4Rp1p/p7/1p1p4/3P2n1/2NB1K2/PPP4r/6R1 b - - 6 34",
+"calNodes": 609292,
+"calMs": 451.5,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:Ptf4Y",
+"fen": "r2q2k1/3n1rP1/2pb1p2/5PR1/1P1Pp3/4B3/1qPQ4/2NK2R1 w - - 1 28",
+"calNodes": 223060,
+"calMs": 454.0,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:PccSA",
+"fen": "r1b2rk1/pp3pbp/2p3p1/4p3/1P2P1qP/P7/1BQPB3/R3K1NR b KQ - 1 15",
+"calNodes": 328601,
+"calMs": 452.5,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:BkbiX",
+"fen": "8/p7/4p3/1p2Kp2/5P2/1P4kP/P7/8 w - - 9 46",
+"calNodes": 1044897,
+"calMs": 453.1,
+"calDepth": 23,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:prGvQuGD#60",
+"fen": "8/ppk3pp/3r4/2pP1Q2/3b2P1/8/P5KP/8 w - - 2 31",
+"calNodes": 694271,
+"calMs": 450.3,
+"calDepth": 14,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:kU169Uc8#80",
+"fen": "2bk4/5p1p/5P2/1p1NP3/1Bpn1K2/P7/7P/8 w - - 0 41",
+"calNodes": 882503,
+"calMs": 450.3,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:TBQFguA4#116",
+"fen": "4B3/8/3K3n/p1p5/Ppk1P3/6P1/8/8 w - - 2 59",
+"calNodes": 581819,
+"calMs": 450.3,
+"calDepth": 16,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:ir78CJrw#45",
+"fen": "2rq1rk1/4b1pp/b4p2/1pn1pP1N/pB1pP1P1/Pn1P1N2/1PR3BP/3Q2RK b - - 9 23",
+"calNodes": 347390,
+"calMs": 453.3,
+"calDepth": 13,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:FDbJk",
+"fen": "rb3rk1/5p2/p2q3p/B1p1n1pQ/3p4/R2P3P/1P3PPN/4R1K1 w - - 2 26",
+"calNodes": 653578,
+"calMs": 453.5,
+"calDepth": 16,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:de2em",
+"fen": "8/p2r4/1p6/8/1N6/3p1k2/PK6/3R4 b - - 1 66",
+"calNodes": 472916,
+"calMs": 454.0,
+"calDepth": 20,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:cGlVAY3z#56",
+"fen": "2rb4/3q1pkp/3p2p1/Rp1Bp3/1P6/3PP1PP/Q4PK1/8 w - - 4 29",
+"calNodes": 737823,
+"calMs": 449.7,
+"calDepth": 16,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:QM5Yk",
+"fen": "3r1r2/1p2qpk1/p1b1p1pp/4P3/5P2/2pQ2R1/PPB3PP/4R1K1 w - - 0 23",
+"calNodes": 419056,
+"calMs": 453.5,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:olR4LUWb#44",
+"fen": "r4rk1/1p3ppp/p3p3/q7/2p1P3/1P6/1QP2PPP/2KRR3 w - - 2 23",
+"calNodes": 561610,
+"calMs": 452.3,
+"calDepth": 13,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:hqeyj",
+"fen": "6k1/1pr2bp1/p4p1p/q2P4/3QP1P1/3B1P1P/P5K1/1R6 b - - 0 32",
+"calNodes": 490868,
+"calMs": 452.5,
+"calDepth": 14,
+"source": "responses_v2.csv"
+}
+],
+"zahak-10.0": [
+{
+"pos": "lichess-game:2inuMZeV#41",
+"fen": "2r2rk1/pb1n2pp/1p2p2q/2pPPp2/2P2P1b/P2BB1N1/2Q3PP/R4RK1 b - - 0 21",
+"calNodes": 516150,
+"calMs": 433.7,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:n8Xl6VYW#39",
+"fen": "4rrk1/p1n2ppp/b2p4/2pPnQ2/7q/P1N1R1NP/BP3PP1/R5K1 b - - 6 20",
+"calNodes": 352844,
+"calMs": 355.5,
+"calDepth": 17,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:ifscNkXK#48",
+"fen": "3r3r/p1pk1ppp/Q1p1p3/2P2q2/2P2P2/7R/PP3P2/1R3KNb w - - 5 25",
+"calNodes": 351315,
+"calMs": 321.8,
+"calDepth": 14,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:1OtP0SKE#52",
+"fen": "8/3k2pp/3p1b2/1N2n3/3BP3/8/PPr3PP/5RK1 w - - 3 27",
+"calNodes": 465015,
+"calMs": 350.8,
+"calDepth": 16,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:904Mfkqa#28",
+"fen": "2k1r2r/ppp2ppp/2n2n2/8/3P4/P1q1BB2/5PPP/R2Q1K1R w - - 2 15",
+"calNodes": 304432,
+"calMs": 255.5,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:bNITIrja#45",
+"fen": "3r1kr1/1b1n3R/p2bp3/1p1p2P1/2nB4/1NN2B2/PPP3P1/2KR4 b - - 2 23",
+"calNodes": 351089,
+"calMs": 348.0,
+"calDepth": 13,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:1KiQPXDQ#58",
+"fen": "r5k1/R5p1/p1b3p1/1p3p2/3P4/3B4/PP3P1P/6K1 w - - 1 30",
+"calNodes": 704079,
+"calMs": 448.2,
+"calDepth": 20,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:0xqKq",
+"fen": "8/p7/8/1P2k2p/P2p2p1/4P3/3K3P/8 w - - 0 30",
+"calNodes": 584249,
+"calMs": 400.1,
+"calDepth": 20,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:zA2uF",
+"fen": "5rk1/1p2n1p1/4p2p/R2pP3/2qPbPP1/P3Q3/3B3P/R5K1 b - - 0 27",
+"calNodes": 372408,
+"calMs": 378.8,
+"calDepth": 16,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:NoeR6pH1#39",
+"fen": "rq3rk1/pp1n2p1/2p4p/3p1p1b/3P3N/Q2BP3/PP3PPP/R4RK1 b - - 1 20",
+"calNodes": 469056,
+"calMs": 408.3,
+"calDepth": 14,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:lihox",
+"fen": "8/8/8/2p2Pb1/2k1K3/p1p5/P5R1/8 b - - 6 52",
+"calNodes": 379928,
+"calMs": 278.8,
+"calDepth": 20,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:qAcCUf91#41",
+"fen": "2r1r1k1/2qb2pp/p3pn2/1p1p4/3N1P2/3BQ2P/PPP3P1/1K1RR3 b - - 2 21",
+"calNodes": 403223,
+"calMs": 365.2,
+"calDepth": 16,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:EuD3ZsSm#96",
+"fen": "8/8/3k1bp1/1p1pp3/1P1pP2P/3P1K2/8/4B3 w - - 1 49",
+"calNodes": 570572,
+"calMs": 336.6,
+"calDepth": 26,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:bhp7QcJW#37",
+"fen": "2kr4/ppp1pp1p/5npP/4nq2/5P2/2Nr2P1/PPPBQ1B1/2KR4 b - - 0 19",
+"calNodes": 489321,
+"calMs": 452.5,
+"calDepth": 17,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:FeAqh",
+"fen": "1rr3k1/5pp1/2n1p1p1/1qPp4/pPn2B2/P2B1P2/K4QPP/3R3R b - - 8 31",
+"calNodes": 420951,
+"calMs": 436.7,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:QsOUdm0A#97",
+"fen": "8/2R5/1p1p2k1/pP1N1p2/n3nPp1/6Pp/7P/6K1 b - - 4 49",
+"calNodes": 429770,
+"calMs": 293.6,
+"calDepth": 17,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:nE4U6Am9#50",
+"fen": "3qr1k1/4npbp/1np3p1/1r6/p2PN3/P1BQ1N1P/5PP1/3RR1K1 w - - 2 26",
+"calNodes": 448551,
+"calMs": 413.0,
+"calDepth": 14,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:rzh9E5AR#28",
+"fen": "r1b2r1k/pp1nq1pp/2pb4/4Np2/2BP1P2/4P3/P5PP/R1BQ1RK1 w - - 1 15",
+"calNodes": 505364,
+"calMs": 365.8,
+"calDepth": 16,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:Eyv9T81V#69",
+"fen": "5r2/6k1/5p2/R5pp/4P2P/5P2/5KP1/8 b - - 0 35",
+"calNodes": 685398,
+"calMs": 414.6,
+"calDepth": 20,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:AUUQiJCl#52",
+"fen": "2r3k1/4ppb1/1p4pp/n1Np2P1/3P1P1P/r1P2NK1/5P2/2R2R2 w - - 0 27",
+"calNodes": 305466,
+"calMs": 219.7,
+"calDepth": 16,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:9wTphB32#53",
+"fen": "5rk1/4bppp/p2pp3/5P2/4P3/6QP/4q1P1/2R2R1K b - - 2 27",
+"calNodes": 479432,
+"calMs": 416.6,
+"calDepth": 16,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:1AUbZ",
+"fen": "5Q2/1p1k1p2/1rr1p1p1/3pP3/8/5qP1/5P1P/1R3RK1 w - - 5 33",
+"calNodes": 327814,
+"calMs": 353.6,
+"calDepth": 18,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:yyPYU",
+"fen": "8/8/2k4p/2P2pp1/p2K3P/P5P1/1P6/8 b - - 0 43",
+"calNodes": 627222,
+"calMs": 399.1,
+"calDepth": 25,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:PFbag0Wa#73",
+"fen": "8/2p3pp/1k6/p1p5/4K3/P2r3P/1P2R1P1/8 b - - 4 37",
+"calNodes": 613117,
+"calMs": 413.7,
+"calDepth": 17,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:fdHfz",
+"fen": "2b5/8/1p6/1Pk3p1/2PpppP1/P2P1P2/2B2K2/8 b - - 1 47",
+"calNodes": 442909,
+"calMs": 326.3,
+"calDepth": 25,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:1OIQh",
+"fen": "7r/r4pkp/1R6/8/5P2/8/1PP3PP/1K2R3 b - - 2 23",
+"calNodes": 330643,
+"calMs": 281.6,
+"calDepth": 17,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:Kugc2",
+"fen": "6rk/4Rp1p/p7/1p1p4/3P2n1/2NB1K2/PPP4r/6R1 b - - 6 34",
+"calNodes": 395076,
+"calMs": 345.4,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:Ptf4Y",
+"fen": "r2q2k1/3n1rP1/2pb1p2/5PR1/1P1Pp3/4B3/1qPQ4/2NK2R1 w - - 1 28",
+"calNodes": 301635,
+"calMs": 443.7,
+"calDepth": 14,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:PccSA",
+"fen": "r1b2rk1/pp3pbp/2p3p1/4p3/1P2P1qP/P7/1BQPB3/R3K1NR b KQ - 1 15",
+"calNodes": 367707,
+"calMs": 379.6,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:BkbiX",
+"fen": "8/p7/4p3/1p2Kp2/5P2/1P4kP/P7/8 w - - 9 46",
+"calNodes": 586677,
+"calMs": 407.9,
+"calDepth": 22,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:prGvQuGD#60",
+"fen": "8/ppk3pp/3r4/2pP1Q2/3b2P1/8/P5KP/8 w - - 2 31",
+"calNodes": 402981,
+"calMs": 282.4,
+"calDepth": 16,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:kU169Uc8#80",
+"fen": "2bk4/5p1p/5P2/1p1NP3/1Bpn1K2/P7/7P/8 w - - 0 41",
+"calNodes": 607129,
+"calMs": 405.3,
+"calDepth": 17,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:TBQFguA4#116",
+"fen": "4B3/8/3K3n/p1p5/Ppk1P3/6P1/8/8 w - - 2 59",
+"calNodes": 326691,
+"calMs": 200.8,
+"calDepth": 16,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:ir78CJrw#45",
+"fen": "2rq1rk1/4b1pp/b4p2/1pn1pP1N/pB1pP1P1/Pn1P1N2/1PR3BP/3Q2RK b - - 9 23",
+"calNodes": 457850,
+"calMs": 387.5,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:FDbJk",
+"fen": "rb3rk1/5p2/p2q3p/B1p1n1pQ/3p4/R2P3P/1P3PPN/4R1K1 w - - 2 26",
+"calNodes": 404506,
+"calMs": 413.9,
+"calDepth": 18,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:de2em",
+"fen": "8/p2r4/1p6/8/1N6/3p1k2/PK6/3R4 b - - 1 66",
+"calNodes": 447387,
+"calMs": 269.3,
+"calDepth": 22,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:cGlVAY3z#56",
+"fen": "2rb4/3q1pkp/3p2p1/Rp1Bp3/1P6/3PP1PP/Q4PK1/8 w - - 4 29",
+"calNodes": 473977,
+"calMs": 413.2,
+"calDepth": 18,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:QM5Yk",
+"fen": "3r1r2/1p2qpk1/p1b1p1pp/4P3/5P2/2pQ2R1/PPB3PP/4R1K1 w - - 0 23",
+"calNodes": 422183,
+"calMs": 431.0,
+"calDepth": 17,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:olR4LUWb#44",
+"fen": "r4rk1/1p3ppp/p3p3/q7/2p1P3/1P6/1QP2PPP/2KRR3 w - - 2 23",
+"calNodes": 524324,
+"calMs": 432.8,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:hqeyj",
+"fen": "6k1/1pr2bp1/p4p1p/q2P4/3QP1P1/3B1P1P/P5K1/1R6 b - - 0 32",
+"calNodes": 417561,
+"calMs": 340.6,
+"calDepth": 14,
+"source": "responses_v2.csv"
+}
+],
+"halogen-11": [
+{
+"pos": "lichess-game:2inuMZeV#41",
+"fen": "2r2rk1/pb1n2pp/1p2p2q/2pPPp2/2P2P1b/P2BB1N1/2Q3PP/R4RK1 b - - 0 21",
+"calNodes": 707153,
+"calMs": 377.3,
+"calDepth": 17,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:n8Xl6VYW#39",
+"fen": "4rrk1/p1n2ppp/b2p4/2pPnQ2/7q/P1N1R1NP/BP3PP1/R5K1 b - - 6 20",
+"calNodes": 503017,
+"calMs": 292.2,
+"calDepth": 17,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:ifscNkXK#48",
+"fen": "3r3r/p1pk1ppp/Q1p1p3/2P2q2/2P2P2/7R/PP3P2/1R3KNb w - - 5 25",
+"calNodes": 770643,
+"calMs": 365.9,
+"calDepth": 17,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:1OtP0SKE#52",
+"fen": "8/3k2pp/3p1b2/1N2n3/3BP3/8/PPr3PP/5RK1 w - - 3 27",
+"calNodes": 870800,
+"calMs": 400.5,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:904Mfkqa#28",
+"fen": "2k1r2r/ppp2ppp/2n2n2/8/3P4/P1q1BB2/5PPP/R2Q1K1R w - - 2 15",
+"calNodes": 592726,
+"calMs": 322.1,
+"calDepth": 14,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:bNITIrja#45",
+"fen": "3r1kr1/1b1n3R/p2bp3/1p1p2P1/2nB4/1NN2B2/PPP3P1/2KR4 b - - 2 23",
+"calNodes": 708041,
+"calMs": 391.0,
+"calDepth": 16,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:1KiQPXDQ#58",
+"fen": "r5k1/R5p1/p1b3p1/1p3p2/3P4/3B4/PP3P1P/6K1 w - - 1 30",
+"calNodes": 884467,
+"calMs": 327.8,
+"calDepth": 20,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:0xqKq",
+"fen": "8/p7/8/1P2k2p/P2p2p1/4P3/3K3P/8 w - - 0 30",
+"calNodes": 707583,
+"calMs": 348.5,
+"calDepth": 18,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:zA2uF",
+"fen": "5rk1/1p2n1p1/4p2p/R2pP3/2qPbPP1/P3Q3/3B3P/R5K1 b - - 0 27",
+"calNodes": 511926,
+"calMs": 313.3,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:NoeR6pH1#39",
+"fen": "rq3rk1/pp1n2p1/2p4p/3p1p1b/3P3N/Q2BP3/PP3PPP/R4RK1 b - - 1 20",
+"calNodes": 722334,
+"calMs": 335.7,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:lihox",
+"fen": "8/8/8/2p2Pb1/2k1K3/p1p5/P5R1/8 b - - 6 52",
+"calNodes": 830831,
+"calMs": 325.4,
+"calDepth": 20,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:qAcCUf91#41",
+"fen": "2r1r1k1/2qb2pp/p3pn2/1p1p4/3N1P2/3BQ2P/PPP3P1/1K1RR3 b - - 2 21",
+"calNodes": 681242,
+"calMs": 318.1,
+"calDepth": 18,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:EuD3ZsSm#96",
+"fen": "8/8/3k1bp1/1p1pp3/1P1pP2P/3P1K2/8/4B3 w - - 1 49",
+"calNodes": 644880,
+"calMs": 238.9,
+"calDepth": 21,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:bhp7QcJW#37",
+"fen": "2kr4/ppp1pp1p/5npP/4nq2/5P2/2Nr2P1/PPPBQ1B1/2KR4 b - - 0 19",
+"calNodes": 577863,
+"calMs": 331.7,
+"calDepth": 19,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:nE4U6Am9#50",
+"fen": "3qr1k1/4npbp/1np3p1/1r6/p2PN3/P1BQ1N1P/5PP1/3RR1K1 w - - 2 26",
+"calNodes": 819333,
+"calMs": 382.1,
+"calDepth": 16,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:rzh9E5AR#28",
+"fen": "r1b2r1k/pp1nq1pp/2pb4/4Np2/2BP1P2/4P3/P5PP/R1BQ1RK1 w - - 1 15",
+"calNodes": 691195,
+"calMs": 311.5,
+"calDepth": 18,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:Eyv9T81V#69",
+"fen": "5r2/6k1/5p2/R5pp/4P2P/5P2/5KP1/8 b - - 0 35",
+"calNodes": 911218,
+"calMs": 346.3,
+"calDepth": 17,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:AUUQiJCl#52",
+"fen": "2r3k1/4ppb1/1p4pp/n1Np2P1/3P1P1P/r1P2NK1/5P2/2R2R2 w - - 0 27",
+"calNodes": 463167,
+"calMs": 351.2,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:9wTphB32#53",
+"fen": "5rk1/4bppp/p2pp3/5P2/4P3/6QP/4q1P1/2R2R1K b - - 2 27",
+"calNodes": 741925,
+"calMs": 325.7,
+"calDepth": 18,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:1AUbZ",
+"fen": "5Q2/1p1k1p2/1rr1p1p1/3pP3/8/5qP1/5P1P/1R3RK1 w - - 5 33",
+"calNodes": 791489,
+"calMs": 379.0,
+"calDepth": 22,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:yyPYU",
+"fen": "8/8/2k4p/2P2pp1/p2K3P/P5P1/1P6/8 b - - 0 43",
+"calNodes": 846344,
+"calMs": 405.7,
+"calDepth": 22,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:PFbag0Wa#73",
+"fen": "8/2p3pp/1k6/p1p5/4K3/P2r3P/1P2R1P1/8 b - - 4 37",
+"calNodes": 812641,
+"calMs": 340.4,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:fdHfz",
+"fen": "2b5/8/1p6/1Pk3p1/2PpppP1/P2P1P2/2B2K2/8 b - - 1 47",
+"calNodes": 512048,
+"calMs": 265.3,
+"calDepth": 23,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:1OIQh",
+"fen": "7r/r4pkp/1R6/8/5P2/8/1PP3PP/1K2R3 b - - 2 23",
+"calNodes": 850840,
+"calMs": 371.6,
+"calDepth": 19,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:Kugc2",
+"fen": "6rk/4Rp1p/p7/1p1p4/3P2n1/2NB1K2/PPP4r/6R1 b - - 6 34",
+"calNodes": 569123,
+"calMs": 271.8,
+"calDepth": 17,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:Ptf4Y",
+"fen": "r2q2k1/3n1rP1/2pb1p2/5PR1/1P1Pp3/4B3/1qPQ4/2NK2R1 w - - 1 28",
+"calNodes": 658385,
+"calMs": 304.7,
+"calDepth": 16,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:PccSA",
+"fen": "r1b2rk1/pp3pbp/2p3p1/4p3/1P2P1qP/P7/1BQPB3/R3K1NR b KQ - 1 15",
+"calNodes": 574503,
+"calMs": 361.5,
+"calDepth": 19,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:BkbiX",
+"fen": "8/p7/4p3/1p2Kp2/5P2/1P4kP/P7/8 w - - 9 46",
+"calNodes": 777380,
+"calMs": 404.7,
+"calDepth": 22,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:prGvQuGD#60",
+"fen": "8/ppk3pp/3r4/2pP1Q2/3b2P1/8/P5KP/8 w - - 2 31",
+"calNodes": 582070,
+"calMs": 241.6,
+"calDepth": 14,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:kU169Uc8#80",
+"fen": "2bk4/5p1p/5P2/1p1NP3/1Bpn1K2/P7/7P/8 w - - 0 41",
+"calNodes": 1027966,
+"calMs": 403.1,
+"calDepth": 16,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:TBQFguA4#116",
+"fen": "4B3/8/3K3n/p1p5/Ppk1P3/6P1/8/8 w - - 2 59",
+"calNodes": 635234,
+"calMs": 245.6,
+"calDepth": 19,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:ir78CJrw#45",
+"fen": "2rq1rk1/4b1pp/b4p2/1pn1pP1N/pB1pP1P1/Pn1P1N2/1PR3BP/3Q2RK b - - 9 23",
+"calNodes": 810034,
+"calMs": 398.6,
+"calDepth": 17,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:FDbJk",
+"fen": "rb3rk1/5p2/p2q3p/B1p1n1pQ/3p4/R2P3P/1P3PPN/4R1K1 w - - 2 26",
+"calNodes": 902346,
+"calMs": 394.8,
+"calDepth": 20,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:de2em",
+"fen": "8/p2r4/1p6/8/1N6/3p1k2/PK6/3R4 b - - 1 66",
+"calNodes": 915715,
+"calMs": 402.8,
+"calDepth": 23,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:cGlVAY3z#56",
+"fen": "2rb4/3q1pkp/3p2p1/Rp1Bp3/1P6/3PP1PP/Q4PK1/8 w - - 4 29",
+"calNodes": 568419,
+"calMs": 294.7,
+"calDepth": 18,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:QM5Yk",
+"fen": "3r1r2/1p2qpk1/p1b1p1pp/4P3/5P2/2pQ2R1/PPB3PP/4R1K1 w - - 0 23",
+"calNodes": 532890,
+"calMs": 339.3,
+"calDepth": 18,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:olR4LUWb#44",
+"fen": "r4rk1/1p3ppp/p3p3/q7/2p1P3/1P6/1QP2PPP/2KRR3 w - - 2 23",
+"calNodes": 532446,
+"calMs": 255.4,
+"calDepth": 14,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:hqeyj",
+"fen": "6k1/1pr2bp1/p4p1p/q2P4/3QP1P1/3B1P1P/P5K1/1R6 b - - 0 32",
+"calNodes": 869907,
+"calMs": 385.5,
+"calDepth": 18,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:xz9MO",
+"fen": "r4rk1/pp2Rppp/3p4/7q/3n2b1/3B1N2/PPPB1PPP/R2Q2K1 b - - 0 14",
+"calNodes": 797212,
+"calMs": 378.1,
+"calDepth": 18,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:1sOZ4yr1#82",
+"fen": "8/8/3r1p2/p1rP1kp1/P2R1P1p/2pR3P/2P1KP2/8 w - - 0 42",
+"calNodes": 766152,
+"calMs": 322.8,
+"calDepth": 18,
+"source": "responses_v2.csv"
+}
+],
+"fatalii-0.4.0": [
+{
+"pos": "lichess-game:2inuMZeV#41",
+"fen": "2r2rk1/pb1n2pp/1p2p2q/2pPPp2/2P2P1b/P2BB1N1/2Q3PP/R4RK1 b - - 0 21",
+"calNodes": 519879,
+"calMs": 431.0,
+"calDepth": 8,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:n8Xl6VYW#39",
+"fen": "4rrk1/p1n2ppp/b2p4/2pPnQ2/7q/P1N1R1NP/BP3PP1/R5K1 b - - 6 20",
+"calNodes": 514913,
+"calMs": 465.8,
+"calDepth": 7,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:ifscNkXK#48",
+"fen": "3r3r/p1pk1ppp/Q1p1p3/2P2q2/2P2P2/7R/PP3P2/1R3KNb w - - 5 25",
+"calNodes": 448577,
+"calMs": 435.8,
+"calDepth": 8,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:1OtP0SKE#52",
+"fen": "8/3k2pp/3p1b2/1N2n3/3BP3/8/PPr3PP/5RK1 w - - 3 27",
+"calNodes": 671322,
+"calMs": 442.9,
+"calDepth": 8,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:904Mfkqa#28",
+"fen": "2k1r2r/ppp2ppp/2n2n2/8/3P4/P1q1BB2/5PPP/R2Q1K1R w - - 2 15",
+"calNodes": 272267,
+"calMs": 224.2,
+"calDepth": 7,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:1KiQPXDQ#58",
+"fen": "r5k1/R5p1/p1b3p1/1p3p2/3P4/3B4/PP3P1P/6K1 w - - 1 30",
+"calNodes": 644658,
+"calMs": 454.9,
+"calDepth": 11,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:0xqKq",
+"fen": "8/p7/8/1P2k2p/P2p2p1/4P3/3K3P/8 w - - 0 30",
+"calNodes": 978204,
+"calMs": 451.4,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:zA2uF",
+"fen": "5rk1/1p2n1p1/4p2p/R2pP3/2qPbPP1/P3Q3/3B3P/R5K1 b - - 0 27",
+"calNodes": 497191,
+"calMs": 460.0,
+"calDepth": 10,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:NoeR6pH1#39",
+"fen": "rq3rk1/pp1n2p1/2p4p/3p1p1b/3P3N/Q2BP3/PP3PPP/R4RK1 b - - 1 20",
+"calNodes": 321335,
+"calMs": 227.9,
+"calDepth": 7,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:lihox",
+"fen": "8/8/8/2p2Pb1/2k1K3/p1p5/P5R1/8 b - - 6 52",
+"calNodes": 468090,
+"calMs": 273.8,
+"calDepth": 14,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:qAcCUf91#41",
+"fen": "2r1r1k1/2qb2pp/p3pn2/1p1p4/3N1P2/3BQ2P/PPP3P1/1K1RR3 b - - 2 21",
+"calNodes": 386137,
+"calMs": 282.8,
+"calDepth": 6,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:EuD3ZsSm#96",
+"fen": "8/8/3k1bp1/1p1pp3/1P1pP2P/3P1K2/8/4B3 w - - 1 49",
+"calNodes": 812015,
+"calMs": 425.7,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:bhp7QcJW#37",
+"fen": "2kr4/ppp1pp1p/5npP/4nq2/5P2/2Nr2P1/PPPBQ1B1/2KR4 b - - 0 19",
+"calNodes": 445170,
+"calMs": 459.0,
+"calDepth": 8,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:FeAqh",
+"fen": "1rr3k1/5pp1/2n1p1p1/1qPp4/pPn2B2/P2B1P2/K4QPP/3R3R b - - 8 31",
+"calNodes": 396379,
+"calMs": 319.3,
+"calDepth": 8,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:QsOUdm0A#97",
+"fen": "8/2R5/1p1p2k1/pP1N1p2/n3nPp1/6Pp/7P/6K1 b - - 4 49",
+"calNodes": 847519,
+"calMs": 484.0,
+"calDepth": 11,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:nE4U6Am9#50",
+"fen": "3qr1k1/4npbp/1np3p1/1r6/p2PN3/P1BQ1N1P/5PP1/3RR1K1 w - - 2 26",
+"calNodes": 546504,
+"calMs": 417.3,
+"calDepth": 7,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:rzh9E5AR#28",
+"fen": "r1b2r1k/pp1nq1pp/2pb4/4Np2/2BP1P2/4P3/P5PP/R1BQ1RK1 w - - 1 15",
+"calNodes": 356169,
+"calMs": 295.6,
+"calDepth": 8,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:Eyv9T81V#69",
+"fen": "5r2/6k1/5p2/R5pp/4P2P/5P2/5KP1/8 b - - 0 35",
+"calNodes": 849385,
+"calMs": 434.8,
+"calDepth": 12,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:AUUQiJCl#52",
+"fen": "2r3k1/4ppb1/1p4pp/n1Np2P1/3P1P1P/r1P2NK1/5P2/2R2R2 w - - 0 27",
+"calNodes": 383511,
+"calMs": 286.4,
+"calDepth": 9,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:9wTphB32#53",
+"fen": "5rk1/4bppp/p2pp3/5P2/4P3/6QP/4q1P1/2R2R1K b - - 2 27",
+"calNodes": 421748,
+"calMs": 380.6,
+"calDepth": 8,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:1AUbZ",
+"fen": "5Q2/1p1k1p2/1rr1p1p1/3pP3/8/5qP1/5P1P/1R3RK1 w - - 5 33",
+"calNodes": 478475,
+"calMs": 347.1,
+"calDepth": 8,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:yyPYU",
+"fen": "8/8/2k4p/2P2pp1/p2K3P/P5P1/1P6/8 b - - 0 43",
+"calNodes": 822245,
+"calMs": 376.8,
+"calDepth": 16,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:PFbag0Wa#73",
+"fen": "8/2p3pp/1k6/p1p5/4K3/P2r3P/1P2R1P1/8 b - - 4 37",
+"calNodes": 727537,
+"calMs": 396.2,
+"calDepth": 9,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:fdHfz",
+"fen": "2b5/8/1p6/1Pk3p1/2PpppP1/P2P1P2/2B2K2/8 b - - 1 47",
+"calNodes": 1001093,
+"calMs": 435.9,
+"calDepth": 18,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:1OIQh",
+"fen": "7r/r4pkp/1R6/8/5P2/8/1PP3PP/1K2R3 b - - 2 23",
+"calNodes": 529043,
+"calMs": 310.8,
+"calDepth": 12,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:Kugc2",
+"fen": "6rk/4Rp1p/p7/1p1p4/3P2n1/2NB1K2/PPP4r/6R1 b - - 6 34",
+"calNodes": 554948,
+"calMs": 435.9,
+"calDepth": 10,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:Ptf4Y",
+"fen": "r2q2k1/3n1rP1/2pb1p2/5PR1/1P1Pp3/4B3/1qPQ4/2NK2R1 w - - 1 28",
+"calNodes": 416398,
+"calMs": 369.1,
+"calDepth": 8,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:BkbiX",
+"fen": "8/p7/4p3/1p2Kp2/5P2/1P4kP/P7/8 w - - 9 46",
+"calNodes": 696504,
+"calMs": 338.5,
+"calDepth": 14,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:prGvQuGD#60",
+"fen": "8/ppk3pp/3r4/2pP1Q2/3b2P1/8/P5KP/8 w - - 2 31",
+"calNodes": 388939,
+"calMs": 234.3,
+"calDepth": 9,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:kU169Uc8#80",
+"fen": "2bk4/5p1p/5P2/1p1NP3/1Bpn1K2/P7/7P/8 w - - 0 41",
+"calNodes": 359999,
+"calMs": 208.2,
+"calDepth": 9,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:TBQFguA4#116",
+"fen": "4B3/8/3K3n/p1p5/Ppk1P3/6P1/8/8 w - - 2 59",
+"calNodes": 839917,
+"calMs": 389.5,
+"calDepth": 16,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:ir78CJrw#45",
+"fen": "2rq1rk1/4b1pp/b4p2/1pn1pP1N/pB1pP1P1/Pn1P1N2/1PR3BP/3Q2RK b - - 9 23",
+"calNodes": 624890,
+"calMs": 432.8,
+"calDepth": 7,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:FDbJk",
+"fen": "rb3rk1/5p2/p2q3p/B1p1n1pQ/3p4/R2P3P/1P3PPN/4R1K1 w - - 2 26",
+"calNodes": 266986,
+"calMs": 226.5,
+"calDepth": 7,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:de2em",
+"fen": "8/p2r4/1p6/8/1N6/3p1k2/PK6/3R4 b - - 1 66",
+"calNodes": 742553,
+"calMs": 449.5,
+"calDepth": 13,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:cGlVAY3z#56",
+"fen": "2rb4/3q1pkp/3p2p1/Rp1Bp3/1P6/3PP1PP/Q4PK1/8 w - - 4 29",
+"calNodes": 515495,
+"calMs": 449.1,
+"calDepth": 9,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:QM5Yk",
+"fen": "3r1r2/1p2qpk1/p1b1p1pp/4P3/5P2/2pQ2R1/PPB3PP/4R1K1 w - - 0 23",
+"calNodes": 341286,
+"calMs": 295.6,
+"calDepth": 8,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:olR4LUWb#44",
+"fen": "r4rk1/1p3ppp/p3p3/q7/2p1P3/1P6/1QP2PPP/2KRR3 w - - 2 23",
+"calNodes": 363014,
+"calMs": 274.5,
+"calDepth": 8,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:hqeyj",
+"fen": "6k1/1pr2bp1/p4p1p/q2P4/3QP1P1/3B1P1P/P5K1/1R6 b - - 0 32",
+"calNodes": 617684,
+"calMs": 441.5,
+"calDepth": 9,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:xz9MO",
+"fen": "r4rk1/pp2Rppp/3p4/7q/3n2b1/3B1N2/PPPB1PPP/R2Q2K1 b - - 0 14",
+"calNodes": 218814,
+"calMs": 236.9,
+"calDepth": 8,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:1sOZ4yr1#82",
+"fen": "8/8/3r1p2/p1rP1kp1/P2R1P1p/2pR3P/2P1KP2/8 w - - 0 42",
+"calNodes": 351146,
+"calMs": 208.2,
+"calDepth": 11,
+"source": "responses_v2.csv"
+}
+],
+"fatalii-0.5.0": [
+{
+"pos": "lichess-game:2inuMZeV#41",
+"fen": "2r2rk1/pb1n2pp/1p2p2q/2pPPp2/2P2P1b/P2BB1N1/2Q3PP/R4RK1 b - - 0 21",
+"calNodes": 340859,
+"calMs": 426.2,
+"calDepth": 8,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:ifscNkXK#48",
+"fen": "3r3r/p1pk1ppp/Q1p1p3/2P2q2/2P2P2/7R/PP3P2/1R3KNb w - - 5 25",
+"calNodes": 313370,
+"calMs": 314.9,
+"calDepth": 8,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:1OtP0SKE#52",
+"fen": "8/3k2pp/3p1b2/1N2n3/3BP3/8/PPr3PP/5RK1 w - - 3 27",
+"calNodes": 306104,
+"calMs": 256.5,
+"calDepth": 7,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:904Mfkqa#28",
+"fen": "2k1r2r/ppp2ppp/2n2n2/8/3P4/P1q1BB2/5PPP/R2Q1K1R w - - 2 15",
+"calNodes": 369287,
+"calMs": 433.2,
+"calDepth": 8,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:bNITIrja#45",
+"fen": "3r1kr1/1b1n3R/p2bp3/1p1p2P1/2nB4/1NN2B2/PPP3P1/2KR4 b - - 2 23",
+"calNodes": 383622,
+"calMs": 421.1,
+"calDepth": 7,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:1KiQPXDQ#58",
+"fen": "r5k1/R5p1/p1b3p1/1p3p2/3P4/3B4/PP3P1P/6K1 w - - 1 30",
+"calNodes": 453435,
+"calMs": 344.8,
+"calDepth": 9,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:0xqKq",
+"fen": "8/p7/8/1P2k2p/P2p2p1/4P3/3K3P/8 w - - 0 30",
+"calNodes": 506465,
+"calMs": 277.3,
+"calDepth": 13,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:zA2uF",
+"fen": "5rk1/1p2n1p1/4p2p/R2pP3/2qPbPP1/P3Q3/3B3P/R5K1 b - - 0 27",
+"calNodes": 274998,
+"calMs": 301.4,
+"calDepth": 8,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:NoeR6pH1#39",
+"fen": "rq3rk1/pp1n2p1/2p4p/3p1p1b/3P3N/Q2BP3/PP3PPP/R4RK1 b - - 1 20",
+"calNodes": 243146,
+"calMs": 263.5,
+"calDepth": 7,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:EuD3ZsSm#96",
+"fen": "8/8/3k1bp1/1p1pp3/1P1pP2P/3P1K2/8/4B3 w - - 1 49",
+"calNodes": 689978,
+"calMs": 369.5,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:bhp7QcJW#37",
+"fen": "2kr4/ppp1pp1p/5npP/4nq2/5P2/2Nr2P1/PPPBQ1B1/2KR4 b - - 0 19",
+"calNodes": 216452,
+"calMs": 277.4,
+"calDepth": 7,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:FeAqh",
+"fen": "1rr3k1/5pp1/2n1p1p1/1qPp4/pPn2B2/P2B1P2/K4QPP/3R3R b - - 8 31",
+"calNodes": 480999,
+"calMs": 460.6,
+"calDepth": 8,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:QsOUdm0A#97",
+"fen": "8/2R5/1p1p2k1/pP1N1p2/n3nPp1/6Pp/7P/6K1 b - - 4 49",
+"calNodes": 614792,
+"calMs": 380.4,
+"calDepth": 11,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:rzh9E5AR#28",
+"fen": "r1b2r1k/pp1nq1pp/2pb4/4Np2/2BP1P2/4P3/P5PP/R1BQ1RK1 w - - 1 15",
+"calNodes": 278062,
+"calMs": 409.3,
+"calDepth": 7,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:Eyv9T81V#69",
+"fen": "5r2/6k1/5p2/R5pp/4P2P/5P2/5KP1/8 b - - 0 35",
+"calNodes": 633581,
+"calMs": 338.4,
+"calDepth": 12,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:AUUQiJCl#52",
+"fen": "2r3k1/4ppb1/1p4pp/n1Np2P1/3P1P1P/r1P2NK1/5P2/2R2R2 w - - 0 27",
+"calNodes": 281652,
+"calMs": 260.5,
+"calDepth": 8,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:9wTphB32#53",
+"fen": "5rk1/4bppp/p2pp3/5P2/4P3/6QP/4q1P1/2R2R1K b - - 2 27",
+"calNodes": 293661,
+"calMs": 268.0,
+"calDepth": 7,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:1AUbZ",
+"fen": "5Q2/1p1k1p2/1rr1p1p1/3pP3/8/5qP1/5P1P/1R3RK1 w - - 5 33",
+"calNodes": 249221,
+"calMs": 217.0,
+"calDepth": 8,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:yyPYU",
+"fen": "8/8/2k4p/2P2pp1/p2K3P/P5P1/1P6/8 b - - 0 43",
+"calNodes": 875585,
+"calMs": 439.6,
+"calDepth": 16,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:PFbag0Wa#73",
+"fen": "8/2p3pp/1k6/p1p5/4K3/P2r3P/1P2R1P1/8 b - - 4 37",
+"calNodes": 613653,
+"calMs": 405.9,
+"calDepth": 10,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:fdHfz",
+"fen": "2b5/8/1p6/1Pk3p1/2PpppP1/P2P1P2/2B2K2/8 b - - 1 47",
+"calNodes": 707642,
+"calMs": 394.8,
+"calDepth": 17,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:1OIQh",
+"fen": "7r/r4pkp/1R6/8/5P2/8/1PP3PP/1K2R3 b - - 2 23",
+"calNodes": 591145,
+"calMs": 434.9,
+"calDepth": 12,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:Kugc2",
+"fen": "6rk/4Rp1p/p7/1p1p4/3P2n1/2NB1K2/PPP4r/6R1 b - - 6 34",
+"calNodes": 210401,
+"calMs": 211.7,
+"calDepth": 9,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:PccSA",
+"fen": "r1b2rk1/pp3pbp/2p3p1/4p3/1P2P1qP/P7/1BQPB3/R3K1NR b KQ - 1 15",
+"calNodes": 367966,
+"calMs": 414.9,
+"calDepth": 9,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:BkbiX",
+"fen": "8/p7/4p3/1p2Kp2/5P2/1P4kP/P7/8 w - - 9 46",
+"calNodes": 1024167,
+"calMs": 469.3,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:prGvQuGD#60",
+"fen": "8/ppk3pp/3r4/2pP1Q2/3b2P1/8/P5KP/8 w - - 2 31",
+"calNodes": 339446,
+"calMs": 240.6,
+"calDepth": 8,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:kU169Uc8#80",
+"fen": "2bk4/5p1p/5P2/1p1NP3/1Bpn1K2/P7/7P/8 w - - 0 41",
+"calNodes": 667134,
+"calMs": 490.0,
+"calDepth": 10,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:TBQFguA4#116",
+"fen": "4B3/8/3K3n/p1p5/Ppk1P3/6P1/8/8 w - - 2 59",
+"calNodes": 881688,
+"calMs": 460.6,
+"calDepth": 15,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:ir78CJrw#45",
+"fen": "2rq1rk1/4b1pp/b4p2/1pn1pP1N/pB1pP1P1/Pn1P1N2/1PR3BP/3Q2RK b - - 9 23",
+"calNodes": 213428,
+"calMs": 277.5,
+"calDepth": 6,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:FDbJk",
+"fen": "rb3rk1/5p2/p2q3p/B1p1n1pQ/3p4/R2P3P/1P3PPN/4R1K1 w - - 2 26",
+"calNodes": 197633,
+"calMs": 211.7,
+"calDepth": 7,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:de2em",
+"fen": "8/p2r4/1p6/8/1N6/3p1k2/PK6/3R4 b - - 1 66",
+"calNodes": 549071,
+"calMs": 412.7,
+"calDepth": 13,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:cGlVAY3z#56",
+"fen": "2rb4/3q1pkp/3p2p1/Rp1Bp3/1P6/3PP1PP/Q4PK1/8 w - - 4 29",
+"calNodes": 246928,
+"calMs": 298.6,
+"calDepth": 8,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:QM5Yk",
+"fen": "3r1r2/1p2qpk1/p1b1p1pp/4P3/5P2/2pQ2R1/PPB3PP/4R1K1 w - - 0 23",
+"calNodes": 256903,
+"calMs": 321.4,
+"calDepth": 7,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:hqeyj",
+"fen": "6k1/1pr2bp1/p4p1p/q2P4/3QP1P1/3B1P1P/P5K1/1R6 b - - 0 32",
+"calNodes": 400187,
+"calMs": 380.5,
+"calDepth": 8,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-puzzle:xz9MO",
+"fen": "r4rk1/pp2Rppp/3p4/7q/3n2b1/3B1N2/PPPB1PPP/R2Q2K1 b - - 0 14",
+"calNodes": 276012,
+"calMs": 338.6,
+"calDepth": 7,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:1sOZ4yr1#82",
+"fen": "8/8/3r1p2/p1rP1kp1/P2R1P1p/2pR3P/2P1KP2/8 w - - 0 42",
+"calNodes": 530529,
+"calMs": 369.7,
+"calDepth": 10,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:8MpJeo37#34",
+"fen": "1r5r/p2k1pb1/3p2pn/1N2p2p/2PnP2P/4BB2/P2K1PP1/1R5R w - - 1 18",
+"calNodes": 449245,
+"calMs": 459.2,
+"calDepth": 8,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:mYpzTDAN#24",
+"fen": "rn1qk2r/pbp5/1p1pp2p/2nP1pp1/2P5/2PBPNB1/P1Q2PPP/R3K2R w KQkq - 1 13",
+"calNodes": 215036,
+"calMs": 265.5,
+"calDepth": 7,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:WoEq9jJ6#28",
+"fen": "1r2kb1r/2p2pp1/pq2pn1p/1p2P1N1/8/5QP1/PPP2PKP/R1B2R2 w k - 0 15",
+"calNodes": 357968,
+"calMs": 451.2,
+"calDepth": 8,
+"source": "responses_v2.csv"
+},
+{
+"pos": "lichess-game:1biAyISF#60",
+"fen": "2rrb2k/2q2pbp/3p4/3Rp2Q/1p5P/1P6/PB2PPB1/3R2K1 w - - 4 31",
+"calNodes": 192558,
+"calMs": 220.7,
+"calDepth": 7,
+"source": "responses_v2.csv"
+}
+],
+"weiss-1.0": [
+{
+"pos": "lichess-puzzle:EeROy",
+"fen": "8/8/4k3/2rR4/p1P4P/P7/1P6/2K5 b - - 0 44",
+"calNodes": 2441005,
+"calMs": 469.0,
+"calDepth": 24,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:qukzL",
+"fen": "3r2k1/p5bp/1p4pB/2q1p3/8/2P1Q3/PP4PP/4R1K1 b - - 13 30",
+"calNodes": 1673427,
+"calMs": 340.0,
+"calDepth": 23,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:UmFg31Kc#100",
+"fen": "8/1p6/3p4/3P4/P4b2/1K1k1Bp1/2p5/5N2 w - - 0 51",
+"calNodes": 2903356,
+"calMs": 453.0,
+"calDepth": 23,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:zWuipFdA#26",
+"fen": "1r1qkb1r/pQp2ppp/6n1/2p1P3/2b2P2/2N3P1/PPP3BP/R3K1NR w KQk - 1 14",
+"calNodes": 1794497,
+"calMs": 455.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:9BmF6kzI#84",
+"fen": "r7/6p1/1p3k2/1PpPpP2/1rP3PP/p1K5/R7/5R2 w - - 2 43",
+"calNodes": 1766936,
+"calMs": 469.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:yuC24LlF#99",
+"fen": "8/8/1k1B3p/4Pp2/3b4/6pP/4r1P1/3R3K b - - 12 50",
+"calNodes": 2083521,
+"calMs": 477.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:hsVQhK6n#26",
+"fen": "1r1q1rk1/1p2ppbp/p2p1np1/1Pp5/2P5/P1NPPBPb/5P1P/1RBQ1RK1 w - - 1 14",
+"calNodes": 1859434,
+"calMs": 457.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:AUOwNyeQ#97",
+"fen": "1n6/2K2pp1/8/P5k1/8/4P1P1/8/8 b - - 7 49",
+"calNodes": 2721637,
+"calMs": 425.0,
+"calDepth": 31,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:eodng69i#29",
+"fen": "2kr1b1r/pp3ppp/2b1p3/4P3/8/2PBBP2/P3K1PP/R6R b - - 1 15",
+"calNodes": 1382025,
+"calMs": 284.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:6XhN0Bk7#33",
+"fen": "r1b2r1k/2q1bp1p/p1pp1p2/4pP2/2P1P3/2NQ4/PPB3PP/3R1RK1 b - - 0 17",
+"calNodes": 1260288,
+"calMs": 287.0,
+"calDepth": 15,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:2inuMZeV#41",
+"fen": "2r2rk1/pb1n2pp/1p2p2q/2pPPp2/2P2P1b/P2BB1N1/2Q3PP/R4RK1 b - - 0 21",
+"calNodes": 1811451,
+"calMs": 439.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:fbKoTXrL#77",
+"fen": "8/6kp/3b1p2/3P4/4PPB1/3n1K2/3B3P/8 b - - 5 39",
+"calNodes": 1914832,
+"calMs": 433.0,
+"calDepth": 20,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:oMUcHSh1#24",
+"fen": "rnbr2k1/pp2bppp/2p5/2q5/3N4/5B2/PPP2PPP/R1BQR1K1 w - - 6 13",
+"calNodes": 1940832,
+"calMs": 471.0,
+"calDepth": 15,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:NKNeOdqN#97",
+"fen": "1k6/5pp1/1pQ1b3/p2pP3/5Np1/4q1P1/7P/5K2 b - - 7 49",
+"calNodes": 2258732,
+"calMs": 483.0,
+"calDepth": 20,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:mBrS9",
+"fen": "r3kb1r/pp1n1pp1/1qp1P2p/8/8/1Q4P1/PP3PbP/R1B2RK1 w kq - 0 15",
+"calNodes": 1516615,
+"calMs": 376.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:dB7ZadV9#71",
+"fen": "8/8/4R1p1/p4k1p/2Bp3P/1P1P2P1/2q2PK1/8 b - - 3 36",
+"calNodes": 1101313,
+"calMs": 223.0,
+"calDepth": 21,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:SM9gO",
+"fen": "3r3k/pp3B1p/nbp5/6Q1/4P3/5P2/P6P/7K b - - 0 25",
+"calNodes": 2097096,
+"calMs": 415.0,
+"calDepth": 22,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:g7OtC76s#72",
+"fen": "6k1/2r2pp1/7p/8/3p4/3Q2P1/5PKP/8 w - - 2 37",
+"calNodes": 1745332,
+"calMs": 345.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:RP9xxxgy#70",
+"fen": "5bk1/p2q1p1p/1p1Pp1p1/2p5/2P4P/P2Q2P1/1P6/7K w - - 1 36",
+"calNodes": 2457264,
+"calMs": 484.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:yymac",
+"fen": "4r1k1/p1p2pp1/1bp3p1/3q4/8/1PP4P/PB2NnP1/3RQ1K1 w - - 0 22",
+"calNodes": 2092460,
+"calMs": 474.0,
+"calDepth": 22,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:vsjlDnkP#75",
+"fen": "5k2/2r1p3/5npp/8/6P1/1B2R2P/5PK1/8 b - - 0 38",
+"calNodes": 2018733,
+"calMs": 449.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:9EsZl",
+"fen": "6k1/5p2/P3p3/6pp/1N2p3/4P1P1/1P3P2/2K2b2 b - - 0 37",
+"calNodes": 2425492,
+"calMs": 437.0,
+"calDepth": 21,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:WGZQyeIl#50",
+"fen": "rn6/pp4k1/4p1p1/2p5/B2P1r2/2P2P2/1P6/2KR2N1 w - - 0 26",
+"calNodes": 1777270,
+"calMs": 393.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:AizD5",
+"fen": "8/2k2p2/1p4pp/1K5P/5PP1/8/8/8 w - - 0 40",
+"calNodes": 2002388,
+"calMs": 368.0,
+"calDepth": 25,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:abNo0",
+"fen": "5rk1/pp3p1p/1q3P2/7R/1b2QP2/1K6/PP1r3P/5B1R b - - 0 24",
+"calNodes": 1630923,
+"calMs": 403.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:n8Xl6VYW#39",
+"fen": "4rrk1/p1n2ppp/b2p4/2pPnQ2/7q/P1N1R1NP/BP3PP1/R5K1 b - - 6 20",
+"calNodes": 1360575,
+"calMs": 318.0,
+"calDepth": 15,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:HkSqyDrt#68",
+"fen": "8/1ppk4/pr4p1/6R1/3P2pP/2P5/PP4P1/6K1 w - - 3 35",
+"calNodes": 2505178,
+"calMs": 484.0,
+"calDepth": 21,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:ZpojH758#82",
+"fen": "8/p6p/4kbp1/5p2/7P/N2K1P2/1p4P1/8 w - - 2 42",
+"calNodes": 1882523,
+"calMs": 352.0,
+"calDepth": 21,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:ifscNkXK#48",
+"fen": "3r3r/p1pk1ppp/Q1p1p3/2P2q2/2P2P2/7R/PP3P2/1R3KNb w - - 5 25",
+"calNodes": 1768471,
+"calMs": 476.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:1OtP0SKE#52",
+"fen": "8/3k2pp/3p1b2/1N2n3/3BP3/8/PPr3PP/5RK1 w - - 3 27",
+"calNodes": 2132568,
+"calMs": 431.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:904Mfkqa#28",
+"fen": "2k1r2r/ppp2ppp/2n2n2/8/3P4/P1q1BB2/5PPP/R2Q1K1R w - - 2 15",
+"calNodes": 1801242,
+"calMs": 430.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:1HQRnrgx#54",
+"fen": "8/3n1pp1/p2kn2p/1pp1p3/1P2P3/1PPNKP2/6PP/3N4 w - - 0 28",
+"calNodes": 1802700,
+"calMs": 393.0,
+"calDepth": 21,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:FRzfD3kN#40",
+"fen": "1r5r/pR5p/3p2pk/3Pn3/4N3/8/PPP3PP/5RK1 w - - 1 21",
+"calNodes": 1180691,
+"calMs": 229.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:N87o3WiL#79",
+"fen": "8/1p2q3/p2p1pk1/3P2p1/8/P7/1PP1p3/2K1Q3 b - - 1 40",
+"calNodes": 1998042,
+"calMs": 417.0,
+"calDepth": 20,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:cGRlOf2x#70",
+"fen": "4n3/4kp2/p1rp2p1/1p2p1p1/4P3/P3RP1P/1P4P1/3R1K2 w - - 1 36",
+"calNodes": 1837536,
+"calMs": 380.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:bNITIrja#45",
+"fen": "3r1kr1/1b1n3R/p2bp3/1p1p2P1/2nB4/1NN2B2/PPP3P1/2KR4 b - - 2 23",
+"calNodes": 1317009,
+"calMs": 295.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:1KiQPXDQ#58",
+"fen": "r5k1/R5p1/p1b3p1/1p3p2/3P4/3B4/PP3P1P/6K1 w - - 1 30",
+"calNodes": 2394963,
+"calMs": 427.0,
+"calDepth": 24,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:0xqKq",
+"fen": "8/p7/8/1P2k2p/P2p2p1/4P3/3K3P/8 w - - 0 30",
+"calNodes": 2265869,
+"calMs": 397.0,
+"calDepth": 24,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:KxhwpZtH#44",
+"fen": "r1q1n1k1/4bppp/1pP1p3/1N1p4/3P1P2/5NP1/1Q3P1P/2R3K1 w - - 3 23",
+"calNodes": 1583665,
+"calMs": 346.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:T3i79nMz#65",
+"fen": "4r1k1/5pp1/2Q2n1p/3P4/3q4/6PP/5PB1/2R3K1 b - - 1 33",
+"calNodes": 1403764,
+"calMs": 291.0,
+"calDepth": 19,
+"source": "responses.csv"
+}
+],
+"weiss-1.4": [
+{
+"pos": "lichess-puzzle:EeROy",
+"fen": "8/8/4k3/2rR4/p1P4P/P7/1P6/2K5 b - - 0 44",
+"calNodes": 1838357,
+"calMs": 398.0,
+"calDepth": 21,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:qukzL",
+"fen": "3r2k1/p5bp/1p4pB/2q1p3/8/2P1Q3/PP4PP/4R1K1 b - - 13 30",
+"calNodes": 851167,
+"calMs": 293.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:zWuipFdA#26",
+"fen": "1r1qkb1r/pQp2ppp/6n1/2p1P3/2b2P2/2N3P1/PPP3BP/R3K1NR w KQk - 1 14",
+"calNodes": 1042154,
+"calMs": 494.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:9BmF6kzI#84",
+"fen": "r7/6p1/1p3k2/1PpPpP2/1rP3PP/p1K5/R7/5R2 w - - 2 43",
+"calNodes": 1010414,
+"calMs": 402.0,
+"calDepth": 15,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:yuC24LlF#99",
+"fen": "8/8/1k1B3p/4Pp2/3b4/6pP/4r1P1/3R3K b - - 12 50",
+"calNodes": 1143491,
+"calMs": 434.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:hsVQhK6n#26",
+"fen": "1r1q1rk1/1p2ppbp/p2p1np1/1Pp5/2P5/P1NPPBPb/5P1P/1RBQ1RK1 w - - 1 14",
+"calNodes": 798724,
+"calMs": 365.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:AUOwNyeQ#97",
+"fen": "1n6/2K2pp1/8/P5k1/8/4P1P1/8/8 b - - 7 49",
+"calNodes": 2019506,
+"calMs": 484.0,
+"calDepth": 24,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:eodng69i#29",
+"fen": "2kr1b1r/pp3ppp/2b1p3/4P3/8/2PBBP2/P3K1PP/R6R b - - 1 15",
+"calNodes": 773677,
+"calMs": 348.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:6XhN0Bk7#33",
+"fen": "r1b2r1k/2q1bp1p/p1pp1p2/4pP2/2P1P3/2NQ4/PPB3PP/3R1RK1 b - - 0 17",
+"calNodes": 1004602,
+"calMs": 424.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:2inuMZeV#41",
+"fen": "2r2rk1/pb1n2pp/1p2p2q/2pPPp2/2P2P1b/P2BB1N1/2Q3PP/R4RK1 b - - 0 21",
+"calNodes": 983647,
+"calMs": 454.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:fbKoTXrL#77",
+"fen": "8/6kp/3b1p2/3P4/4PPB1/3n1K2/3B3P/8 b - - 5 39",
+"calNodes": 966151,
+"calMs": 359.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:oMUcHSh1#24",
+"fen": "rnbr2k1/pp2bppp/2p5/2q5/3N4/5B2/PPP2PPP/R1BQR1K1 w - - 6 13",
+"calNodes": 751263,
+"calMs": 451.0,
+"calDepth": 15,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:NKNeOdqN#97",
+"fen": "1k6/5pp1/1pQ1b3/p2pP3/5Np1/4q1P1/7P/5K2 b - - 7 49",
+"calNodes": 905306,
+"calMs": 336.0,
+"calDepth": 15,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:mBrS9",
+"fen": "r3kb1r/pp1n1pp1/1qp1P2p/8/8/1Q4P1/PP3PbP/R1B2RK1 w kq - 0 15",
+"calNodes": 558333,
+"calMs": 232.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:dB7ZadV9#71",
+"fen": "8/8/4R1p1/p4k1p/2Bp3P/1P1P2P1/2q2PK1/8 b - - 3 36",
+"calNodes": 1286179,
+"calMs": 433.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:SM9gO",
+"fen": "3r3k/pp3B1p/nbp5/6Q1/4P3/5P2/P6P/7K b - - 0 25",
+"calNodes": 1258169,
+"calMs": 423.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:g7OtC76s#72",
+"fen": "6k1/2r2pp1/7p/8/3p4/3Q2P1/5PKP/8 w - - 2 37",
+"calNodes": 873025,
+"calMs": 460.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:RP9xxxgy#70",
+"fen": "5bk1/p2q1p1p/1p1Pp1p1/2p5/2P4P/P2Q2P1/1P6/7K w - - 1 36",
+"calNodes": 1047889,
+"calMs": 403.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:yymac",
+"fen": "4r1k1/p1p2pp1/1bp3p1/3q4/8/1PP4P/PB2NnP1/3RQ1K1 w - - 0 22",
+"calNodes": 777320,
+"calMs": 252.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:vsjlDnkP#75",
+"fen": "5k2/2r1p3/5npp/8/6P1/1B2R2P/5PK1/8 b - - 0 38",
+"calNodes": 795374,
+"calMs": 342.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:WGZQyeIl#50",
+"fen": "rn6/pp4k1/4p1p1/2p5/B2P1r2/2P2P2/1P6/2KR2N1 w - - 0 26",
+"calNodes": 1195144,
+"calMs": 482.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:AizD5",
+"fen": "8/2k2p2/1p4pp/1K5P/5PP1/8/8/8 w - - 0 40",
+"calNodes": 1787808,
+"calMs": 437.0,
+"calDepth": 21,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:abNo0",
+"fen": "5rk1/pp3p1p/1q3P2/7R/1b2QP2/1K6/PP1r3P/5B1R b - - 0 24",
+"calNodes": 594325,
+"calMs": 288.0,
+"calDepth": 14,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:n8Xl6VYW#39",
+"fen": "4rrk1/p1n2ppp/b2p4/2pPnQ2/7q/P1N1R1NP/BP3PP1/R5K1 b - - 6 20",
+"calNodes": 998397,
+"calMs": 451.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:HkSqyDrt#68",
+"fen": "8/1ppk4/pr4p1/6R1/3P2pP/2P5/PP4P1/6K1 w - - 3 35",
+"calNodes": 1371077,
+"calMs": 459.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:ZpojH758#82",
+"fen": "8/p6p/4kbp1/5p2/7P/N2K1P2/1p4P1/8 w - - 2 42",
+"calNodes": 961026,
+"calMs": 284.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:ifscNkXK#48",
+"fen": "3r3r/p1pk1ppp/Q1p1p3/2P2q2/2P2P2/7R/PP3P2/1R3KNb w - - 5 25",
+"calNodes": 966888,
+"calMs": 474.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:1OtP0SKE#52",
+"fen": "8/3k2pp/3p1b2/1N2n3/3BP3/8/PPr3PP/5RK1 w - - 3 27",
+"calNodes": 1060386,
+"calMs": 403.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:904Mfkqa#28",
+"fen": "2k1r2r/ppp2ppp/2n2n2/8/3P4/P1q1BB2/5PPP/R2Q1K1R w - - 2 15",
+"calNodes": 605147,
+"calMs": 344.0,
+"calDepth": 15,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:1HQRnrgx#54",
+"fen": "8/3n1pp1/p2kn2p/1pp1p3/1P2P3/1PPNKP2/6PP/3N4 w - - 0 28",
+"calNodes": 1525409,
+"calMs": 480.0,
+"calDepth": 20,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:cH08gfLk#29",
+"fen": "r2q1rk1/1b2bppp/p2ppn2/7N/Pp2P3/1P1B1Q2/1B1P1PPP/R4RK1 b - - 4 15",
+"calNodes": 607231,
+"calMs": 296.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:N87o3WiL#79",
+"fen": "8/1p2q3/p2p1pk1/3P2p1/8/P7/1PP1p3/2K1Q3 b - - 1 40",
+"calNodes": 948987,
+"calMs": 393.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:cGRlOf2x#70",
+"fen": "4n3/4kp2/p1rp2p1/1p2p1p1/4P3/P3RP1P/1P4P1/3R1K2 w - - 1 36",
+"calNodes": 759891,
+"calMs": 251.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:bNITIrja#45",
+"fen": "3r1kr1/1b1n3R/p2bp3/1p1p2P1/2nB4/1NN2B2/PPP3P1/2KR4 b - - 2 23",
+"calNodes": 895321,
+"calMs": 423.0,
+"calDepth": 15,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:1KiQPXDQ#58",
+"fen": "r5k1/R5p1/p1b3p1/1p3p2/3P4/3B4/PP3P1P/6K1 w - - 1 30",
+"calNodes": 1307512,
+"calMs": 384.0,
+"calDepth": 20,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:0xqKq",
+"fen": "8/p7/8/1P2k2p/P2p2p1/4P3/3K3P/8 w - - 0 30",
+"calNodes": 1810883,
+"calMs": 458.0,
+"calDepth": 20,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:KxhwpZtH#44",
+"fen": "r1q1n1k1/4bppp/1pP1p3/1N1p4/3P1P2/5NP1/1Q3P1P/2R3K1 w - - 3 23",
+"calNodes": 454023,
+"calMs": 235.0,
+"calDepth": 15,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:T3i79nMz#65",
+"fen": "4r1k1/5pp1/2Q2n1p/3P4/3q4/6PP/5PB1/2R3K1 b - - 1 33",
+"calNodes": 957322,
+"calMs": 388.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:NM3SYxXW#66",
+"fen": "8/p5p1/8/1Pb1k2p/6p1/1B4P1/P3KP1P/8 w - - 1 34",
+"calNodes": 1398712,
+"calMs": 434.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:l9ZGz",
+"fen": "1rb1r3/2q2pk1/p4npp/2ppp1Q1/8/1PNP1N1P/P1P2PP1/R3R1K1 w - - 0 18",
+"calNodes": 1157375,
+"calMs": 433.0,
+"calDepth": 20,
+"source": "responses.csv"
+}
+],
+"weiss-2.0": [
+{
+"pos": "lichess-puzzle:EeROy",
+"fen": "8/8/4k3/2rR4/p1P4P/P7/1P6/2K5 b - - 0 44",
+"calNodes": 1267977,
+"calMs": 334.0,
+"calDepth": 22,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:qukzL",
+"fen": "3r2k1/p5bp/1p4pB/2q1p3/8/2P1Q3/PP4PP/4R1K1 b - - 13 30",
+"calNodes": 909880,
+"calMs": 388.0,
+"calDepth": 20,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:UmFg31Kc#100",
+"fen": "8/1p6/3p4/3P4/P4b2/1K1k1Bp1/2p5/5N2 w - - 0 51",
+"calNodes": 1287308,
+"calMs": 333.0,
+"calDepth": 20,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:zWuipFdA#26",
+"fen": "1r1qkb1r/pQp2ppp/6n1/2p1P3/2b2P2/2N3P1/PPP3BP/R3K1NR w KQk - 1 14",
+"calNodes": 724834,
+"calMs": 368.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:9BmF6kzI#84",
+"fen": "r7/6p1/1p3k2/1PpPpP2/1rP3PP/p1K5/R7/5R2 w - - 2 43",
+"calNodes": 726505,
+"calMs": 356.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:yuC24LlF#99",
+"fen": "8/8/1k1B3p/4Pp2/3b4/6pP/4r1P1/3R3K b - - 12 50",
+"calNodes": 917182,
+"calMs": 375.0,
+"calDepth": 20,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:hsVQhK6n#26",
+"fen": "1r1q1rk1/1p2ppbp/p2p1np1/1Pp5/2P5/P1NPPBPb/5P1P/1RBQ1RK1 w - - 1 14",
+"calNodes": 793853,
+"calMs": 413.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:AUOwNyeQ#97",
+"fen": "1n6/2K2pp1/8/P5k1/8/4P1P1/8/8 b - - 7 49",
+"calNodes": 1741623,
+"calMs": 479.0,
+"calDepth": 25,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:6XhN0Bk7#33",
+"fen": "r1b2r1k/2q1bp1p/p1pp1p2/4pP2/2P1P3/2NQ4/PPB3PP/3R1RK1 b - - 0 17",
+"calNodes": 840586,
+"calMs": 393.0,
+"calDepth": 20,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:2inuMZeV#41",
+"fen": "2r2rk1/pb1n2pp/1p2p2q/2pPPp2/2P2P1b/P2BB1N1/2Q3PP/R4RK1 b - - 0 21",
+"calNodes": 769287,
+"calMs": 423.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:fbKoTXrL#77",
+"fen": "8/6kp/3b1p2/3P4/4PPB1/3n1K2/3B3P/8 b - - 5 39",
+"calNodes": 1213850,
+"calMs": 479.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:oMUcHSh1#24",
+"fen": "rnbr2k1/pp2bppp/2p5/2q5/3N4/5B2/PPP2PPP/R1BQR1K1 w - - 6 13",
+"calNodes": 577632,
+"calMs": 297.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:NKNeOdqN#97",
+"fen": "1k6/5pp1/1pQ1b3/p2pP3/5Np1/4q1P1/7P/5K2 b - - 7 49",
+"calNodes": 620182,
+"calMs": 290.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:mBrS9",
+"fen": "r3kb1r/pp1n1pp1/1qp1P2p/8/8/1Q4P1/PP3PbP/R1B2RK1 w kq - 0 15",
+"calNodes": 756845,
+"calMs": 361.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:dB7ZadV9#71",
+"fen": "8/8/4R1p1/p4k1p/2Bp3P/1P1P2P1/2q2PK1/8 b - - 3 36",
+"calNodes": 656404,
+"calMs": 251.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:SM9gO",
+"fen": "3r3k/pp3B1p/nbp5/6Q1/4P3/5P2/P6P/7K b - - 0 25",
+"calNodes": 474736,
+"calMs": 227.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:g7OtC76s#72",
+"fen": "6k1/2r2pp1/7p/8/3p4/3Q2P1/5PKP/8 w - - 2 37",
+"calNodes": 1130881,
+"calMs": 432.0,
+"calDepth": 21,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:RP9xxxgy#70",
+"fen": "5bk1/p2q1p1p/1p1Pp1p1/2p5/2P4P/P2Q2P1/1P6/7K w - - 1 36",
+"calNodes": 871534,
+"calMs": 378.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:yymac",
+"fen": "4r1k1/p1p2pp1/1bp3p1/3q4/8/1PP4P/PB2NnP1/3RQ1K1 w - - 0 22",
+"calNodes": 957473,
+"calMs": 345.0,
+"calDepth": 20,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:vsjlDnkP#75",
+"fen": "5k2/2r1p3/5npp/8/6P1/1B2R2P/5PK1/8 b - - 0 38",
+"calNodes": 914095,
+"calMs": 389.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:9EsZl",
+"fen": "6k1/5p2/P3p3/6pp/1N2p3/4P1P1/1P3P2/2K2b2 b - - 0 37",
+"calNodes": 1365814,
+"calMs": 440.0,
+"calDepth": 22,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:WGZQyeIl#50",
+"fen": "rn6/pp4k1/4p1p1/2p5/B2P1r2/2P2P2/1P6/2KR2N1 w - - 0 26",
+"calNodes": 730816,
+"calMs": 357.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:AizD5",
+"fen": "8/2k2p2/1p4pp/1K5P/5PP1/8/8/8 w - - 0 40",
+"calNodes": 863047,
+"calMs": 278.0,
+"calDepth": 21,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:abNo0",
+"fen": "5rk1/pp3p1p/1q3P2/7R/1b2QP2/1K6/PP1r3P/5B1R b - - 0 24",
+"calNodes": 822393,
+"calMs": 429.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:n8Xl6VYW#39",
+"fen": "4rrk1/p1n2ppp/b2p4/2pPnQ2/7q/P1N1R1NP/BP3PP1/R5K1 b - - 6 20",
+"calNodes": 576743,
+"calMs": 274.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:HkSqyDrt#68",
+"fen": "8/1ppk4/pr4p1/6R1/3P2pP/2P5/PP4P1/6K1 w - - 3 35",
+"calNodes": 1173550,
+"calMs": 457.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:ZpojH758#82",
+"fen": "8/p6p/4kbp1/5p2/7P/N2K1P2/1p4P1/8 w - - 2 42",
+"calNodes": 758761,
+"calMs": 259.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:ifscNkXK#48",
+"fen": "3r3r/p1pk1ppp/Q1p1p3/2P2q2/2P2P2/7R/PP3P2/1R3KNb w - - 5 25",
+"calNodes": 872255,
+"calMs": 448.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:1OtP0SKE#52",
+"fen": "8/3k2pp/3p1b2/1N2n3/3BP3/8/PPr3PP/5RK1 w - - 3 27",
+"calNodes": 671460,
+"calMs": 320.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:904Mfkqa#28",
+"fen": "2k1r2r/ppp2ppp/2n2n2/8/3P4/P1q1BB2/5PPP/R2Q1K1R w - - 2 15",
+"calNodes": 695049,
+"calMs": 359.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:1HQRnrgx#54",
+"fen": "8/3n1pp1/p2kn2p/1pp1p3/1P2P3/1PPNKP2/6PP/3N4 w - - 0 28",
+"calNodes": 1272520,
+"calMs": 451.0,
+"calDepth": 21,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:FRzfD3kN#40",
+"fen": "1r5r/pR5p/3p2pk/3Pn3/4N3/8/PPP3PP/5RK1 w - - 1 21",
+"calNodes": 951163,
+"calMs": 370.0,
+"calDepth": 21,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:cH08gfLk#29",
+"fen": "r2q1rk1/1b2bppp/p2ppn2/7N/Pp2P3/1P1B1Q2/1B1P1PPP/R4RK1 b - - 4 15",
+"calNodes": 971679,
+"calMs": 462.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:N87o3WiL#79",
+"fen": "8/1p2q3/p2p1pk1/3P2p1/8/P7/1PP1p3/2K1Q3 b - - 1 40",
+"calNodes": 905774,
+"calMs": 392.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:cGRlOf2x#70",
+"fen": "4n3/4kp2/p1rp2p1/1p2p1p1/4P3/P3RP1P/1P4P1/3R1K2 w - - 1 36",
+"calNodes": 1263539,
+"calMs": 469.0,
+"calDepth": 20,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:bNITIrja#45",
+"fen": "3r1kr1/1b1n3R/p2bp3/1p1p2P1/2nB4/1NN2B2/PPP3P1/2KR4 b - - 2 23",
+"calNodes": 839144,
+"calMs": 453.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:1KiQPXDQ#58",
+"fen": "r5k1/R5p1/p1b3p1/1p3p2/3P4/3B4/PP3P1P/6K1 w - - 1 30",
+"calNodes": 921511,
+"calMs": 323.0,
+"calDepth": 20,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:0xqKq",
+"fen": "8/p7/8/1P2k2p/P2p2p1/4P3/3K3P/8 w - - 0 30",
+"calNodes": 1641719,
+"calMs": 491.0,
+"calDepth": 23,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:KxhwpZtH#44",
+"fen": "r1q1n1k1/4bppp/1pP1p3/1N1p4/3P1P2/5NP1/1Q3P1P/2R3K1 w - - 3 23",
+"calNodes": 551193,
+"calMs": 279.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:T3i79nMz#65",
+"fen": "4r1k1/5pp1/2Q2n1p/3P4/3q4/6PP/5PB1/2R3K1 b - - 1 33",
+"calNodes": 759816,
+"calMs": 381.0,
+"calDepth": 19,
+"source": "responses.csv"
+}
+],
+"berserk-3.2.0": [
+{
+"pos": "lichess-puzzle:EeROy",
+"fen": "8/8/4k3/2rR4/p1P4P/P7/1P6/2K5 b - - 0 44",
+"calNodes": 726398,
+"calMs": 359.0,
+"calDepth": 23,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:qukzL",
+"fen": "3r2k1/p5bp/1p4pB/2q1p3/8/2P1Q3/PP4PP/4R1K1 b - - 13 30",
+"calNodes": 270170,
+"calMs": 214.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:UmFg31Kc#100",
+"fen": "8/1p6/3p4/3P4/P4b2/1K1k1Bp1/2p5/5N2 w - - 0 51",
+"calNodes": 916374,
+"calMs": 418.0,
+"calDepth": 22,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:zWuipFdA#26",
+"fen": "1r1qkb1r/pQp2ppp/6n1/2p1P3/2b2P2/2N3P1/PPP3BP/R3K1NR w KQk - 1 14",
+"calNodes": 231354,
+"calMs": 250.0,
+"calDepth": 15,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:9BmF6kzI#84",
+"fen": "r7/6p1/1p3k2/1PpPpP2/1rP3PP/p1K5/R7/5R2 w - - 2 43",
+"calNodes": 441790,
+"calMs": 342.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:yuC24LlF#99",
+"fen": "8/8/1k1B3p/4Pp2/3b4/6pP/4r1P1/3R3K b - - 12 50",
+"calNodes": 395323,
+"calMs": 330.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:hsVQhK6n#26",
+"fen": "1r1q1rk1/1p2ppbp/p2p1np1/1Pp5/2P5/P1NPPBPb/5P1P/1RBQ1RK1 w - - 1 14",
+"calNodes": 277274,
+"calMs": 356.0,
+"calDepth": 14,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:AUOwNyeQ#97",
+"fen": "1n6/2K2pp1/8/P5k1/8/4P1P1/8/8 b - - 7 49",
+"calNodes": 989197,
+"calMs": 471.0,
+"calDepth": 25,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:eodng69i#29",
+"fen": "2kr1b1r/pp3ppp/2b1p3/4P3/8/2PBBP2/P3K1PP/R6R b - - 1 15",
+"calNodes": 330410,
+"calMs": 336.0,
+"calDepth": 15,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:6XhN0Bk7#33",
+"fen": "r1b2r1k/2q1bp1p/p1pp1p2/4pP2/2P1P3/2NQ4/PPB3PP/3R1RK1 b - - 0 17",
+"calNodes": 385258,
+"calMs": 412.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:2inuMZeV#41",
+"fen": "2r2rk1/pb1n2pp/1p2p2q/2pPPp2/2P2P1b/P2BB1N1/2Q3PP/R4RK1 b - - 0 21",
+"calNodes": 286034,
+"calMs": 328.0,
+"calDepth": 14,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:fbKoTXrL#77",
+"fen": "8/6kp/3b1p2/3P4/4PPB1/3n1K2/3B3P/8 b - - 5 39",
+"calNodes": 360724,
+"calMs": 281.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:oMUcHSh1#24",
+"fen": "rnbr2k1/pp2bppp/2p5/2q5/3N4/5B2/PPP2PPP/R1BQR1K1 w - - 6 13",
+"calNodes": 213920,
+"calMs": 254.0,
+"calDepth": 13,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:NKNeOdqN#97",
+"fen": "1k6/5pp1/1pQ1b3/p2pP3/5Np1/4q1P1/7P/5K2 b - - 7 49",
+"calNodes": 374631,
+"calMs": 352.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:mBrS9",
+"fen": "r3kb1r/pp1n1pp1/1qp1P2p/8/8/1Q4P1/PP3PbP/R1B2RK1 w kq - 0 15",
+"calNodes": 505865,
+"calMs": 472.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:dB7ZadV9#71",
+"fen": "8/8/4R1p1/p4k1p/2Bp3P/1P1P2P1/2q2PK1/8 b - - 3 36",
+"calNodes": 559037,
+"calMs": 429.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:SM9gO",
+"fen": "3r3k/pp3B1p/nbp5/6Q1/4P3/5P2/P6P/7K b - - 0 25",
+"calNodes": 419974,
+"calMs": 388.0,
+"calDepth": 20,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:g7OtC76s#72",
+"fen": "6k1/2r2pp1/7p/8/3p4/3Q2P1/5PKP/8 w - - 2 37",
+"calNodes": 480259,
+"calMs": 342.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:RP9xxxgy#70",
+"fen": "5bk1/p2q1p1p/1p1Pp1p1/2p5/2P4P/P2Q2P1/1P6/7K w - - 1 36",
+"calNodes": 405104,
+"calMs": 396.0,
+"calDepth": 15,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:yymac",
+"fen": "4r1k1/p1p2pp1/1bp3p1/3q4/8/1PP4P/PB2NnP1/3RQ1K1 w - - 0 22",
+"calNodes": 496003,
+"calMs": 423.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:vsjlDnkP#75",
+"fen": "5k2/2r1p3/5npp/8/6P1/1B2R2P/5PK1/8 b - - 0 38",
+"calNodes": 267342,
+"calMs": 222.0,
+"calDepth": 14,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:9EsZl",
+"fen": "6k1/5p2/P3p3/6pp/1N2p3/4P1P1/1P3P2/2K2b2 b - - 0 37",
+"calNodes": 915546,
+"calMs": 457.0,
+"calDepth": 21,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:WGZQyeIl#50",
+"fen": "rn6/pp4k1/4p1p1/2p5/B2P1r2/2P2P2/1P6/2KR2N1 w - - 0 26",
+"calNodes": 446255,
+"calMs": 404.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:AizD5",
+"fen": "8/2k2p2/1p4pp/1K5P/5PP1/8/8/8 w - - 0 40",
+"calNodes": 736799,
+"calMs": 378.0,
+"calDepth": 23,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:abNo0",
+"fen": "5rk1/pp3p1p/1q3P2/7R/1b2QP2/1K6/PP1r3P/5B1R b - - 0 24",
+"calNodes": 489566,
+"calMs": 452.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:n8Xl6VYW#39",
+"fen": "4rrk1/p1n2ppp/b2p4/2pPnQ2/7q/P1N1R1NP/BP3PP1/R5K1 b - - 6 20",
+"calNodes": 363765,
+"calMs": 422.0,
+"calDepth": 15,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:HkSqyDrt#68",
+"fen": "8/1ppk4/pr4p1/6R1/3P2pP/2P5/PP4P1/6K1 w - - 3 35",
+"calNodes": 422461,
+"calMs": 310.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:ZpojH758#82",
+"fen": "8/p6p/4kbp1/5p2/7P/N2K1P2/1p4P1/8 w - - 2 42",
+"calNodes": 596632,
+"calMs": 386.0,
+"calDepth": 20,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:ifscNkXK#48",
+"fen": "3r3r/p1pk1ppp/Q1p1p3/2P2q2/2P2P2/7R/PP3P2/1R3KNb w - - 5 25",
+"calNodes": 326199,
+"calMs": 368.0,
+"calDepth": 15,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:1OtP0SKE#52",
+"fen": "8/3k2pp/3p1b2/1N2n3/3BP3/8/PPr3PP/5RK1 w - - 3 27",
+"calNodes": 480413,
+"calMs": 431.0,
+"calDepth": 15,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:904Mfkqa#28",
+"fen": "2k1r2r/ppp2ppp/2n2n2/8/3P4/P1q1BB2/5PPP/R2Q1K1R w - - 2 15",
+"calNodes": 311022,
+"calMs": 340.0,
+"calDepth": 13,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:1HQRnrgx#54",
+"fen": "8/3n1pp1/p2kn2p/1pp1p3/1P2P3/1PPNKP2/6PP/3N4 w - - 0 28",
+"calNodes": 510248,
+"calMs": 395.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:FRzfD3kN#40",
+"fen": "1r5r/pR5p/3p2pk/3Pn3/4N3/8/PPP3PP/5RK1 w - - 1 21",
+"calNodes": 522896,
+"calMs": 398.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:cH08gfLk#29",
+"fen": "r2q1rk1/1b2bppp/p2ppn2/7N/Pp2P3/1P1B1Q2/1B1P1PPP/R4RK1 b - - 4 15",
+"calNodes": 366603,
+"calMs": 408.0,
+"calDepth": 14,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:N87o3WiL#79",
+"fen": "8/1p2q3/p2p1pk1/3P2p1/8/P7/1PP1p3/2K1Q3 b - - 1 40",
+"calNodes": 607142,
+"calMs": 451.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:cGRlOf2x#70",
+"fen": "4n3/4kp2/p1rp2p1/1p2p1p1/4P3/P3RP1P/1P4P1/3R1K2 w - - 1 36",
+"calNodes": 398124,
+"calMs": 409.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:bNITIrja#45",
+"fen": "3r1kr1/1b1n3R/p2bp3/1p1p2P1/2nB4/1NN2B2/PPP3P1/2KR4 b - - 2 23",
+"calNodes": 252701,
+"calMs": 317.0,
+"calDepth": 13,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:1KiQPXDQ#58",
+"fen": "r5k1/R5p1/p1b3p1/1p3p2/3P4/3B4/PP3P1P/6K1 w - - 1 30",
+"calNodes": 656533,
+"calMs": 442.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:0xqKq",
+"fen": "8/p7/8/1P2k2p/P2p2p1/4P3/3K3P/8 w - - 0 30",
+"calNodes": 596707,
+"calMs": 330.0,
+"calDepth": 21,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:KxhwpZtH#44",
+"fen": "r1q1n1k1/4bppp/1pP1p3/1N1p4/3P1P2/5NP1/1Q3P1P/2R3K1 w - - 3 23",
+"calNodes": 316678,
+"calMs": 317.0,
+"calDepth": 14,
+"source": "responses.csv"
+}
+],
+"stash-21.0": [
+{
+"pos": "lichess-puzzle:EeROy",
+"fen": "8/8/4k3/2rR4/p1P4P/P7/1P6/2K5 b - - 0 44",
+"calNodes": 1916928,
+"calMs": 496.0,
+"calDepth": 31,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:qukzL",
+"fen": "3r2k1/p5bp/1p4pB/2q1p3/8/2P1Q3/PP4PP/4R1K1 b - - 13 30",
+"calNodes": 1302528,
+"calMs": 491.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:UmFg31Kc#100",
+"fen": "8/1p6/3p4/3P4/P4b2/1K1k1Bp1/2p5/5N2 w - - 0 51",
+"calNodes": 1458176,
+"calMs": 498.0,
+"calDepth": 25,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:zWuipFdA#26",
+"fen": "1r1qkb1r/pQp2ppp/6n1/2p1P3/2b2P2/2N3P1/PPP3BP/R3K1NR w KQk - 1 14",
+"calNodes": 937984,
+"calMs": 493.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:9BmF6kzI#84",
+"fen": "r7/6p1/1p3k2/1PpPpP2/1rP3PP/p1K5/R7/5R2 w - - 2 43",
+"calNodes": 1191936,
+"calMs": 491.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:yuC24LlF#99",
+"fen": "8/8/1k1B3p/4Pp2/3b4/6pP/4r1P1/3R3K b - - 12 50",
+"calNodes": 1167360,
+"calMs": 492.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:hsVQhK6n#26",
+"fen": "1r1q1rk1/1p2ppbp/p2p1np1/1Pp5/2P5/P1NPPBPb/5P1P/1RBQ1RK1 w - - 1 14",
+"calNodes": 1085440,
+"calMs": 491.0,
+"calDepth": 14,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:AUOwNyeQ#97",
+"fen": "1n6/2K2pp1/8/P5k1/8/4P1P1/8/8 b - - 7 49",
+"calNodes": 1601536,
+"calMs": 493.0,
+"calDepth": 28,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:eodng69i#29",
+"fen": "2kr1b1r/pp3ppp/2b1p3/4P3/8/2PBBP2/P3K1PP/R6R b - - 1 15",
+"calNodes": 1101824,
+"calMs": 492.0,
+"calDepth": 15,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:6XhN0Bk7#33",
+"fen": "r1b2r1k/2q1bp1p/p1pp1p2/4pP2/2P1P3/2NQ4/PPB3PP/3R1RK1 b - - 0 17",
+"calNodes": 1105920,
+"calMs": 491.0,
+"calDepth": 13,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:2inuMZeV#41",
+"fen": "2r2rk1/pb1n2pp/1p2p2q/2pPPp2/2P2P1b/P2BB1N1/2Q3PP/R4RK1 b - - 0 21",
+"calNodes": 1040384,
+"calMs": 492.0,
+"calDepth": 13,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:fbKoTXrL#77",
+"fen": "8/6kp/3b1p2/3P4/4PPB1/3n1K2/3B3P/8 b - - 5 39",
+"calNodes": 1273856,
+"calMs": 492.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:oMUcHSh1#24",
+"fen": "rnbr2k1/pp2bppp/2p5/2q5/3N4/5B2/PPP2PPP/R1BQR1K1 w - - 6 13",
+"calNodes": 1007616,
+"calMs": 492.0,
+"calDepth": 12,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:NKNeOdqN#97",
+"fen": "1k6/5pp1/1pQ1b3/p2pP3/5Np1/4q1P1/7P/5K2 b - - 7 49",
+"calNodes": 1331200,
+"calMs": 491.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:mBrS9",
+"fen": "r3kb1r/pp1n1pp1/1qp1P2p/8/8/1Q4P1/PP3PbP/R1B2RK1 w kq - 0 15",
+"calNodes": 962560,
+"calMs": 491.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:dB7ZadV9#71",
+"fen": "8/8/4R1p1/p4k1p/2Bp3P/1P1P2P1/2q2PK1/8 b - - 3 36",
+"calNodes": 1249280,
+"calMs": 493.0,
+"calDepth": 20,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:SM9gO",
+"fen": "3r3k/pp3B1p/nbp5/6Q1/4P3/5P2/P6P/7K b - - 0 25",
+"calNodes": 1110016,
+"calMs": 493.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:g7OtC76s#72",
+"fen": "6k1/2r2pp1/7p/8/3p4/3Q2P1/5PKP/8 w - - 2 37",
+"calNodes": 1437696,
+"calMs": 492.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:RP9xxxgy#70",
+"fen": "5bk1/p2q1p1p/1p1Pp1p1/2p5/2P4P/P2Q2P1/1P6/7K w - - 1 36",
+"calNodes": 1191936,
+"calMs": 492.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:yymac",
+"fen": "4r1k1/p1p2pp1/1bp3p1/3q4/8/1PP4P/PB2NnP1/3RQ1K1 w - - 0 22",
+"calNodes": 1273856,
+"calMs": 493.0,
+"calDepth": 21,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:vsjlDnkP#75",
+"fen": "5k2/2r1p3/5npp/8/6P1/1B2R2P/5PK1/8 b - - 0 38",
+"calNodes": 1245184,
+"calMs": 492.0,
+"calDepth": 15,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:9EsZl",
+"fen": "6k1/5p2/P3p3/6pp/1N2p3/4P1P1/1P3P2/2K2b2 b - - 0 37",
+"calNodes": 1257472,
+"calMs": 492.0,
+"calDepth": 22,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:WGZQyeIl#50",
+"fen": "rn6/pp4k1/4p1p1/2p5/B2P1r2/2P2P2/1P6/2KR2N1 w - - 0 26",
+"calNodes": 1220608,
+"calMs": 491.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:AizD5",
+"fen": "8/2k2p2/1p4pp/1K5P/5PP1/8/8/8 w - - 0 40",
+"calNodes": 1753088,
+"calMs": 491.0,
+"calDepth": 27,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:abNo0",
+"fen": "5rk1/pp3p1p/1q3P2/7R/1b2QP2/1K6/PP1r3P/5B1R b - - 0 24",
+"calNodes": 1146880,
+"calMs": 492.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:n8Xl6VYW#39",
+"fen": "4rrk1/p1n2ppp/b2p4/2pPnQ2/7q/P1N1R1NP/BP3PP1/R5K1 b - - 6 20",
+"calNodes": 946176,
+"calMs": 492.0,
+"calDepth": 12,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:HkSqyDrt#68",
+"fen": "8/1ppk4/pr4p1/6R1/3P2pP/2P5/PP4P1/6K1 w - - 3 35",
+"calNodes": 1003520,
+"calMs": 491.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:ZpojH758#82",
+"fen": "8/p6p/4kbp1/5p2/7P/N2K1P2/1p4P1/8 w - - 2 42",
+"calNodes": 1474560,
+"calMs": 492.0,
+"calDepth": 20,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:ifscNkXK#48",
+"fen": "3r3r/p1pk1ppp/Q1p1p3/2P2q2/2P2P2/7R/PP3P2/1R3KNb w - - 5 25",
+"calNodes": 1097728,
+"calMs": 492.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:1OtP0SKE#52",
+"fen": "8/3k2pp/3p1b2/1N2n3/3BP3/8/PPr3PP/5RK1 w - - 3 27",
+"calNodes": 1105920,
+"calMs": 491.0,
+"calDepth": 14,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:904Mfkqa#28",
+"fen": "2k1r2r/ppp2ppp/2n2n2/8/3P4/P1q1BB2/5PPP/R2Q1K1R w - - 2 15",
+"calNodes": 1007616,
+"calMs": 492.0,
+"calDepth": 13,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:1HQRnrgx#54",
+"fen": "8/3n1pp1/p2kn2p/1pp1p3/1P2P3/1PPNKP2/6PP/3N4 w - - 0 28",
+"calNodes": 1347584,
+"calMs": 492.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:FRzfD3kN#40",
+"fen": "1r5r/pR5p/3p2pk/3Pn3/4N3/8/PPP3PP/5RK1 w - - 1 21",
+"calNodes": 1232896,
+"calMs": 491.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:cH08gfLk#29",
+"fen": "r2q1rk1/1b2bppp/p2ppn2/7N/Pp2P3/1P1B1Q2/1B1P1PPP/R4RK1 b - - 4 15",
+"calNodes": 983040,
+"calMs": 492.0,
+"calDepth": 13,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:N87o3WiL#79",
+"fen": "8/1p2q3/p2p1pk1/3P2p1/8/P7/1PP1p3/2K1Q3 b - - 1 40",
+"calNodes": 1445888,
+"calMs": 491.0,
+"calDepth": 23,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:cGRlOf2x#70",
+"fen": "4n3/4kp2/p1rp2p1/1p2p1p1/4P3/P3RP1P/1P4P1/3R1K2 w - - 1 36",
+"calNodes": 1253376,
+"calMs": 492.0,
+"calDepth": 15,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:bNITIrja#45",
+"fen": "3r1kr1/1b1n3R/p2bp3/1p1p2P1/2nB4/1NN2B2/PPP3P1/2KR4 b - - 2 23",
+"calNodes": 946176,
+"calMs": 491.0,
+"calDepth": 12,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:1KiQPXDQ#58",
+"fen": "r5k1/R5p1/p1b3p1/1p3p2/3P4/3B4/PP3P1P/6K1 w - - 1 30",
+"calNodes": 1359872,
+"calMs": 492.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:0xqKq",
+"fen": "8/p7/8/1P2k2p/P2p2p1/4P3/3K3P/8 w - - 0 30",
+"calNodes": 1585152,
+"calMs": 491.0,
+"calDepth": 23,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:KxhwpZtH#44",
+"fen": "r1q1n1k1/4bppp/1pP1p3/1N1p4/3P1P2/5NP1/1Q3P1P/2R3K1 w - - 3 23",
+"calNodes": 1138688,
+"calMs": 491.0,
+"calDepth": 12,
+"source": "responses.csv"
+}
+],
+"stash-33.0": [
+{
+"pos": "lichess-puzzle:EeROy",
+"fen": "8/8/4k3/2rR4/p1P4P/P7/1P6/2K5 b - - 0 44",
+"calNodes": 1843444,
+"calMs": 490.0,
+"calDepth": 29,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:qukzL",
+"fen": "3r2k1/p5bp/1p4pB/2q1p3/8/2P1Q3/PP4PP/4R1K1 b - - 13 30",
+"calNodes": 1237701,
+"calMs": 490.0,
+"calDepth": 22,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:UmFg31Kc#100",
+"fen": "8/1p6/3p4/3P4/P4b2/1K1k1Bp1/2p5/5N2 w - - 0 51",
+"calNodes": 1358311,
+"calMs": 490.0,
+"calDepth": 21,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:zWuipFdA#26",
+"fen": "1r1qkb1r/pQp2ppp/6n1/2p1P3/2b2P2/2N3P1/PPP3BP/R3K1NR w KQk - 1 14",
+"calNodes": 927640,
+"calMs": 490.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:9BmF6kzI#84",
+"fen": "r7/6p1/1p3k2/1PpPpP2/1rP3PP/p1K5/R7/5R2 w - - 2 43",
+"calNodes": 1101699,
+"calMs": 490.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:yuC24LlF#99",
+"fen": "8/8/1k1B3p/4Pp2/3b4/6pP/4r1P1/3R3K b - - 12 50",
+"calNodes": 1300397,
+"calMs": 490.0,
+"calDepth": 20,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:hsVQhK6n#26",
+"fen": "1r1q1rk1/1p2ppbp/p2p1np1/1Pp5/2P5/P1NPPBPb/5P1P/1RBQ1RK1 w - - 1 14",
+"calNodes": 926183,
+"calMs": 490.0,
+"calDepth": 15,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:AUOwNyeQ#97",
+"fen": "1n6/2K2pp1/8/P5k1/8/4P1P1/8/8 b - - 7 49",
+"calNodes": 1423783,
+"calMs": 490.0,
+"calDepth": 30,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:eodng69i#29",
+"fen": "2kr1b1r/pp3ppp/2b1p3/4P3/8/2PBBP2/P3K1PP/R6R b - - 1 15",
+"calNodes": 1065110,
+"calMs": 490.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:6XhN0Bk7#33",
+"fen": "r1b2r1k/2q1bp1p/p1pp1p2/4pP2/2P1P3/2NQ4/PPB3PP/3R1RK1 b - - 0 17",
+"calNodes": 951650,
+"calMs": 490.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:2inuMZeV#41",
+"fen": "2r2rk1/pb1n2pp/1p2p2q/2pPPp2/2P2P1b/P2BB1N1/2Q3PP/R4RK1 b - - 0 21",
+"calNodes": 991253,
+"calMs": 490.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:fbKoTXrL#77",
+"fen": "8/6kp/3b1p2/3P4/4PPB1/3n1K2/3B3P/8 b - - 5 39",
+"calNodes": 1130616,
+"calMs": 490.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:oMUcHSh1#24",
+"fen": "rnbr2k1/pp2bppp/2p5/2q5/3N4/5B2/PPP2PPP/R1BQR1K1 w - - 6 13",
+"calNodes": 863174,
+"calMs": 490.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:NKNeOdqN#97",
+"fen": "1k6/5pp1/1pQ1b3/p2pP3/5Np1/4q1P1/7P/5K2 b - - 7 49",
+"calNodes": 1268998,
+"calMs": 490.0,
+"calDepth": 20,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:mBrS9",
+"fen": "r3kb1r/pp1n1pp1/1qp1P2p/8/8/1Q4P1/PP3PbP/R1B2RK1 w kq - 0 15",
+"calNodes": 876929,
+"calMs": 490.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:dB7ZadV9#71",
+"fen": "8/8/4R1p1/p4k1p/2Bp3P/1P1P2P1/2q2PK1/8 b - - 3 36",
+"calNodes": 1277436,
+"calMs": 490.0,
+"calDepth": 22,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:SM9gO",
+"fen": "3r3k/pp3B1p/nbp5/6Q1/4P3/5P2/P6P/7K b - - 0 25",
+"calNodes": 1272537,
+"calMs": 490.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:g7OtC76s#72",
+"fen": "6k1/2r2pp1/7p/8/3p4/3Q2P1/5PKP/8 w - - 2 37",
+"calNodes": 1326119,
+"calMs": 490.0,
+"calDepth": 20,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:RP9xxxgy#70",
+"fen": "5bk1/p2q1p1p/1p1Pp1p1/2p5/2P4P/P2Q2P1/1P6/7K w - - 1 36",
+"calNodes": 733642,
+"calMs": 340.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:yymac",
+"fen": "4r1k1/p1p2pp1/1bp3p1/3q4/8/1PP4P/PB2NnP1/3RQ1K1 w - - 0 22",
+"calNodes": 1230846,
+"calMs": 490.0,
+"calDepth": 20,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:vsjlDnkP#75",
+"fen": "5k2/2r1p3/5npp/8/6P1/1B2R2P/5PK1/8 b - - 0 38",
+"calNodes": 1134393,
+"calMs": 490.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:9EsZl",
+"fen": "6k1/5p2/P3p3/6pp/1N2p3/4P1P1/1P3P2/2K2b2 b - - 0 37",
+"calNodes": 1550551,
+"calMs": 490.0,
+"calDepth": 21,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:WGZQyeIl#50",
+"fen": "rn6/pp4k1/4p1p1/2p5/B2P1r2/2P2P2/1P6/2KR2N1 w - - 0 26",
+"calNodes": 1167274,
+"calMs": 490.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:AizD5",
+"fen": "8/2k2p2/1p4pp/1K5P/5PP1/8/8/8 w - - 0 40",
+"calNodes": 1653953,
+"calMs": 490.0,
+"calDepth": 24,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:abNo0",
+"fen": "5rk1/pp3p1p/1q3P2/7R/1b2QP2/1K6/PP1r3P/5B1R b - - 0 24",
+"calNodes": 1052418,
+"calMs": 490.0,
+"calDepth": 18,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:n8Xl6VYW#39",
+"fen": "4rrk1/p1n2ppp/b2p4/2pPnQ2/7q/P1N1R1NP/BP3PP1/R5K1 b - - 6 20",
+"calNodes": 940022,
+"calMs": 490.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:HkSqyDrt#68",
+"fen": "8/1ppk4/pr4p1/6R1/3P2pP/2P5/PP4P1/6K1 w - - 3 35",
+"calNodes": 1120735,
+"calMs": 490.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:ZpojH758#82",
+"fen": "8/p6p/4kbp1/5p2/7P/N2K1P2/1p4P1/8 w - - 2 42",
+"calNodes": 1487687,
+"calMs": 490.0,
+"calDepth": 22,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:ifscNkXK#48",
+"fen": "3r3r/p1pk1ppp/Q1p1p3/2P2q2/2P2P2/7R/PP3P2/1R3KNb w - - 5 25",
+"calNodes": 1007033,
+"calMs": 490.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:1OtP0SKE#52",
+"fen": "8/3k2pp/3p1b2/1N2n3/3BP3/8/PPr3PP/5RK1 w - - 3 27",
+"calNodes": 1123805,
+"calMs": 490.0,
+"calDepth": 17,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:904Mfkqa#28",
+"fen": "2k1r2r/ppp2ppp/2n2n2/8/3P4/P1q1BB2/5PPP/R2Q1K1R w - - 2 15",
+"calNodes": 942067,
+"calMs": 490.0,
+"calDepth": 15,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:1HQRnrgx#54",
+"fen": "8/3n1pp1/p2kn2p/1pp1p3/1P2P3/1PPNKP2/6PP/3N4 w - - 0 28",
+"calNodes": 1328758,
+"calMs": 490.0,
+"calDepth": 21,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:FRzfD3kN#40",
+"fen": "1r5r/pR5p/3p2pk/3Pn3/4N3/8/PPP3PP/5RK1 w - - 1 21",
+"calNodes": 1181300,
+"calMs": 490.0,
+"calDepth": 20,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:cH08gfLk#29",
+"fen": "r2q1rk1/1b2bppp/p2ppn2/7N/Pp2P3/1P1B1Q2/1B1P1PPP/R4RK1 b - - 4 15",
+"calNodes": 774974,
+"calMs": 490.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:N87o3WiL#79",
+"fen": "8/1p2q3/p2p1pk1/3P2p1/8/P7/1PP1p3/2K1Q3 b - - 1 40",
+"calNodes": 1289627,
+"calMs": 490.0,
+"calDepth": 21,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:cGRlOf2x#70",
+"fen": "4n3/4kp2/p1rp2p1/1p2p1p1/4P3/P3RP1P/1P4P1/3R1K2 w - - 1 36",
+"calNodes": 767105,
+"calMs": 319.0,
+"calDepth": 19,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:bNITIrja#45",
+"fen": "3r1kr1/1b1n3R/p2bp3/1p1p2P1/2nB4/1NN2B2/PPP3P1/2KR4 b - - 2 23",
+"calNodes": 993920,
+"calMs": 490.0,
+"calDepth": 16,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:1KiQPXDQ#58",
+"fen": "r5k1/R5p1/p1b3p1/1p3p2/3P4/3B4/PP3P1P/6K1 w - - 1 30",
+"calNodes": 1347904,
+"calMs": 490.0,
+"calDepth": 22,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-puzzle:0xqKq",
+"fen": "8/p7/8/1P2k2p/P2p2p1/4P3/3K3P/8 w - - 0 30",
+"calNodes": 1659991,
+"calMs": 490.0,
+"calDepth": 22,
+"source": "responses.csv"
+},
+{
+"pos": "lichess-game:KxhwpZtH#44",
+"fen": "r1q1n1k1/4bppp/1pP1p3/1N1p4/3P1P2/5NP1/1Q3P1P/2R3K1 w - - 3 23",
+"calNodes": 1015446,
+"calMs": 490.0,
+"calDepth": 17,
+"source": "responses.csv"
+}
+]
+}
+}

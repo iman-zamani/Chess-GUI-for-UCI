@@ -6,7 +6,7 @@
 #
 # Needs: python3 with tools/elo/requirements.txt, git, make, a C/C++ compiler,
 # Go (for Blunder), curl, and a built chess-cli (cmake --build build).
-# Compute (Apple M4, 4 workers): reference analysis ~8 h, engine runs ~6 h.
+# Compute (4 workers): reference analysis ~8 h on an Apple M4; engine runs ~6 h for model v1.
 # Keep the computer awake: a sleep invalidates move-time based answers
 # (run_engines.py retries an answer that spans a sleep).
 set -eu
@@ -59,14 +59,22 @@ set -- $("$PY" -c "
 import json,sys; r=min(json.load(open(sys.argv[1]))['results'], key=lambda r: r['loeo']['mae'])
 print(r['threshold'], r['model'])" "$WORK/data/cv.json")
 
-# 8. final fit and selection -> Resources/elo
+# 8. final fit and selection -> Resources/elo, with the reference engines' recorded
+#    searches for the speed measurement (constants measured as described in
+#    data/elo/speed_constants.json)
 "$PY" "$T/fit_irt.py" --data "$WORK/data" --threshold "$1" --model "$2" --holdout "$HOLDOUT" \
     --out "$WORK/data/items.json"
+"$PY" "$T/speed_reference.py" --data "$WORK/data" --constants "$REPO/data/elo/speed_constants.json" \
+    --out "$WORK/data/speed.json"
 "$PY" "$T/select_positions.py" --data "$WORK/data" --items "$WORK/data/items.json" --cv "$WORK/data/cv.json" \
-    --calib-nps "$NPS" --out-dir "$REPO/Resources/elo"
+    --calib-nps "$NPS" --speed "$WORK/data/speed.json" --out-dir "$REPO/Resources/elo"
 echo "model written to $REPO/Resources/elo (threshold $1, $2 model)"
 
-# 9. the held-out engine through the shipped estimator, and the report for docs/elo-estimator.md
+# 9. the held-out engine through the shipped estimator (with the reference engines,
+#    tools/build_reference_engines.py), and the report for docs/elo-estimator.md
+[ -x "$REPO/Resources/reference/stockfish-11" ] || [ -x "$REPO/Resources/reference/stockfish-11.exe" ] || \
+    "$PY" "$REPO/tools/build_reference_engines.py"
+cmake --build "$REPO/build"
 HB=$("$PY" -c "import json,sys; print(json.load(open(sys.argv[1]))[sys.argv[2]]['binary'])" \
      "$WORK/engines/build_status.json" "$HOLDOUT")
 "$REPO/build/chess-cli" elo-estimate --engine cmd="$HB" --full --json > "$WORK/data/holdout_full.json"

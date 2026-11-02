@@ -4,6 +4,7 @@
 #include "testing.hpp"
 #include "ui/file_dialog.hpp"
 #include <misc/cpp/imgui_stdlib.h>
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <filesystem>
@@ -455,8 +456,8 @@ void ToolsScreen::drawEloTab(){
     eloFull_ = mode == 1;
     double minutes = (eloFull_ ? model_.items.size() : (size_t)model_.maxItems) * (model_.baseMovetimeMs + 60) / 60000.0;
     ImGui::PushStyleColor(ImGuiCol_Text, ui::kDim);
-    ImGui::TextWrapped("At most %.1f minutes at the calibration machine's speed; the move time per position is "
-                       "scaled to this computer's speed.", minutes);
+    ImGui::TextWrapped("At most %.1f minutes at the calibration machine's speed, plus about a minute to measure this "
+                       "computer's speed with the reference engines; the move time per position is scaled to it.", minutes);
     ImGui::PopStyleColor();
     const EngineConfig* eng = ui::findEngine(app_.registry(), st.eloEngine);
     ImGui::BeginDisabled(busy() || !eng);
@@ -473,16 +474,14 @@ void ToolsScreen::runElo(const EngineConfig& cfg, bool full){
         EloOptions o;
         o.adaptive = !full;
         o.abort = &j.abortFlag();
-        j.log("Measuring this computer's speed...");
+        o.log = [&](const std::string& s){ j.log(s); };
         o.progress = [&](const EloProgress& p){
             { std::lock_guard<std::mutex> lk(resMx_); eloProgress_ = p; }
             if (p.answered % 10 == 0)
-                j.log(std::to_string(p.answered) + " positions: " + std::to_string((int)std::lround(p.elo))
-                      + " +/- " + std::to_string((int)std::lround(1.96 * p.se)) + " (measurement only)");
+                j.log(std::to_string(p.answered) + " positions: " + eloProgressText(p, model));
         };
         EloResult r = runEloEstimate(cfg, model, o);
-        if (r.ok) j.log(">>> Estimated Elo " + std::to_string((int)std::lround(r.elo)) + " +/- "
-                        + std::to_string((int)std::lround(r.ci95)) + " (95%), " + std::to_string(r.answered)
+        if (r.ok) j.log(">>> Estimated Elo: " + eloHeadline(r) + ", " + std::to_string(r.answered)
                         + " positions, " + std::to_string(r.movetimeMs) + " ms each");
         else j.log("FAIL: " + r.error);
         std::lock_guard<std::mutex> lk(resMx_);
@@ -495,33 +494,49 @@ void ToolsScreen::drawEloResult(){
     EloResult r; EloProgress p; bool running;
     { std::lock_guard<std::mutex> lk(resMx_); r = elo_; p = eloProgress_; running = eloRunning_; }
     float em = ImGui::GetFontSize();
-    double shownElo = r.ok ? r.elo : p.elo, shownCi = r.ok ? r.ci95 : 1.96 * p.se;
+    double shownElo = r.ok ? r.elo : p.elo, shownCi = r.ok ? r.ci95 : eloCi95(model_, p.elo, p.se, p.speedErrorElo);
     ImGui::PushFont(ui::fonts().large);
-    if (r.ok) ImGui::Text("Estimated Elo: %ld +/- %ld (95%%), CCRL-Blitz-equivalent", std::lround(r.elo), std::lround(r.ci95));
-    else if (running && p.answered) ImGui::Text("%d / %d positions: %ld +/- %ld", p.answered, p.planned,
-                                                std::lround(p.elo), std::lround(1.96 * p.se));
+    if (r.hasNumber()) ImGui::Text("Estimated Elo: %ld +/- %ld (95%%), CCRL Blitz (single CPU) equivalent",
+                                   std::lround(r.elo), std::lround(r.ci95));
+    else if (r.ok && r.status == EloStatus::Unreliable) ImGui::TextColored(ui::kBad, "No estimate: the run failed a check");
+    else if (r.ok) ImGui::Text("Estimated Elo: %s", eloHeadline(r).c_str());
+    else if (running && p.answered) ImGui::Text("%d / %d positions: %s", p.answered, p.planned,
+                                                eloProgressText(p, model_).c_str());
     else if (running) ImGui::Text("Starting...");
     else ImGui::TextColored(ui::kBad, "%s", r.error.empty() ? "No result" : r.error.c_str());
     ImGui::PopFont();
     if (running && p.planned) ImGui::ProgressBar((float)p.answered / p.planned, ImVec2(-1, em * 0.4f), "");
     if (r.ok){
-        ImGui::TextDisabled("%s: %d of %d positions solved, %d ms per position (hardware factor %.2f). "
-                            "The interval includes the model's measured error.", r.engineName.c_str(), r.solved,
-                            r.answered, r.movetimeMs, r.factor);
-        ImGui::TextColored(ui::kWarn, "An estimate from positions, not from games: time management is not measured.");
+        ImGui::PushStyleColor(ImGuiCol_Text, ui::kDim);
+        ImGui::TextWrapped("%s: %d of %d positions solved, %d ms per position (%s; %s). The interval includes the "
+                           "model's measured error and the uncertainty of the speed measurement.", r.engineName.c_str(),
+                           r.solved, r.answered, r.movetimeMs,
+                           eloSpeedSource(r).c_str(),
+                           r.diag.placement.c_str());
+        ImGui::PopStyleColor();
+        if (r.status == EloStatus::AboveRange || r.status == EloStatus::BelowRange)
+            ImGui::TextWrapped("This model is calibrated for %ld-%ld: outside that range the test can tell that an engine "
+                               "is stronger (or weaker), not by how much.", std::lround(model_.rangeMin), std::lround(model_.rangeMax));
+        ImGui::PushStyleColor(ImGuiCol_Text, ui::kBad);
+        for (auto& f : r.diag.failures) ImGui::TextWrapped("Failed check: %s", f.c_str());
+        ImGui::PopStyleColor();
+        ImGui::PushStyleColor(ImGuiCol_Text, ui::kWarn);
+        for (auto& w : r.diag.warnings) ImGui::TextWrapped("Warning: %s", w.c_str());
         std::string warn = eloRangeWarning(r, model_);
-        if (!warn.empty()){
-            ImGui::PushStyleColor(ImGuiCol_Text, ui::kBad);
-            ImGui::TextWrapped("%s", warn.c_str());
-            ImGui::PopStyleColor();
-        }
+        if (!warn.empty()) ImGui::TextWrapped("%s", warn.c_str());
+        ImGui::TextWrapped("An estimate from positions, not from games: time management is not measured.");
+        ImGui::PopStyleColor();
     }
     // where the engine sits among the calibration engines
-    if ((r.ok || p.answered) && !model_.calibration.empty()){
+    bool progressInRange = eloRangeStatus(model_, p.elo, eloCi95(model_, p.elo, p.se, p.speedErrorElo)).status == EloStatus::Ok;
+    bool showBar = r.hasNumber() || (running && p.answered && progressInRange);
+    bool showBound = r.ok && (r.status == EloStatus::AboveRange || r.status == EloStatus::BelowRange);
+    if ((showBar || showBound) && !model_.calibration.empty()){
         ImGui::SeparatorText("Among the calibration engines");
         double lo = 1e9, hi = -1e9;
         for (auto& c : model_.calibration){ lo = std::min(lo, c.second); hi = std::max(hi, c.second); }
-        lo = std::min(lo, shownElo - shownCi) - 50; hi = std::max(hi, shownElo + shownCi) + 50;
+        if (showBar){ lo = std::min(lo, shownElo - shownCi); hi = std::max(hi, shownElo + shownCi); }
+        lo -= 50; hi += 50;
         ImVec2 p0 = ImGui::GetCursorScreenPos();
         float w = ImGui::GetContentRegionAvail().x, h = em * 4;
         ImGui::InvisibleButton("elo-chart", ImVec2(w, h));
@@ -543,14 +558,22 @@ void ToolsScreen::drawEloResult(){
                 hover = c.first + ": " + std::to_string((int)std::lround(c.second));
         }
         ImU32 col = ImGui::GetColorU32(ui::kAccent);
-        dl->AddRectFilled(ImVec2(x(shownElo - shownCi), axis - em * 1.5f), ImVec2(x(shownElo + shownCi), axis - em * 1.1f),
-                          (col & 0x00FFFFFF) | 0x60000000);
-        dl->AddLine(ImVec2(x(shownElo), axis - em * 1.8f), ImVec2(x(shownElo), axis), col, 3);
+        if (showBar){
+            dl->AddRectFilled(ImVec2(x(shownElo - shownCi), axis - em * 1.5f), ImVec2(x(shownElo + shownCi), axis - em * 1.1f),
+                              (col & 0x00FFFFFF) | 0x60000000);
+            dl->AddLine(ImVec2(x(shownElo), axis - em * 1.8f), ImVec2(x(shownElo), axis), col, 3);
+        } else {                                              // a bound: shade from it to the end of the scale
+            bool above = r.status == EloStatus::AboveRange;
+            dl->AddRectFilled(ImVec2(above ? x(r.bound) : p0.x, axis - em * 1.5f), ImVec2(above ? p0.x + w : x(r.bound), axis - em * 1.1f),
+                              (col & 0x00FFFFFF) | 0x60000000);
+            dl->AddLine(ImVec2(x(r.bound), axis - em * 1.8f), ImVec2(x(r.bound), axis), col, 3);
+        }
         if (!hover.empty()) ImGui::SetTooltip("%s", hover.c_str());
-        ImGui::TextDisabled("Dots: the %d calibration engines (hover for names). Bar: this engine with its 95%% interval.",
+        ImGui::TextDisabled(showBar ? "Dots: the %d calibration engines (hover for names). Bar: this engine with its 95%% interval."
+                                    : "Dots: the %d calibration engines (hover for names). Shaded: where this engine is.",
                             (int)model_.calibration.size());
     }
-    if (r.ok){
+    if (r.hasNumber()){
         ImGui::SeparatorText("By category");
         if (ImGui::BeginTable("elo-groups", 3, ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit)){
             ImGui::TableSetupColumn("Category", ImGuiTableColumnFlags_WidthStretch);
@@ -565,6 +588,8 @@ void ToolsScreen::drawEloResult(){
             ImGui::EndTable();
         }
         ImGui::TextDisabled("Category values come from fewer positions and are less certain than the total.");
+    }
+    if (r.ok){
         auto save = [&](const char* ext, const std::string& text){
             std::string path = filedialog::saveFile("Save the Elo estimate",
                 app_.settings().lastSaveDir + "/elo_" + ui::timeStamp() + ext, {ext[1] == 'j' ? "JSON" : "Markdown", std::string("*") + ext});

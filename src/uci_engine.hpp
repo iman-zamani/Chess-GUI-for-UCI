@@ -1,5 +1,6 @@
 /* Chess-GUI-for-UCI — UCI engine process wrapper (Win/POSIX). GPL-2.0 */
 #pragma once
+#include "cpu_placement.hpp"
 #include "engine_config.hpp"
 #include <atomic>
 #include <condition_variable>
@@ -116,6 +117,18 @@ public:
     // apply cfg.options, then wait for "readyok".
     bool start(const EngineConfig& cfg);
     bool start(const std::string& exePath);         // default config for an executable
+    // Where the process runs (core pinning / efficiency cores / no power
+    // throttling); applies from the next start(). See cpu_placement.hpp.
+    void setPlacement(const CpuPlacement& p){ placement_ = p; }
+    const CpuPlacement& placement() const { return placement_; }
+    // False when the placement asked for could not be applied at the last start.
+    bool placementApplied() const { return placementApplied_; }
+    // Windows: whether the opt-out of power throttling was accepted (Windows 10 1709 and later)
+    bool powerThrottlingOff() const { return powerThrottlingOff_; }
+    // CPU time (user + system) the engine process has used, in seconds; -1 if unknown.
+    double cpuSeconds();
+    // Part of cpuSeconds() spent on performance cores (Apple silicon); -1 if unknown.
+    double pCoreSeconds();
     // Time allowed for "uciok" and for the first "readyok" (defaults 10 s / 30 s).
     void setStartTimeouts(int uciokMs, int readyokMs){ uciokTimeout = uciokMs; readyTimeout = readyokMs; }
     void quit();
@@ -132,8 +145,13 @@ public:
     // go movetime ms; "stop" if there is no bestmove after ms + graceMs (for
     // engines that overrun or ignore movetime), then wait up to stopWaitMs.
     std::string goMovetimeStrict(int ms, int graceMs, int stopWaitMs = 5000);
-    std::string goDepth(int depth);
+    // go depth / go nodes; "stop" if there is no bestmove after timeoutMs.
+    std::string goDepth(int depth, int timeoutMs = 600000);
     std::string goNodes(long long nodes, int timeoutMs = 600000);
+    // Wall time from "go" to "bestmove" of the last goMovetimeStrict / goDepth /
+    // goNodes, and whether it needed a "stop".
+    long long lastSearchWallMs() const { return lastWallMs_; }
+    bool lastSearchStopped() const { return lastStopped_; }
     std::string goClock(int wtimeMs, int btimeMs, int wincMs, int bincMs);
     // infinite analysis: call goInfinite, poll lastInfo(), then stopAndWait()
     void goInfinite();
@@ -176,6 +194,7 @@ private:
     bool spawn();
     void markDead();
     std::string waitBestmove(int timeoutMs);
+    std::string searchTimed(const std::string& goCmd, int timeoutMs, int stopWaitMs = 5000);
     void resetSearchInfo();
     void parseInfo(const std::string& line);
     void parseOptionLine(const std::string& line);
@@ -183,6 +202,11 @@ private:
     void readerLoop();                           // reader thread: engine output -> log + queue
 
     EngineConfig cfg_;
+    CpuPlacement placement_;
+    bool placementApplied_ = true;
+    bool powerThrottlingOff_ = true;
+    long long lastWallMs_ = 0;
+    bool lastStopped_ = false;
     std::vector<UciOption> opts;
     int chess960Mode_ = -1;                      // UCI_Chess960 as last sent (-1 = never)
     std::string engName = "engine", engAuthor, errMsg;
