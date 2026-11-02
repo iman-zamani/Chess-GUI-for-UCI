@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.2.0 (2026-11-02)
 
 ### Elo estimator
 - The move time is now set from this computer's speed as measured with two reference engines
