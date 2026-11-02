@@ -2,6 +2,7 @@
 #include "testlib.hpp"
 #include "chess.hpp"
 #include "testing.hpp"
+#include <algorithm>
 
 // The six canonical positions from the Chess Programming Wiki "Perft Results" page
 // (https://www.chessprogramming.org/Perft_Results). Depths are capped so the whole
