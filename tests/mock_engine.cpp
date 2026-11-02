@@ -28,20 +28,44 @@
  *   --no-quit                     ignore "quit" (must be killed)
  *   --exit-at-start CODE          exit immediately with CODE (not a UCI engine)
  *   --think-ms N                  under clock control, always think N ms (fast match tests)
+ *   --speed-scale S               "go nodes N" / "go depth d" answer at once, reporting the time an
+ *                                 engine running at S x speed would take (N/1000 ms or 100*d ms, / S)
+ *   --report-cpu                  print "info string cpu N" (the CPU the search ran on) before bestmove
+ *   --burn-cpu                    keep the CPU busy while searching (like a real engine) instead of sleeping
+ *   --speed-file PATH             like --speed-scale, with S read from PATH at every search (a test can
+ *                                 change the simulated speed during a run); "S K B" in the file means S
+ *                                 for the next K "go nodes" / "go depth" searches of any mock, then B
+ *   --real-time                   with a speed scale, "go nodes" / "go depth" take the time they report
+ *   --movetime-scale F            under "go movetime T", think F x T (0.01: ignores it, 1.6: needs a stop)
+ *   --busy-idle                   keep a CPU busy while waiting for commands (a busy-waiting input loop)
+ *
+ * Flags can also come from the MOCK_ENGINE_FLAGS environment variable, separated
+ * by '|' (for engines the program starts without arguments, e.g. reference engines);
+ * command-line flags come after them, so they win.
  */
 #include "chess.hpp"
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <mutex>
 #include <sstream>
 #include <string>
 #include <thread>
 #include <vector>
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#elif defined(__linux__)
+#include <sched.h>
+#endif
 
 namespace {
 
@@ -50,7 +74,11 @@ struct Flags {
     bool reportEnv = false, noUciok = false, noReadyok = false, busyReadyok = false;
     bool illegalBestmove = false, noneBestmove = false, ignoreStop = false;
     bool outputAfterBestmove = false, mateBlind = false, timeHog = false, noPerft = false, noQuit = false;
+    bool reportCpu = false, burnCpu = false, realTime = false, busyIdle = false;
+    double movetimeScale = 1;
+    std::string speedFile;
     int slowUciok = 0, slowReadyok = 0, crashOnGo = 0, thinkMs = -1;
+    double speedScale = 0;
 } F;
 
 std::mutex outMx;
@@ -154,7 +182,7 @@ bool pickMove(const Position& p, Move& best, int& mate){
 }
 
 int thinkTimeMs(const GoParams& g, const Position& p){
-    if (g.movetime >= 0) return g.movetime;
+    if (g.movetime >= 0) return (int)std::lround(g.movetime * F.movetimeScale);
     if (g.depth >= 0 || g.nodes >= 0) return 0;
     int t = p.whiteToMove ? g.wtime : g.btime, inc = p.whiteToMove ? g.winc : g.binc;
     if (t < 0) return 0;
@@ -169,8 +197,37 @@ void runSearch(GoParams g, Position p){
     if (F.crashOnGo && goCount == F.crashOnGo){ sleepMs(20); std::fflush(stdout); std::_Exit(3); }
     Move best; int mate = 0;
     bool have = pickMove(p, best, mate);
+    if (!F.speedFile.empty()){
+        std::ifstream in(F.speedFile);
+        double v = 0, after = 0;
+        long long left = 0;
+        if (in >> v && v > 0) F.speedScale = v;
+        if (in >> left >> after && left > 0 && (g.nodes > 0 || g.depth > 0)){
+            in.close();
+            std::ofstream o(F.speedFile);
+            if (left > 1) o << v << " " << left - 1 << " " << after;
+            else o << after;
+        }
+    }
+    if (F.speedScale > 0 && (g.nodes > 0 || g.depth > 0)){    // a simulated machine speed
+        int d = g.depth > 0 ? g.depth : 12;
+        long long n = g.nodes > 0 ? g.nodes : 100000LL * d;
+        long long ms = std::max(1LL, std::llround((g.nodes > 0 ? n / 1000.0 : 100.0 * d) / F.speedScale));
+        if (F.realTime){
+            auto until = t0 + std::chrono::milliseconds(ms);
+            volatile unsigned long long x = 0;
+            while (clk::now() < until){ if (F.burnCpu) for (int i = 0; i < 1000; i++) x = x + i; else sleepMs(1); }
+        }
+        out("info depth " + std::to_string(d) + " nodes " + std::to_string(n) + " time " + std::to_string(ms)
+            + (have ? " pv " + p.moveToUCI(best) : ""));
+        out("bestmove " + (have ? p.moveToUCI(best) : std::string("(none)")));
+        searching = false;
+        return;
+    }
     int limit = thinkTimeMs(g, p);
     bool waitStop = g.infinite || g.ponder;
+    // "go depth d" / "go nodes n" without a time: search until it gets there
+    bool untilDepthOrNodes = g.movetime < 0 && (g.depth > 0 || g.nodes > 0);
     int depth = 0; long long nodes = 0;
     auto info = [&](){
         depth++; nodes += 1000 + 37 * depth;
@@ -189,10 +246,25 @@ void runSearch(GoParams g, Position p){
         if (g.ponder && ponderhitFlag){             // ponderhit: becomes a normal timed search
             g.ponder = false; waitStop = g.infinite; t0 = clk::now();
         }
-        if (!waitStop && msSince(t0) >= limit) break;
+        if (!waitStop && !untilDepthOrNodes && msSince(t0) >= limit) break;
         if (g.depth >= 0 && depth >= std::max(1, g.depth)) break;
-        sleepMs(std::min(10, std::max(1, limit / 8)));
+        if (g.nodes > 0 && nodes >= g.nodes) break;
+        int pause = untilDepthOrNodes ? 10 : std::min(10, std::max(1, limit / 8));
+        if (F.burnCpu){
+            auto until = clk::now() + std::chrono::milliseconds(pause);
+            volatile unsigned long long x = 0;
+            while (clk::now() < until) for (int i = 0; i < 1000; i++) x = x + i;
+        } else sleepMs(pause);
         if (depth < 60 && msSince(t0) / 50 >= depth) info();
+    }
+    if (F.reportCpu){
+#ifdef _WIN32
+        out("info string cpu " + std::to_string((int)GetCurrentProcessorNumber()));
+#elif defined(__linux__)
+        out("info string cpu " + std::to_string(sched_getcpu()));
+#else
+        out("info string cpu -1");
+#endif
     }
     std::string bm;
     if (!have || F.noneBestmove) bm = "(none)";
@@ -263,7 +335,15 @@ void handleGo(std::istringstream& ss){
 } // namespace
 
 int main(int argc, char** argv){
-    std::vector<std::string> args(argv + 1, argv + argc);
+    std::vector<std::string> args;
+    if (const char* env = std::getenv("MOCK_ENGINE_FLAGS")){
+        std::string s = env, cur;
+        for (char c : s + "|"){
+            if (c == '|'){ if (!cur.empty()) args.push_back(cur); cur.clear(); }
+            else cur += c;
+        }
+    }
+    args.insert(args.end(), argv + 1, argv + argc);
     for (size_t i = 0; i < args.size(); i++){
         const std::string& a = args[i];
         auto next = [&]() -> std::string { return i + 1 < args.size() ? args[++i] : ""; };
@@ -287,11 +367,23 @@ int main(int argc, char** argv){
         else if (a == "--perft-bug") F.perftBug = next();
         else if (a == "--no-quit") F.noQuit = true;
         else if (a == "--think-ms") F.thinkMs = std::atoi(next().c_str());
+        else if (a == "--speed-scale") F.speedScale = std::atof(next().c_str());
+        else if (a == "--report-cpu") F.reportCpu = true;
+        else if (a == "--burn-cpu") F.burnCpu = true;
+        else if (a == "--speed-file") F.speedFile = next();
+        else if (a == "--real-time") F.realTime = true;
+        else if (a == "--movetime-scale") F.movetimeScale = std::atof(next().c_str());
+        else if (a == "--busy-idle") F.busyIdle = true;
         else if (a == "--exit-at-start"){ std::cerr << "mock_engine: exiting at start" << std::endl;
                                           return std::atoi(next().c_str()); }
         else { std::cerr << "mock_engine: unknown flag " << a << "\n"; }
     }
     if (!F.stderrText.empty()) std::cerr << F.stderrText << std::endl;
+    if (F.busyIdle)
+        std::thread([]{
+            volatile unsigned long long x = 0;
+            for (;;){ if (searching) sleepMs(1); else for (int i = 0; i < 1000; i++) x = x + i; }
+        }).detach();
 
     std::string line;
     while (std::getline(std::cin, line)){

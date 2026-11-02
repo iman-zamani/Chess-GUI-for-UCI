@@ -28,7 +28,8 @@
 namespace fs = std::filesystem;
 
 // Exit codes (documented in --help).
-enum Exit { EXIT_OK = 0, EXIT_H0 = 1, EXIT_FAILED = 1, EXIT_USAGE = 2, EXIT_INCONCLUSIVE = 3, EXIT_INTERRUPTED = 130 };
+enum Exit { EXIT_OK = 0, EXIT_H0 = 1, EXIT_FAILED = 1, EXIT_USAGE = 2, EXIT_INCONCLUSIVE = 3, EXIT_NO_ESTIMATE = 4,
+            EXIT_INTERRUPTED = 130 };
 
 static std::atomic<bool> g_interrupted{false};
 static void onSignal(int){ g_interrupted = true; }
@@ -47,7 +48,8 @@ Usage:
                                 check an engine against the UCI protocol
   chess-cli analyse --engine E [--fen FEN] [--moves M...] [--depth N | --movetime MS | --nodes N]
                     [--multipv K]
-  chess-cli elo-estimate --engine E [--quick | --full] [--model FILE] [--factor F] [--markdown FILE]
+  chess-cli elo-estimate --engine E [--quick | --full] [--model FILE] [--factor F] [--no-placement]
+                         [--markdown FILE]
                                 estimate the engine's Elo from test positions (not from games)
   chess-cli bench [--runs N]    single-threaded speed (internal perft, best of N runs)
   chess-cli help | --version
@@ -91,7 +93,8 @@ Output:
 
 Exit codes: 0 success (sprt: H1 accepted), 1 a check failed (perft mismatch, movegen bug found,
 UCI check FAIL; sprt: H0 accepted), 2 usage or start error, 3 sprt: games ran out before a
-decision, 130 interrupted (the match state file can resume it).
+decision, 4 elo-estimate: no estimate (the run failed a check), 130 interrupted (the match state
+file can resume it).
 )";
 
 static bool parseDouble(const std::string& s, double& v){
@@ -357,7 +360,7 @@ struct ToolArgs {
     int depth = -1, movetime = -1, multipv = 1, runs = 3;
     long long nodes = -1;
     std::string suite;
-    bool divide = false, json = false, quick = false, full = false;
+    bool divide = false, json = false, quick = false, full = false, noPlacement = false;
     std::string model, markdown;
     double factor = 0;
     std::vector<std::string> only;
@@ -392,6 +395,7 @@ static int parseToolArgs(const std::vector<std::string>& a, ToolArgs& t, const s
         else if (k == "--markdown"){ if (!value(t.markdown)) return fail("--markdown needs a file"); }
         else if (k == "--factor"){ if (!value(v) || !parseDouble(v, t.factor) || t.factor <= 0) return fail("bad --factor"); }
         else if (k == "--full") t.full = true;
+        else if (k == "--no-placement") t.noPlacement = true;
         else if (k == "--divide") t.divide = true;
         else if (k == "--quick") t.quick = true;
         else if (k == "--json") t.json = true;
@@ -605,7 +609,8 @@ static int cmdAnalyse(const std::vector<std::string>& args){
 
 static int cmdEloEstimate(const std::vector<std::string>& args){
     ToolArgs t;
-    int rc = parseToolArgs(args, t, {"--engine", "--quick", "--full", "--model", "--factor", "--markdown", "--json"});
+    int rc = parseToolArgs(args, t, {"--engine", "--quick", "--full", "--model", "--factor", "--markdown", "--json",
+                                     "--no-placement"});
     if (rc >= 0) return rc;
     if (!t.hasEngine) return fail("elo-estimate needs --engine");
     if (t.quick && t.full) return fail("give --quick or --full, not both");
@@ -619,6 +624,7 @@ static int cmdEloEstimate(const std::vector<std::string>& args){
     EloOptions opt;
     opt.adaptive = !t.full;
     opt.factor = t.factor;
+    opt.placement = !t.noPlacement;
     std::signal(SIGINT, onSignal);
     std::atomic<bool> abortFlag{false};
     opt.abort = &abortFlag;
@@ -626,11 +632,12 @@ static int cmdEloEstimate(const std::vector<std::string>& args){
     opt.progress = [&](const EloProgress& p){
         if (g_interrupted) abortFlag = true;
         if (p.answered - lastShown >= 10 || p.answered == p.planned){
-            std::fprintf(out, "%d positions: %.0f +/- %.0f (measurement only)\n", p.answered, p.elo, 1.96 * p.se);
+            std::fprintf(out, "%d positions: %s\n", p.answered, eloProgressText(p, m).c_str());
             std::fflush(out);
             lastShown = p.answered;
         }
     };
+    opt.log = [&](const std::string& s){ if (g_interrupted) abortFlag = true; std::fprintf(out, "%s\n", s.c_str()); std::fflush(out); };
     std::fprintf(out, "%s mode, %d positions in the model%s\n", opt.adaptive ? "Quick (adaptive)" : "Full",
                  (int)m.items.size(), t.factor > 0 ? "" : "; measuring this computer's speed first");
     EloResult r = runEloEstimate(t.engine, m, opt);
@@ -639,16 +646,25 @@ static int cmdEloEstimate(const std::vector<std::string>& args){
         std::ofstream f(fs::u8path(t.markdown));
         f << eloResultMarkdown(r, m);
     }
-    if (t.json){ std::printf("%s\n", eloResultJson(r, m).c_str()); return g_interrupted ? EXIT_INTERRUPTED : EXIT_OK; }
-    std::printf("\nEstimated Elo: %ld +/- %ld (95%%), CCRL-Blitz-equivalent\n", std::lround(r.elo), std::lround(r.ci95));
-    for (auto& [g, v] : r.groups) std::printf("  %-11s %5ld  (%d positions)\n", g.c_str(), std::lround(v.first), v.second);
-    std::printf("%d of %d positions solved, %d ms per position (hardware factor %.2f)\n", r.solved, r.answered,
-                r.movetimeMs, r.factor);
-    if (!m.validationText.empty()) std::printf("Model accuracy: %s\n", m.validationText.c_str());
+    int code = g_interrupted ? EXIT_INTERRUPTED : r.status == EloStatus::Unreliable ? EXIT_NO_ESTIMATE : EXIT_OK;
+    if (t.json){ std::printf("%s\n", eloResultJson(r, m).c_str()); return code; }
+    std::printf("\nEstimated Elo: %s%s\n", eloHeadline(r).c_str(),
+                r.hasNumber() ? ", CCRL Blitz (single CPU) equivalent" : "");
+    if (r.hasNumber())
+        for (auto& [g, v] : r.groups) std::printf("  %-11s %5ld  (%d positions)\n", g.c_str(), std::lround(v.first), v.second);
+    if (r.status == EloStatus::AboveRange || r.status == EloStatus::BelowRange)
+        std::printf("The model is calibrated for %ld-%ld: outside that it can tell that an engine is stronger (or weaker), "
+                    "not by how much.\n", std::lround(m.rangeMin), std::lround(m.rangeMax));
+    std::printf("%d of %d positions solved, %d ms per position (%s; %s)\n", r.solved, r.answered, r.movetimeMs,
+                eloSpeedSource(r).c_str(),
+                r.diag.placement.c_str());
+    for (auto& f : r.diag.failures) std::printf("Failed check: %s\n", f.c_str());
+    for (auto& w : r.diag.warnings) std::printf("Warning: %s\n", w.c_str());
     std::string warn = eloRangeWarning(r, m);
     if (!warn.empty()) std::printf("Warning: %s\n", warn.c_str());
+    if (!m.validationText.empty()) std::printf("Model accuracy: %s\n", m.validationText.c_str());
     std::printf("This is an estimate from test positions, not a rating from games: time management is not measured.\n");
-    return g_interrupted ? EXIT_INTERRUPTED : EXIT_OK;
+    return code;
 }
 
 int main(int argc, char** argv){

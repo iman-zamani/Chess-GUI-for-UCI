@@ -19,8 +19,12 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <signal.h>
+#include <sys/resource.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#ifdef __linux__
+#include <sched.h>
+#endif
 #endif
 
 using clk = std::chrono::steady_clock;
@@ -78,6 +82,7 @@ bool UciEngine::spawn(){
     bool attrOk = InitializeProcThreadAttributeList(attrs, 1, 0, &attrSize)
                && UpdateProcThreadAttribute(attrs, 0, PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
                                             inherit, sizeof(inherit), nullptr, nullptr);
+    bool pin = placement_.cpu >= 0 && placement_.cpu < (int)(8 * sizeof(DWORD_PTR));
     STARTUPINFOEXW si{}; si.StartupInfo.cb = sizeof(si);
     si.StartupInfo.dwFlags = STARTF_USESTDHANDLES;
     si.StartupInfo.hStdInput = inR; si.StartupInfo.hStdOutput = outW; si.StartupInfo.hStdError = errW;
@@ -87,7 +92,9 @@ bool UciEngine::spawn(){
     for (auto& a : cfg_.args) cmd += L" " + quoteArg(widen(a));
     std::wstring exe = widen(cfg_.path), wd = widen(cfg_.effectiveWorkingDir());
     PROCESS_INFORMATION pi{};
-    DWORD flags = CREATE_NO_WINDOW | (attrOk ? EXTENDED_STARTUPINFO_PRESENT : 0);
+    // started suspended when it gets a CPU placement, so it never runs elsewhere
+    bool place = pin || placement_.noPowerThrottling;
+    DWORD flags = CREATE_NO_WINDOW | (attrOk ? EXTENDED_STARTUPINFO_PRESENT : 0) | (place ? CREATE_SUSPENDED : 0);
     BOOL ok = CreateProcessW(exe.c_str(), &cmd[0], nullptr, nullptr, TRUE, flags, nullptr,
                              wd.empty() ? nullptr : wd.c_str(), &si.StartupInfo, &pi);
     DWORD gle = GetLastError();
@@ -97,6 +104,31 @@ bool UciEngine::spawn(){
         CloseHandle(inW); CloseHandle(outR); CloseHandle(errR);
         errMsg = "cannot launch " + cfg_.path + " (Windows error " + std::to_string(gle) + ")";
         return false;
+    }
+    placementApplied_ = placement_.cpu < 0 || pin;               // a CPU this API can't address: not pinned
+    powerThrottlingOff_ = !placement_.noPowerThrottling;
+    if (place){
+        if (pin){
+            // The process mask applies within its primary group. Windows chooses that group, so
+            // on machines with more than 64 CPUs it may not be the CPU's group: then it isn't
+            // pinned (and says so) rather than pinned to the wrong CPU.
+            USHORT groups[4] = {0}, n = 4;
+            bool sameGroup = GetProcessGroupAffinity(pi.hProcess, &n, groups) && n >= 1 && groups[0] == placement_.group;
+            DWORD_PTR mask = (DWORD_PTR)1 << placement_.cpu, got = 0, sys = 0;
+            placementApplied_ = sameGroup && SetProcessAffinityMask(pi.hProcess, mask)
+                             && GetProcessAffinityMask(pi.hProcess, &got, &sys) && got == mask;
+        }
+        if (placement_.noPowerThrottling){
+            // PROCESS_POWER_THROTTLING_STATE with EXECUTION_SPEED controlled and off:
+            // the process is never put in "efficiency mode" (EcoQoS). Looked up at run
+            // time: older Windows versions and SDKs lack it.
+            struct { ULONG Version, ControlMask, StateMask; } st{1, 0x1, 0};
+            typedef BOOL (WINAPI *SetInfoFn)(HANDLE, int, LPVOID, DWORD);
+            auto fn = (SetInfoFn)(void*)GetProcAddress(GetModuleHandleW(L"kernel32.dll"), "SetProcessInformation");
+            const int processPowerThrottling = 4;               // PROCESS_INFORMATION_CLASS value
+            powerThrottlingOff_ = fn && fn(pi.hProcess, processPowerThrottling, &st, sizeof st);
+        }
+        ResumeThread(pi.hThread);
     }
     CloseHandle(pi.hThread);
     hChildIn = inW; hChildOut = outR; hChildErr = errR; hProc = pi.hProcess;
@@ -121,6 +153,8 @@ bool UciEngine::spawn(){
     for (auto& a : argStore) argv.push_back(const_cast<char*>(a.c_str()));
     argv.push_back(nullptr);
 
+    const int pinCpu = placement_.cpu;
+    const bool darwinBg = placement_.darwinBackground;
     std::lock_guard<std::mutex> lk(spawnMx);
     int toChild[2], fromChild[2], errPipe[2], execErr[2];
     if (pipe(toChild) || pipe(fromChild) || pipe(errPipe) || pipe(execErr)){ errMsg="pipe failed"; return false; }
@@ -139,6 +173,17 @@ bool UciEngine::spawn(){
             int e = errno; ssize_t r = write(execErr[1], &stage, sizeof stage); r = write(execErr[1], &e, sizeof e);
             (void)r; _exit(127);
         }
+        // CPU placement: inherited across exec (checked by the parent below)
+#ifdef __linux__
+        if (pinCpu >= 0 && pinCpu < CPU_SETSIZE){
+            cpu_set_t set; CPU_ZERO(&set); CPU_SET(pinCpu, &set);
+            sched_setaffinity(0, sizeof set, &set);
+        }
+#endif
+#ifdef __APPLE__
+        if (darwinBg) setpriority(PRIO_DARWIN_PROCESS, 0, PRIO_DARWIN_BG);
+#endif
+        (void)pinCpu; (void)darwinBg;
         if (std::strchr(argv[0], '/')) execv(argv[0], argv.data());
         else execvp(argv[0], argv.data());                 // bare name: search PATH
         int e = errno; stage = 2;
@@ -159,6 +204,14 @@ bool UciEngine::spawn(){
         return false;
     }
     inFd = toChild[1]; outFd = fromChild[0]; errFd = errPipe[0]; pid = p;
+    placementApplied_ = true;
+#ifdef __linux__
+    if (pinCpu >= 0){
+        cpu_set_t got; CPU_ZERO(&got);
+        placementApplied_ = sched_getaffinity(p, sizeof got, &got) == 0 && CPU_COUNT(&got) == 1 && CPU_ISSET(pinCpu, &got);
+    }
+#endif
+    // (macOS: another process's background band can't be read back, so it isn't checked)
     fcntl(outFd, F_SETFL, O_NONBLOCK);
     fcntl(errFd, F_SETFL, O_NONBLOCK);
     return true;
@@ -655,31 +708,50 @@ std::string UciEngine::goMovetime(int ms){
     return waitBestmove(ms + 8000);
 }
 std::string UciEngine::goMovetimeStrict(int ms, int graceMs, int stopWaitMs){
+    return searchTimed("go movetime " + std::to_string(ms), ms + graceMs, stopWaitMs);
+}
+std::string UciEngine::goDepth(int d, int timeoutMs){
+    return searchTimed("go depth " + std::to_string(d), timeoutMs);
+}
+std::string UciEngine::goNodes(long long n, int timeoutMs){
+    return searchTimed("go nodes " + std::to_string(n), timeoutMs);
+}
+std::string UciEngine::searchTimed(const std::string& goCmd, int timeoutMs, int stopWaitMs){
     resetSearchInfo();
-    sendRaw("go movetime " + std::to_string(ms));
+    lastStopped_ = false;
+    sendRaw(goCmd);
     auto t0 = clk::now();
-    while (msSince(t0) < ms + graceMs && alive()){
-        std::string ln = readLine(std::max(1, (int)(ms + graceMs - msSince(t0))));
+    while (msSince(t0) < timeoutMs && alive()){
+        std::string ln = readLine(std::max(1, (int)(timeoutMs - msSince(t0))));
         if (ln.empty()) continue;
         parseInfo(ln);
         if (ln.rfind("bestmove", 0) == 0){
+            lastWallMs_ = msSince(t0);
             std::istringstream ss(ln);
             std::string a, b; ss >> a >> b;
             return b == "(none)" ? "" : b;
         }
     }
+    lastWallMs_ = msSince(t0);
     if (!alive()) return "";
-    return stopAndWait(stopWaitMs);
+    lastStopped_ = true;
+    std::string best = stopAndWait(stopWaitMs);
+    lastWallMs_ = msSince(t0);
+    return best;
 }
-std::string UciEngine::goDepth(int d){
-    resetSearchInfo();
-    sendRaw("go depth " + std::to_string(d));
-    return waitBestmove(600000);
+double UciEngine::cpuSeconds(){
+#ifdef _WIN32
+    return processCpuSecondsHandle(hProc);
+#else
+    return pid > 0 ? processCpuSeconds(pid) : -1;
+#endif
 }
-std::string UciEngine::goNodes(long long n, int timeoutMs){
-    resetSearchInfo();
-    sendRaw("go nodes " + std::to_string(n));
-    return waitBestmove(timeoutMs);
+double UciEngine::pCoreSeconds(){
+#ifdef _WIN32
+    return -1;
+#else
+    return pid > 0 ? processPCoreSeconds(pid) : -1;
+#endif
 }
 std::string UciEngine::goClock(int wt,int bt,int wi,int bi){
     resetSearchInfo();

@@ -149,10 +149,12 @@ add_library(chesscore STATIC
     src/analysis.cpp
     src/chess.cpp
     src/elo_estimator.cpp
+    src/elo_speed.cpp
     src/engine_config.cpp
     src/game_tree.cpp
     src/openings.cpp
     src/perft_bisect.cpp
+    src/cpu_placement.cpp
     src/power.cpp
     src/settings.cpp
     src/stats.cpp
@@ -172,6 +174,13 @@ endif()
 # Headless command-line tool: core only, no SFML.
 add_executable(chess-cli src/cli.cpp)
 target_link_libraries(chess-cli PRIVATE chesscore)
+
+# Resources next to the binaries (fonts, pieces, the Elo model, the reference
+# engines, ...). A target of its own, run on every build, so a changed file
+# always arrives, whether or not a binary was relinked.
+add_custom_target(copy-resources ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/Resources $<TARGET_FILE_DIR:chess-cli>/Resources
+    COMMENT "Copying Resources")
 
 if(CHESSGUI_BUILD_GUI)
 set(CHESS_SOURCES
@@ -195,11 +204,6 @@ add_executable(chess-gui ${CHESS_SOURCES})
 target_link_libraries(chess-gui PRIVATE chesscore ${SFML_LIBS} ${AUDIO_LIBS})
 target_include_directories(chess-gui PRIVATE ${pfd_SOURCE_DIR} ${nanosvg_SOURCE_DIR}/src ${miniaudio_SOURCE_DIR})
 
-# Copy Resources next to the binary so ./chess-gui finds fonts, pieces,
-# engines and the perft suite.
-add_custom_command(TARGET chess-gui POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_SOURCE_DIR}/Resources $<TARGET_FILE_DIR:chess-gui>/Resources)
 
 # =============================================================================
 # macOS Retina (HiDPI)
@@ -228,11 +232,14 @@ if(APPLE)
     # there). Then the whole bundle is signed ad hoc: the linker signs only the
     # executable, and a downloaded bundle whose resources are not sealed is reported
     # by macOS as "damaged". (Not a Developer ID signature: see docs/building.md.)
-    add_custom_command(TARGET chess-gui-app POST_BUILD
+    # (On every build, like copy-resources; the reference engines inside are
+    # signed first, as nested code must be.)
+    add_custom_target(bundle-resources ALL
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_SOURCE_DIR}/Resources
             "$<TARGET_BUNDLE_CONTENT_DIR:chess-gui-app>/Resources"
-        COMMAND codesign --force --sign - "$<TARGET_BUNDLE_DIR:chess-gui-app>"
+        COMMAND sh ${CMAKE_SOURCE_DIR}/tools/sign_macos_bundle.sh "$<TARGET_BUNDLE_DIR:chess-gui-app>"
+        DEPENDS chess-gui-app
         COMMENT "Copying Resources into the app bundle and signing it...")
 endif()
 endif() # CHESSGUI_BUILD_GUI
