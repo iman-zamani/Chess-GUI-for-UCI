@@ -1,0 +1,20 @@
+{
+ "description": "Measured constants for the estimator's speed measurement (tools/elo/speed_reference.py). Sources below; see docs/elo-estimator.md.",
+ "warmupSec": 30,
+ "positions": 24,
+ "minMovetimeMs": 150,
+ "sigmaLog2": 0.35,
+ "sigmaSource": "replay experiment 2026-11-02, Apple M4 vs the calibration machine (Xeon E5-2667 v4): 25 calibration engines replayed 40 recorded searches twice (go nodes N, or go depth d where that repeats the same node count); 17 engines from 5 families gave repeatable searches. Their speed ratios scatter around the two reference engines' (geometric mean) with an RMS of 0.176 log2, 0.266 with every family weighted equally (max: Berserk 2.0.0, +0.52); 0.266 x t(0.975, 5 df) / 1.96 = 0.35 allows for estimating it from 5 families. Held-out engines (Berserk 3.2.0, Weiss) are not in it. Raw data: data/elo/speed_replay_m4_2026-11-02.json (tools/elo/speed_replay.py); analysis: tools/elo/speed_proxy.py",
+ "sigmaLog2Arm64": 0.49,
+ "sigmaArm64Source": "checks on other machines, 2026-11-02, with data/elo/replay_set_2026-11-02.json (speed_replay.py --set, speed_proxy.py): family-weighted RMS of the engines' log2 speed ratio around the two reference engines' - Apple silicon: M4 (the experiment above) 0.266, M4 with held-out Weiss/Berserk 3.2.0/Stash 0.330, GitHub macOS runner (M1, virtual) 0.407 and 0.468 (two runs; Berserk 3.2.0 +0.73/+0.87); pooled 0.376, x 1.31 = 0.49 (sigmaLog2Arm64). x86-64: GitHub Linux runner 0.141 and 0.231 (two runs, different CPUs), Windows runner 0.147; pooled 0.178, below sigmaLog2, which is kept for x86 (no Intel hybrid CPU among them). Calibration machine itself: 0.026. Single reference (Stockfish 11 only, the worse one) on Apple silicon: 0.311, 0.350, 0.512, 0.554, pooled 0.444 x 1.31 = 0.58 (singleReferenceSigmaLog2Arm64); on x86 0.164, 0.302, 0.158 (worst per run), pooled 0.218 x 1.31 = 0.29, below singleReferenceSigmaLog2. Runs: https://github.com/iman-zamani/Chess-GUI-for-UCI/actions/runs/41389481183 and /41390278766 (annotations), Elo validation workflow (tools/elo/ci_validation.py)",
+ "fallbackSigmaLog2": 0.6,
+ "fallbackSource": "the internal perft benchmark misjudged engine speed by 1.3x-2x on the Apple M4 (2026-11-01: perft 3.28x vs engines 2.3-3.5x; 2026-10-22: perft 1.6x)",
+ "eloPerDoubling": 155,
+ "eloPerDoublingErr": 33,
+ "eloPerDoublingSource": "2026-11-02, Apple M4, model v2, full mode (714 positions) at 196 vs 392 ms per position: Stash 21.0 +153 (+/-64), Ethereal 12.00 +103 (+/-91), Bit-Genie 8 +153 (+/-65), Berserk 2.0.0 +173 (+/-59), Stockfish 10 +185 (+/-134); inverse-variance mean 155 +/- 33. No held-out engine. Runs: .work/elo/gamma_v2 (chess-cli elo-estimate --full --factor 0.392 / 0.784)",
+ "singleReferenceSigmaLog2": 0.41,
+ "singleReferenceSigmaLog2Arm64": 0.58,
+ "singleReferenceSource": "the same experiment around one reference engine alone: Stockfish 11 family-weighted RMS 0.311, Blunder 8.0.0 0.237; the larger, x 1.31 as above",
+ "checkEverySec": 60,
+ "checkPositions": 4
+}

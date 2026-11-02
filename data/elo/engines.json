@@ -1,5 +1,5 @@
 {
- "description": "Calibration engines for the position-based Elo estimator. Ratings are copied from the CCRL Blitz list (single-CPU entries); engines are built from the pinned tags by tools/elo/build_engines.py and are not redistributed.",
+ "description": "Calibration engines for the position-based Elo estimator. Ratings are copied from the CCRL Blitz list (single-CPU entries); engines are built from the pinned tags by tools/elo/build_engines.py and are not redistributed. Model v2 adds engines run on the calibration machine with the speed-matched protocol (run_engines.py --speed); engines marked heldOut are kept out of every fit for validation; engines marked aboveScale are rated above what the test positions can separate, are kept out of every fit and are only used to check that they are reported as above the calibrated range.",
  "ccrlSource": {
   "list": "CCRL Blitz, all engines, text rating list",
   "url": "https://computerchess.org.uk/ccrl/404/cgi/compare_engines.cgi?print=Rating+list+%28text%29&class=all+engines&only_best_in_class=0",
@@ -552,7 +552,8 @@
    },
    "patchesFor": {
     "Linux-x86_64": []
-   }
+   },
+   "heldOut": "validation: the whole family is kept out of every fit, of the cross-validation and of the speed constants (rated 2896-3319, where no other engine is held out), then estimated with the shipped model on the calibration machine and on an Apple M4"
   },
   {
    "id": "weiss-1.2",
@@ -577,7 +578,8 @@
    },
    "patchesFor": {
     "Linux-x86_64": []
-   }
+   },
+   "heldOut": "validation: the whole family is kept out of every fit, of the cross-validation and of the speed constants (rated 2896-3319, where no other engine is held out), then estimated with the shipped model on the calibration machine and on an Apple M4"
   },
   {
    "id": "weiss-1.4",
@@ -602,7 +604,8 @@
    },
    "patchesFor": {
     "Linux-x86_64": []
-   }
+   },
+   "heldOut": "validation: the whole family is kept out of every fit, of the cross-validation and of the speed constants (rated 2896-3319, where no other engine is held out), then estimated with the shipped model on the calibration machine and on an Apple M4"
   },
   {
    "id": "weiss-2.0",
@@ -627,7 +630,8 @@
    },
    "patchesFor": {
     "Linux-x86_64": []
-   }
+   },
+   "heldOut": "validation: the whole family is kept out of every fit, of the cross-validation and of the speed constants (rated 2896-3319, where no other engine is held out), then estimated with the shipped model on the calibration machine and on an Apple M4"
   },
   {
    "id": "berserk-2.0.0",
@@ -676,6 +680,7 @@
     "minus": 17,
     "games": 943
    },
+   "heldOut": "validation: kept out of every fit, of the cross-validation and of the speed constants (the model v2 fit was run with it held out), then estimated with the shipped model",
    "commit": "8a040a20bfb0712e94d5cad0665305f99d9455b9",
    "idName": "Berserk 3.2.0",
    "builds": {
@@ -809,6 +814,650 @@
    "patchesFor": {
     "Linux-x86_64": []
    }
+  },
+  {
+   "id": "stockfish-16",
+   "family": "Stockfish",
+   "version": "16",
+   "repo": "https://github.com/official-stockfish/Stockfish",
+   "tag": "sf_16",
+   "commit": "68e1e9b3811e16cad014b590d7443b9063b3eb52",
+   "idName": "Stockfish 16",
+   "builds": {
+    "Linux-x86_64": "make -C src -j3 build ARCH=x86-64-avx2"
+   },
+   "binaries": {
+    "Linux-x86_64": "src/stockfish"
+   },
+   "platforms": [
+    "Linux-x86_64"
+   ],
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Stockfish 16 64-bit",
+    "rating": 3761,
+    "plus": 9,
+    "minus": 9,
+    "games": 4641
+   },
+   "addedIn": "model v2 (2026-11-01, run on the calibration machine, speed-matched)",
+   "aboveScale": "rated above what the test positions can separate: 11 of the 12 calibration engines above 3600 solve 94-98% of the 1040 positions they ran (Stockfish 11, 3563: 92%). Cross-validated with them in the fit, their own errors are -213 to +1148 Elo (8 of the 10 not held out are above +380), and the engines rated 3000-3600 come out biased low (leave-one-family-out bias -69 against -11 without them; MAE over all 36 engines 120 against 110). Kept out of every fit; used to check that such engines are reported as above the calibrated range"
+  },
+  {
+   "id": "plentychess-8.0.0",
+   "family": "PlentyChess",
+   "version": "8.0.0",
+   "repo": "https://github.com/Yoshie2000/PlentyChess",
+   "tag": "b-v8.0.0",
+   "commit": "50ad9f1b523063cbbbf599fe0547f42870fe2906",
+   "idName": "PlentyChess 8.0.0",
+   "builds": {
+    "Linux-x86_64": "make -j3 EXE=plentychess"
+   },
+   "binaries": {
+    "Linux-x86_64": "plentychess"
+   },
+   "platforms": [
+    "Linux-x86_64"
+   ],
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "PlentyChess 8.0.0 64-bit",
+    "rating": 3774,
+    "plus": 12,
+    "minus": 12,
+    "games": 2202
+   },
+   "addedIn": "model v2 (2026-11-01, run on the calibration machine, speed-matched)",
+   "aboveScale": "rated above what the test positions can separate: 11 of the 12 calibration engines above 3600 solve 94-98% of the 1040 positions they ran (Stockfish 11, 3563: 92%). Cross-validated with them in the fit, their own errors are -213 to +1148 Elo (8 of the 10 not held out are above +380), and the engines rated 3000-3600 come out biased low (leave-one-family-out bias -69 against -11 without them; MAE over all 36 engines 120 against 110). Kept out of every fit; used to check that such engines are reported as above the calibrated range"
+  },
+  {
+   "id": "obsidian-16.0",
+   "family": "Obsidian",
+   "version": "16.0",
+   "repo": "https://github.com/gab8192/Obsidian",
+   "tag": "v16.0",
+   "commit": "2838ce52c1a3f997cb1175b360cd8c6b2ae6791c",
+   "idName": "Obsidian 16.0",
+   "builds": {
+    "Linux-x86_64": "make -j3 build=native"
+   },
+   "binaries": {
+    "Linux-x86_64": "Obsidian"
+   },
+   "platforms": [
+    "Linux-x86_64"
+   ],
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Obsidian 16.0 64-bit",
+    "rating": 3747,
+    "plus": 9,
+    "minus": 9,
+    "games": 5470
+   },
+   "addedIn": "model v2 (2026-11-01, run on the calibration machine, speed-matched)",
+   "heldOut": "validation: kept out of every fit, estimated with the shipped model",
+   "aboveScale": "rated above what the test positions can separate: 11 of the 12 calibration engines above 3600 solve 94-98% of the 1040 positions they ran (Stockfish 11, 3563: 92%). Cross-validated with them in the fit, their own errors are -213 to +1148 Elo (8 of the 10 not held out are above +380), and the engines rated 3000-3600 come out biased low (leave-one-family-out bias -69 against -11 without them; MAE over all 36 engines 120 against 110). Kept out of every fit; used to check that such engines are reported as above the calibrated range"
+  },
+  {
+   "id": "stormphrax-8.0.0",
+   "family": "Stormphrax",
+   "version": "8.0.0",
+   "repo": "https://github.com/Ciekce/Stormphrax",
+   "tag": "v8.0.0",
+   "commit": "582965517ed2032d41a6b4cd6c2e66b1b934e2ad",
+   "idName": "Stormphrax 8.0.0",
+   "builds": {
+    "Linux-x86_64": "see build_fix.sh / build_fix2.sh"
+   },
+   "binaries": {
+    "Linux-x86_64": "stormphrax"
+   },
+   "platforms": [
+    "Linux-x86_64"
+   ],
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Stormphrax 8.0.0 64-bit",
+    "rating": 3745,
+    "plus": 11,
+    "minus": 11,
+    "games": 2650
+   },
+   "addedIn": "model v2 (2026-11-01, run on the calibration machine, speed-matched)",
+   "aboveScale": "rated above what the test positions can separate: 11 of the 12 calibration engines above 3600 solve 94-98% of the 1040 positions they ran (Stockfish 11, 3563: 92%). Cross-validated with them in the fit, their own errors are -213 to +1148 Elo (8 of the 10 not held out are above +380), and the engines rated 3000-3600 come out biased low (leave-one-family-out bias -69 against -11 without them; MAE over all 36 engines 120 against 110). Kept out of every fit; used to check that such engines are reported as above the calibrated range"
+  },
+  {
+   "id": "integral-8",
+   "family": "Integral",
+   "version": "8",
+   "repo": "https://github.com/aronpetko/integral",
+   "tag": "v8",
+   "commit": "cc1321bfb553c2f7c1b70958b7e2f9464b49ab96",
+   "idName": "Integral v8",
+   "builds": {
+    "Linux-x86_64": "make -j3 native EXE=integral"
+   },
+   "binaries": {
+    "Linux-x86_64": "integral"
+   },
+   "platforms": [
+    "Linux-x86_64"
+   ],
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Integral 8 64-bit",
+    "rating": 3752,
+    "plus": 12,
+    "minus": 12,
+    "games": 2211
+   },
+   "addedIn": "model v2 (2026-11-01, run on the calibration machine, speed-matched)",
+   "aboveScale": "rated above what the test positions can separate: 11 of the 12 calibration engines above 3600 solve 94-98% of the 1040 positions they ran (Stockfish 11, 3563: 92%). Cross-validated with them in the fit, their own errors are -213 to +1148 Elo (8 of the 10 not held out are above +380), and the engines rated 3000-3600 come out biased low (leave-one-family-out bias -69 against -11 without them; MAE over all 36 engines 120 against 110). Kept out of every fit; used to check that such engines are reported as above the calibrated range"
+  },
+  {
+   "id": "caissa-1.26",
+   "family": "Caissa",
+   "version": "1.26",
+   "repo": "https://github.com/Witek902/Caissa",
+   "tag": "1.26",
+   "commit": "008b0b8f1fc6479890665a1a9c2ff6bbc2f1bc06",
+   "idName": "Caissa 1.26 AVX2",
+   "builds": {
+    "Linux-x86_64": "cmake -S . -B build -DCMAKE_BUILD_TYPE=Final -DTARGET_ARCH=x64-avx2 && cmake --build build -j3"
+   },
+   "binaries": {
+    "Linux-x86_64": "build/bin/caissa"
+   },
+   "platforms": [
+    "Linux-x86_64"
+   ],
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Caissa 1.26 64-bit",
+    "rating": 3731,
+    "plus": 12,
+    "minus": 12,
+    "games": 1888
+   },
+   "addedIn": "model v2 (2026-11-01, run on the calibration machine, speed-matched)",
+   "aboveScale": "rated above what the test positions can separate: 11 of the 12 calibration engines above 3600 solve 94-98% of the 1040 positions they ran (Stockfish 11, 3563: 92%). Cross-validated with them in the fit, their own errors are -213 to +1148 Elo (8 of the 10 not held out are above +380), and the engines rated 3000-3600 come out biased low (leave-one-family-out bias -69 against -11 without them; MAE over all 36 engines 120 against 110). Kept out of every fit; used to check that such engines are reported as above the calibrated range"
+  },
+  {
+   "id": "clover-9.1",
+   "family": "Clover",
+   "version": "9.1",
+   "repo": "https://github.com/lucametehau/CloverEngine",
+   "tag": "v9.1",
+   "commit": "e647926a8f23b6b93f7f27c01cb6f686909ec482",
+   "idName": "Clover 9.1",
+   "builds": {
+    "Linux-x86_64": "make -C src -j3"
+   },
+   "binaries": {
+    "Linux-x86_64": "src/Clover.9.1"
+   },
+   "platforms": [
+    "Linux-x86_64"
+   ],
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Clover 9.1 64-bit",
+    "rating": 3727,
+    "plus": 8,
+    "minus": 8,
+    "games": 6617
+   },
+   "addedIn": "model v2 (2026-11-01, run on the calibration machine, speed-matched)",
+   "aboveScale": "rated above what the test positions can separate: 11 of the 12 calibration engines above 3600 solve 94-98% of the 1040 positions they ran (Stockfish 11, 3563: 92%). Cross-validated with them in the fit, their own errors are -213 to +1148 Elo (8 of the 10 not held out are above +380), and the engines rated 3000-3600 come out biased low (leave-one-family-out bias -69 against -11 without them; MAE over all 36 engines 120 against 110). Kept out of every fit; used to check that such engines are reported as above the calibrated range"
+  },
+  {
+   "id": "koivisto-9.0",
+   "family": "Koivisto",
+   "version": "9.0",
+   "repo": "https://github.com/Luecx/Koivisto",
+   "tag": "v9.0",
+   "commit": "2895237d7a4ff267752fb19852ce9868bdccb753",
+   "idName": "Koivisto 9.0",
+   "builds": {
+    "Linux-x86_64": "see build_fix.sh / build_fix2.sh"
+   },
+   "binaries": {
+    "Linux-x86_64": "src_files/Koivisto"
+   },
+   "platforms": [
+    "Linux-x86_64"
+   ],
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Koivisto 9.0 64-bit",
+    "rating": 3632,
+    "plus": 7,
+    "minus": 7,
+    "games": 8445
+   },
+   "addedIn": "model v2 (2026-11-01, run on the calibration machine, speed-matched)",
+   "heldOut": "validation: kept out of every fit, estimated with the shipped model",
+   "aboveScale": "rated above what the test positions can separate: 11 of the 12 calibration engines above 3600 solve 94-98% of the 1040 positions they ran (Stockfish 11, 3563: 92%). Cross-validated with them in the fit, their own errors are -213 to +1148 Elo (8 of the 10 not held out are above +380), and the engines rated 3000-3600 come out biased low (leave-one-family-out bias -69 against -11 without them; MAE over all 36 engines 120 against 110). Kept out of every fit; used to check that such engines are reported as above the calibrated range"
+  },
+  {
+   "id": "seer-2.8.0",
+   "family": "Seer",
+   "version": "2.8.0",
+   "repo": "https://github.com/connormcmonigle/seer-nnue",
+   "tag": "v2.8.0",
+   "commit": "f9b341ea1ffc79fde5acf7e6f382c3a4e29a8e19",
+   "idName": "Seer 2.8.0",
+   "builds": {
+    "Linux-x86_64": "see build_fix.sh / build_fix2.sh"
+   },
+   "binaries": {
+    "Linux-x86_64": "build/seer"
+   },
+   "platforms": [
+    "Linux-x86_64"
+   ],
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Seer 2.8.0 64-bit",
+    "rating": 3640,
+    "plus": 7,
+    "minus": 7,
+    "games": 9739
+   },
+   "addedIn": "model v2 (2026-11-01, run on the calibration machine, speed-matched)",
+   "aboveScale": "rated above what the test positions can separate: 11 of the 12 calibration engines above 3600 solve 94-98% of the 1040 positions they ran (Stockfish 11, 3563: 92%). Cross-validated with them in the fit, their own errors are -213 to +1148 Elo (8 of the 10 not held out are above +380), and the engines rated 3000-3600 come out biased low (leave-one-family-out bias -69 against -11 without them; MAE over all 36 engines 120 against 110). Kept out of every fit; used to check that such engines are reported as above the calibrated range"
+  },
+  {
+   "id": "arasan-26.0",
+   "family": "Arasan",
+   "version": "26.0",
+   "repo": "https://github.com/jdart1/arasan-chess",
+   "tag": "v26.0",
+   "commit": "d8613aca11b3db15ce7f5c6d54da4dc4b31f63f8",
+   "idName": "Arasan v26.0",
+   "builds": {
+    "Linux-x86_64": "see build_fix.sh / build_fix2.sh"
+   },
+   "binaries": {
+    "Linux-x86_64": "bin/arasanx-64-avx2"
+   },
+   "platforms": [
+    "Linux-x86_64"
+   ],
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Arasan 26.0 64-bit",
+    "rating": 3658,
+    "plus": 13,
+    "minus": 13,
+    "games": 1431
+   },
+   "addedIn": "model v2 (2026-11-01, run on the calibration machine, speed-matched)",
+   "aboveScale": "rated above what the test positions can separate: 11 of the 12 calibration engines above 3600 solve 94-98% of the 1040 positions they ran (Stockfish 11, 3563: 92%). Cross-validated with them in the fit, their own errors are -213 to +1148 Elo (8 of the 10 not held out are above +380), and the engines rated 3000-3600 come out biased low (leave-one-family-out bias -69 against -11 without them; MAE over all 36 engines 120 against 110). Kept out of every fit; used to check that such engines are reported as above the calibrated range"
+  },
+  {
+   "id": "ethereal-14.00",
+   "family": "Ethereal",
+   "version": "14.00",
+   "repo": "https://github.com/AndyGrant/Ethereal",
+   "tag": "v14.00",
+   "commit": "96cde8d2f82a3ab0536bf33572405fda96f6e236",
+   "idName": "Ethereal 14.00 (PEXT)",
+   "builds": {
+    "Linux-x86_64": "see build_fix.sh / build_fix2.sh"
+   },
+   "binaries": {
+    "Linux-x86_64": "src/Ethereal"
+   },
+   "platforms": [
+    "Linux-x86_64"
+   ],
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Ethereal 14.00 64-bit",
+    "rating": 3647,
+    "plus": 10,
+    "minus": 10,
+    "games": 3398
+   },
+   "addedIn": "model v2 (2026-11-01, run on the calibration machine, speed-matched)",
+   "aboveScale": "rated above what the test positions can separate: 11 of the 12 calibration engines above 3600 solve 94-98% of the 1040 positions they ran (Stockfish 11, 3563: 92%). Cross-validated with them in the fit, their own errors are -213 to +1148 Elo (8 of the 10 not held out are above +380), and the engines rated 3000-3600 come out biased low (leave-one-family-out bias -69 against -11 without them; MAE over all 36 engines 120 against 110). Kept out of every fit; used to check that such engines are reported as above the calibrated range"
+  },
+  {
+   "id": "halogen-16.0.0",
+   "family": "Halogen",
+   "version": "16.0.0",
+   "repo": "https://github.com/KierenP/Halogen",
+   "tag": "v16",
+   "commit": "fa6d24a5423a20b4530723cd0f6f76d4da0581d8",
+   "idName": "Halogen 16.0.0",
+   "builds": {
+    "Linux-x86_64": "make -C src -j3 EXE=halogen"
+   },
+   "binaries": {
+    "Linux-x86_64": "src/halogen"
+   },
+   "platforms": [
+    "Linux-x86_64"
+   ],
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Halogen 16.0.0 64-bit",
+    "rating": 3721,
+    "plus": 8,
+    "minus": 8,
+    "games": 7454
+   },
+   "addedIn": "model v2 (2026-11-01, run on the calibration machine, speed-matched)",
+   "aboveScale": "rated above what the test positions can separate: 11 of the 12 calibration engines above 3600 solve 94-98% of the 1040 positions they ran (Stockfish 11, 3563: 92%). Cross-validated with them in the fit, their own errors are -213 to +1148 Elo (8 of the 10 not held out are above +380), and the engines rated 3000-3600 come out biased low (leave-one-family-out bias -69 against -11 without them; MAE over all 36 engines 120 against 110). Kept out of every fit; used to check that such engines are reported as above the calibrated range"
+  },
+  {
+   "id": "halogen-11",
+   "family": "Halogen",
+   "version": "11",
+   "repo": "https://github.com/KierenP/Halogen",
+   "tag": "v11",
+   "commit": "f52c0cd7d9ed407eb9cbde728026c478bbf1fb29",
+   "idName": "Halogen 11",
+   "builds": {
+    "Linux-x86_64": "make -C src -j3 EXE=halogen"
+   },
+   "binaries": {
+    "Linux-x86_64": "src/halogen"
+   },
+   "platforms": [
+    "Linux-x86_64"
+   ],
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Halogen 11 64-bit",
+    "rating": 3426,
+    "plus": 9,
+    "minus": 9,
+    "games": 3454
+   },
+   "addedIn": "model v2 (2026-11-01, run on the calibration machine, speed-matched)"
+  },
+  {
+   "id": "zahak-10.0",
+   "family": "Zahak",
+   "version": "10.0",
+   "repo": "https://github.com/amanjpro/zahak",
+   "tag": "10.0",
+   "commit": "72ff8066e2d8348d8d3847fab62c4a6b8344240d",
+   "idName": "Zahak 72ff8066e2d8348d8d3847fab62c4a6b8344240d",
+   "builds": {
+    "Linux-x86_64": "see build_fix.sh / build_fix2.sh"
+   },
+   "binaries": {
+    "Linux-x86_64": "bin/zahak"
+   },
+   "platforms": [
+    "Linux-x86_64"
+   ],
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Zahak 10.0 64-bit",
+    "rating": 3333,
+    "plus": 8,
+    "minus": 8,
+    "games": 6005
+   },
+   "addedIn": "model v2 (2026-11-01, run on the calibration machine, speed-matched)",
+   "idNote": "id name reports the commit of the release tag (the repository's make build), checked against the tag"
+  },
+  {
+   "id": "zahak-8.0",
+   "family": "Zahak",
+   "version": "8.0",
+   "repo": "https://github.com/amanjpro/zahak",
+   "tag": "8.0",
+   "commit": "dbf3c9382757076aab0a0d2a5ff13e1fc699585c",
+   "idName": "Zahak dbf3c9382757076aab0a0d2a5ff13e1fc699585c",
+   "builds": {
+    "Linux-x86_64": "see build_fix.sh / build_fix2.sh"
+   },
+   "binaries": {
+    "Linux-x86_64": "bin/zahak"
+   },
+   "platforms": [
+    "Linux-x86_64"
+   ],
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Zahak 8.0 64-bit",
+    "rating": 3160,
+    "plus": 16,
+    "minus": 16,
+    "games": 1124
+   },
+   "addedIn": "model v2 (2026-11-01, run on the calibration machine, speed-matched)",
+   "idNote": "id name reports the commit of the release tag (the repository's make build), checked against the tag"
+  },
+  {
+   "id": "zahak-6.2",
+   "family": "Zahak",
+   "version": "6.2",
+   "repo": "https://github.com/amanjpro/zahak",
+   "tag": "6.2",
+   "commit": "6421110a6bf5a03d24836251d9cebf84e7e0b783",
+   "idName": "Zahak 6421110a6bf5a03d24836251d9cebf84e7e0b783",
+   "builds": {
+    "Linux-x86_64": "see build_fix.sh / build_fix2.sh"
+   },
+   "binaries": {
+    "Linux-x86_64": "bin/zahak"
+   },
+   "platforms": [
+    "Linux-x86_64"
+   ],
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Zahak 6.2 64-bit",
+    "rating": 2826,
+    "plus": 17,
+    "minus": 17,
+    "games": 912
+   },
+   "addedIn": "model v2 (2026-11-01, run on the calibration machine, speed-matched)",
+   "idNote": "id name reports the commit of the release tag (the repository's make build), checked against the tag"
+  },
+  {
+   "id": "zahak-1.0.0",
+   "family": "Zahak",
+   "version": "1.0.0",
+   "repo": "https://github.com/amanjpro/zahak",
+   "tag": "1.0.0",
+   "commit": "c27d6267596f738d5118dcdbd35813d553c8cc5a",
+   "idName": "Zahak c27d6267596f738d5118dcdbd35813d553c8cc5a",
+   "builds": {
+    "Linux-x86_64": "see build_fix.sh / build_fix2.sh"
+   },
+   "binaries": {
+    "Linux-x86_64": "bin/zahak"
+   },
+   "platforms": [
+    "Linux-x86_64"
+   ],
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Zahak 1.0.0 64-bit",
+    "rating": 1940,
+    "plus": 20,
+    "minus": 20,
+    "games": 882
+   },
+   "addedIn": "model v2 (2026-11-01, run on the calibration machine, speed-matched)",
+   "idNote": "id name reports the commit of the release tag (the repository's make build), checked against the tag"
+  },
+  {
+   "id": "zahak-0.3.0",
+   "family": "Zahak",
+   "version": "0.3.0",
+   "repo": "https://github.com/amanjpro/zahak",
+   "tag": "0.3.0",
+   "commit": "2e7c18b35091d7aefab742c2a871192096128fea",
+   "idName": "Zahak 2e7c18b35091d7aefab742c2a871192096128fea",
+   "builds": {
+    "Linux-x86_64": "see build_fix.sh / build_fix2.sh"
+   },
+   "binaries": {
+    "Linux-x86_64": "bin/zahak"
+   },
+   "platforms": [
+    "Linux-x86_64"
+   ],
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Zahak 0.3.0 64-bit",
+    "rating": 1851,
+    "plus": 20,
+    "minus": 20,
+    "games": 913
+   },
+   "addedIn": "model v2 (2026-11-01, run on the calibration machine, speed-matched)",
+   "idNote": "id name reports the commit of the release tag (the repository's make build), checked against the tag"
+  },
+  {
+   "id": "shallow-blue-2.0.0",
+   "family": "Shallow Blue",
+   "version": "2.0.0",
+   "repo": "https://github.com/GunshipPenguin/shallow-blue",
+   "tag": "v2.0.0",
+   "commit": "a04fbd9861770c897eb566d83b0d2e3b17aa9fc0",
+   "idName": "Shallow Blue 2.0.0",
+   "builds": {
+    "Linux-x86_64": "see build_fix.sh / build_fix2.sh"
+   },
+   "binaries": {
+    "Linux-x86_64": "shallowblue"
+   },
+   "platforms": [
+    "Linux-x86_64"
+   ],
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Shallow Blue 2.0.0 64-bit",
+    "rating": 1578,
+    "plus": 19,
+    "minus": 19,
+    "games": 1119
+   },
+   "addedIn": "model v2 (2026-11-01, run on the calibration machine, speed-matched)"
+  },
+  {
+   "id": "fatalii-0.2.0",
+   "family": "Fatalii",
+   "version": "0.2.0",
+   "repo": "https://github.com/FitzOReilly/fatalii",
+   "tag": "v0.2.0",
+   "commit": "d41708225bc3b3fadc586fae57cc4bc1c398f29c",
+   "idName": "Fatalii 0.2.0",
+   "builds": {
+    "Linux-x86_64": "cargo build --release"
+   },
+   "binaries": {
+    "Linux-x86_64": "fatalii-release"
+   },
+   "platforms": [
+    "Linux-x86_64"
+   ],
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Fatalii 0.2.0 64-bit",
+    "rating": 1599,
+    "plus": 20,
+    "minus": 20,
+    "games": 955
+   },
+   "addedIn": "model v2 (2026-11-01, run on the calibration machine, speed-matched)",
+   "heldOut": "validation: kept out of every fit, estimated with the shipped model"
+  },
+  {
+   "id": "fatalii-0.3.0",
+   "family": "Fatalii",
+   "version": "0.3.0",
+   "repo": "https://github.com/FitzOReilly/fatalii",
+   "tag": "v0.3.0",
+   "commit": "384abc10b641b1634c25eb4a4b0a93a59858a79d",
+   "idName": "Fatalii 0.3.0",
+   "builds": {
+    "Linux-x86_64": "cargo build --release"
+   },
+   "binaries": {
+    "Linux-x86_64": "fatalii-release"
+   },
+   "platforms": [
+    "Linux-x86_64"
+   ],
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Fatalii 0.3.0 64-bit",
+    "rating": 1773,
+    "plus": 19,
+    "minus": 19,
+    "games": 1000
+   },
+   "addedIn": "model v2 (2026-11-01, run on the calibration machine, speed-matched)",
+   "heldOut": "validation: kept out of every fit, estimated with the shipped model"
+  },
+  {
+   "id": "fatalii-0.4.0",
+   "family": "Fatalii",
+   "version": "0.4.0",
+   "repo": "https://github.com/FitzOReilly/fatalii",
+   "tag": "v0.4.0",
+   "commit": "e8456f333b59767bed4c9965025a41fd51cb7bdd",
+   "idName": "Fatalii 0.4.0",
+   "builds": {
+    "Linux-x86_64": "cargo build --release"
+   },
+   "binaries": {
+    "Linux-x86_64": "fatalii-release"
+   },
+   "platforms": [
+    "Linux-x86_64"
+   ],
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Fatalii 0.4.0 64-bit",
+    "rating": 2004,
+    "plus": 18,
+    "minus": 18,
+    "games": 1124
+   },
+   "addedIn": "model v2 (2026-11-01, run on the calibration machine, speed-matched)",
+   "heldOut": "validation: kept out of every fit, estimated with the shipped model"
+  },
+  {
+   "id": "fatalii-0.5.0",
+   "family": "Fatalii",
+   "version": "0.5.0",
+   "repo": "https://github.com/FitzOReilly/fatalii",
+   "tag": "v0.5.0",
+   "commit": "7124449862e485650dfb2a3e4b9f2ab91921d05a",
+   "idName": "Fatalii 0.5.0",
+   "builds": {
+    "Linux-x86_64": "cargo build --release"
+   },
+   "binaries": {
+    "Linux-x86_64": "fatalii-release"
+   },
+   "platforms": [
+    "Linux-x86_64"
+   ],
+   "ccrl": {
+    "list": "CCRL Blitz",
+    "name": "Fatalii 0.5.0 64-bit",
+    "rating": 2208,
+    "plus": 18,
+    "minus": 18,
+    "games": 986
+   },
+   "addedIn": "model v2 (2026-11-01, run on the calibration machine, speed-matched)",
+   "heldOut": "validation: kept out of every fit, estimated with the shipped model"
   }
  ],
  "excluded": [
@@ -851,6 +1500,26 @@
   {
    "engine": "Berserk 4.1.0",
    "reason": "does not use the move time: given 500 ms it answers in a median of 2 ms (depth 6), so its answers say nothing about its rated strength"
+  },
+  {
+   "engine": "Alexandria 9.0.0",
+   "reason": "the build needs a network file that the repository identifies only by its hash (net-hash.txt), with no download location"
+  },
+  {
+   "engine": "Koivisto 5.0, Seer 2.3.0",
+   "reason": "do not compile with GCC 13 at their release tags"
+  },
+  {
+   "engine": "BBC 1.0, 1.1, 1.2",
+   "reason": "the id name has no version, and the 1.1 tag's source file is bbc_1.0.c: the builds can't be matched to the CCRL entries"
+  },
+  {
+   "engine": "Halogen 3.0, 4, 5",
+   "reason": "Visual Studio projects only (no makefile) at these tags"
+  },
+  {
+   "engine": "Berserk 13",
+   "reason": "its network (berserk-d43206fe90e4.nn) can no longer be downloaded: the URL in the makefile returns 403 and the berserk-networks repository only has a later network; a build without it evaluates every position as 0"
   }
  ]
 }

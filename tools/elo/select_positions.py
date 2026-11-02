@@ -6,9 +6,17 @@ From items.json (fit_irt.py): drop items with a <= A_MIN or a poor fit
 Writes Resources/elo/positions.epd (id, category, source in opcodes) and
 Resources/elo/model.json (everything the C++ estimator needs: per-position a, b
 and acceptable moves, threshold, theta -> Elo line, prior, protocol, the
-cross-validation results and the calibration engine list).
+cross-validation results, the calibration engine list, the calibrated range,
+the speed measurement (speed_reference.py) and the run checks).
 
-Usage: select_positions.py --data DIR --items items.json --cv cv.json --calib-nps N
+The calibrated range: estimates are given as numbers only between the second
+family's lowest calibration engine and the second family's highest (at least two
+engine families anchor every rating in the range; outside it the model
+extrapolates from a single family or from none, which cross-validation showed
+to be biased). Engines rated above what the positions can separate (aboveScale in
+engines.json) are not calibration engines, so they do not raise the range.
+
+Usage: select_positions.py --data DIR --items items.json --cv cv.json --calib-nps N --speed speed.json
                            [--n 1000] [--movetime 500] --out-dir Resources/elo
 """
 import argparse, datetime, json, os, sys
@@ -48,6 +56,7 @@ def main():
     ap.add_argument("--items", required=True)
     ap.add_argument("--cv", required=True, help="validate.py output; the entry matching items.json is used")
     ap.add_argument("--calib-nps", type=float, required=True, help="chess-cli bench on the calibration machine")
+    ap.add_argument("--speed", required=True, help="speed block from speed_reference.py")
     ap.add_argument("--movetime", type=int, default=500)
     ap.add_argument("--n", type=int, default=1000)
     ap.add_argument("--version", type=int, default=1)
@@ -82,7 +91,15 @@ def main():
                    % (" ".join(f[:4]), it["id"], it["category"], c.get("source", ""), c.get("url", ""), f[4], f[5]))
     eng = {e["id"]: e for e in json.load(open(a.engines))["engines"]}
     calib = [{"name": "%s %s" % (eng[e]["family"], eng[e]["version"]), "elo": eng[e]["ccrl"]["rating"],
-              "family": eng[e]["family"]} for e in items["engines"]]
+              "family": eng[e]["family"]} for e in items["engines"] if not eng[e].get("synthetic")]
+    fam_max, fam_min = {}, {}
+    for c in calib:
+        fam_max[c["family"]] = max(fam_max.get(c["family"], -1e9), c["elo"])
+        fam_min[c["family"]] = min(fam_min.get(c["family"], 1e9), c["elo"])
+    if len(fam_max) < 2:
+        sys.exit("the calibrated range needs at least two engine families")
+    range_ = {"min": sorted(fam_min.values())[1], "max": sorted(fam_max.values(), reverse=True)[1],
+              "rule": "second family's lowest and highest calibration engine"}
     lo, lf = row["loeo"], row["lofo"]
     ratings = {e: eng[e]["ccrl"]["rating"] for e in items["engines"]}
     lf_b = irt.band_errors({e: v[0] for e, v in row["lofo_pred"].items() if e in ratings}, ratings)
@@ -111,6 +128,11 @@ def main():
         "validation": {"loeo": lo, "lofo": lf},
         "validationText": text,
         "reliableFromElo": reliable_from,
+        "range": range_,
+        "speed": json.load(open(a.speed)),
+        "checks": {"driftWarnLog2": 0.10, "driftFailLog2": 0.25, "timeUseWarn": 0.80, "timeUseFail": 0.50, "overrunWarn": 1.10, "overrunFail": 1.25,
+                   "cpuRatioMax": 1.35, "cpuRatioWarn": 0.80, "cpuRatioMin": 0.60,
+                   "errorRateFail": 0.05, "idleCpuFail": 0.20, "pCoreWarn": 0.90, "pCoreFail": 0.75},
         # the interval uses the unseen-family RMSE of engines estimated in the same range
         "errorBands": irt.error_bands({e: v[0] for e, v in row["lofo_pred"].items() if e in ratings}, ratings),
         "calibration": calib,

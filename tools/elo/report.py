@@ -3,8 +3,10 @@
 so every number in the documentation comes straight from the files.
 
 Usage: report.py --cv cv.json --model Resources/elo/model.json
-                 [--holdout-json estimate.json ...] > results.md
---holdout-json: `chess-cli elo-estimate --json` output for engines kept out of the fit.
+                 [--holdout-json estimate.json ... --holdout-ids ID ... [--holdout-machine NAME ...]] > results.md
+--holdout-json: `chess-cli elo-estimate --json` output for engines kept out of the fit; a
+number is correct when its 95% interval contains the rating, a bound ("at least" / "at most")
+when the rating is on its side of it.
 """
 import argparse, json, os, sys
 
@@ -20,6 +22,7 @@ def main():
     ap.add_argument("--model", required=True)
     ap.add_argument("--holdout-json", nargs="*", default=[])
     ap.add_argument("--holdout-ids", nargs="*", default=[], help="engine ids, in the order of --holdout-json")
+    ap.add_argument("--holdout-machine", nargs="*", default=[], help="computer of each run, in the same order")
     ap.add_argument("--engines", default=ENGINES)
     a = ap.parse_args()
     cv = json.load(open(a.cv))
@@ -74,9 +77,13 @@ def main():
     if model.get("reliableFromElo"):
         w("Estimates below %d get a warning in the GUI and in `chess-cli`." % model["reliableFromElo"])
         w("")
-    w("The configuration with the lowest LOEO MAE is shipped. Choosing it on the LOEO numbers makes "
-      "them slightly optimistic; the LOFO numbers and the held-out engine below are the checks that "
-      "were not used for any choice.")
+    if len(cv["results"]) > 1:
+        w("The configuration with the lowest LOEO MAE is shipped. Choosing it on the LOEO numbers makes "
+          "them slightly optimistic; the LOFO numbers and the held-out engines below are the checks that "
+          "were not used for any choice.")
+    else:
+        w("Only the shipped configuration was cross-validated here (it was chosen on an earlier, larger "
+          "comparison); the LOFO numbers and the held-out engines below were not used for any choice.")
     w("")
     w("### Per engine (shipped configuration)")
     w("")
@@ -90,19 +97,30 @@ def main():
         w("| %s %s | %d | %.0f | %+.0f | %.0f | %+.0f |" % (eng[e]["family"], eng[e]["version"], r, lo, lo - r, lf, lf - r))
     w("")
     if a.holdout_json:
-        w("### Held-out engine")
+        rng = model.get("range", {})
+        w("### Held-out engines")
         w("")
-        w("Kept out of every fit and of the cross-validation, then estimated with the shipped model:")
+        w("Kept out of every fit and of the cross-validation, then estimated with the shipped model by "
+          "`chess-cli elo-estimate` (speed measurement, CPU placement and checks included):")
         w("")
-        w("| Engine | CCRL Blitz | Mode | Estimate | 95% interval | Inside? |")
-        w("|---|---|---|---|---|---|")
-        for path, eid in zip(a.holdout_json, a.holdout_ids):
+        w("| Engine | CCRL Blitz | Computer | Mode | Result | 95% interval | Correct? |")
+        w("|---|---|---|---|---|---|---|")
+        for k, (path, eid) in enumerate(zip(a.holdout_json, a.holdout_ids)):
             j = json.load(open(path))
             r = eng[eid]["ccrl"]["rating"]
-            inside = abs(j["elo"] - r) <= j["ci95"]
-            w("| %s %s | %d | %s, %d positions | %d | +/- %d | %s |"
-              % (eng[eid]["family"], eng[eid]["version"], r, j["mode"], j["positions"], j["elo"], j["ci95"],
-                 "yes" if inside else "**no** (error %+d)" % (j["elo"] - r)))
+            st = j.get("status", "ok")
+            if st == "above_range":
+                res, ci, ok = "a bound: at least %d" % j["bound"], "", r >= j["bound"]
+            elif st == "below_range":
+                res, ci, ok = "a bound: at most %d" % j["bound"], "", r <= j["bound"]
+            elif st == "unreliable":
+                res, ci, ok = "no number (run failed its checks)", "", False
+            else:
+                res, ci, ok = "%d (%+d)" % (j["elo"], j["elo"] - r), "+/- %d" % j["ci95"], abs(j["elo"] - r) <= j["ci95"]
+            bad = "**no**"
+            w("| %s %s | %d | %s | %s, %d positions | %s | %s | %s |"
+              % (eng[eid]["family"], eng[eid]["version"], r, a.holdout_machine[k] if k < len(a.holdout_machine) else "",
+                 j["mode"], j["positions"], res, ci, "yes" if ok else bad))
         w("")
     print("\n".join(out))
 

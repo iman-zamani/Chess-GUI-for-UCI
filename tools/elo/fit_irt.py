@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Fit the 2PL item parameters on all calibration engines.
+"""Fit the 2PL item parameters on the calibration engines (those engines.json marks
+heldOut or aboveScale, and any given with --holdout, are left out).
 
 Writes items.json: for every candidate position its a, b (theta scale), the
 theta -> Elo line, a fit statistic (mean squared standardised residual, ~1 for
@@ -49,6 +50,7 @@ def main():
     ap.add_argument("--engines", default=ENGINES)
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
+    a.holdout = sorted(set(a.holdout) | set(irt.kept_out(a.engines)))
     d = irt.load_dataset(a.engines, os.path.join(a.data, "reference.jsonl"), os.path.join(a.data, "responses.csv"))
     mask = ~np.all(np.isnan(d["L"]), axis=1) & np.array([e not in a.holdout for e in d["engines"]])
     f = fit_all(d, a.threshold, a.model, mask)

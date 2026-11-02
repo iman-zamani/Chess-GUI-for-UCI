@@ -170,6 +170,13 @@ def load_dataset(engines_json, reference_jsonl, responses_csv, exclude_synthetic
     }
 
 
+def kept_out(engines_json):
+    """Engines that engines.json keeps out of every fit: heldOut (validation) and
+    aboveScale (rated above what the positions can separate)."""
+    import json
+    return [e["id"] for e in json.load(open(engines_json))["engines"] if e.get("heldOut") or e.get("aboveScale")]
+
+
 def responses(L, threshold):
     """0/1 solved matrix and observation mask for a win-% loss threshold."""
     M = (~np.isnan(L)).astype(float)
