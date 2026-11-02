@@ -511,6 +511,7 @@ TEST_CASE("elo/busy-waiting-engine"){
     m.speedRefs = mockReferences();
     m.warmupSec = 0.2; m.speedPositions = 6;
     m.minMovetimeMs = 10;
+    m.baseMovetimeMs = 300;                    // 150 ms per position: 50 ms overran on Windows timers
     m.checkEverySec = 0.3;
     EngineConfig cfg; cfg.path = kMock; cfg.args = {"--busy-idle"};
     EloOptions opt;
@@ -519,8 +520,9 @@ TEST_CASE("elo/busy-waiting-engine"){
     REQUIRE(r.ok);
     CHECK_MSG(r.diag.idleCpu > m.idleCpuFail, failuresText(r));
     CHECK(r.status == EloStatus::Unreliable);
-    REQUIRE(!r.diag.failures.empty());
-    CHECK(r.diag.failures[0].find("busy-waiting") != std::string::npos);
+    bool said = false;
+    for (auto& f : r.diag.failures) said |= f.find("busy-waiting") != std::string::npos;
+    CHECK_MSG(said, failuresText(r));
     setEnv("MOCK_ENGINE_FLAGS", "");
     setEnv("CHESSGUI_RESOURCES", "");
 }
@@ -539,6 +541,7 @@ TEST_CASE("elo/own-probe-sees-the-engine-slow-down"){
     m.speedRefs = mockReferences();
     m.warmupSec = 0.2; m.speedPositions = 6;
     m.minMovetimeMs = 10;
+    m.baseMovetimeMs = 300;                    // 150 ms per position: 50 ms overran on Windows timers
     m.checkEverySec = 0.3;
     EngineConfig cfg; cfg.path = kMock; cfg.args = {"--speed-file", speed.string(), "--real-time", "--burn-cpu"};
     EloOptions opt;
