@@ -91,7 +91,7 @@ accepts H0. `chess-cli help` lists all options.
 ## GitHub Action
 
 ```yaml
-- uses: iman-zamani/Chess-GUI-for-UCI@v1.1.1
+- uses: iman-zamani/Chess-GUI-for-UCI@v1.2.0
   with:
     engine: ./my-engine
     checks: uci-check,perft
