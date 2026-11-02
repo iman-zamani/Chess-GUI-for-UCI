@@ -12,6 +12,7 @@ on:
       - "**"
     paths:
       - ".github/workflows/release.yaml"
+      - "tools/build_reference_engines.py"
       - "CMakeLists.txt"
       - "src/cli.cpp"
       - "BundleInfo.plist.in"
@@ -33,6 +34,19 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.10"
+          cache: false
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Reference engines (Elo estimator speed measurement)
+        shell: bash
+        run: python tools/build_reference_engines.py
 
       - name: Configure & Build
         run: |
@@ -71,9 +85,22 @@ jobs:
           - target_arch: x86_64
             runs_on: macos-15-intel
           - target_arch: arm64
-            runs_on: macos-14
+            runs_on: macos-15
     steps:
       - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.10"
+          cache: false
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Reference engines (Elo estimator speed measurement)
+        shell: bash
+        run: python tools/build_reference_engines.py
 
       - name: Configure & Build
         run: |
@@ -124,6 +151,19 @@ jobs:
           wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
           chmod +x linuxdeploy-x86_64.AppImage
           sudo mv linuxdeploy-x86_64.AppImage /usr/local/bin/linuxdeploy
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.10"
+          cache: false
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Reference engines (Elo estimator speed measurement)
+        shell: bash
+        run: python tools/build_reference_engines.py
 
       - name: Configure & Build
         run: |
