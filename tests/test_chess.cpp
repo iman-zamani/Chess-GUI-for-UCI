@@ -83,6 +83,31 @@ TEST_CASE("fen/rejects-garbage"){
     Position::fromFEN("4k3/8/8/8/8/8/8/4K3 w - - 0 1", &ok); CHECK(ok);
 }
 
+TEST_CASE("fen/validation"){
+    bool ok = true;
+    // ranks must have eight squares each, not just 64 in total
+    Position::fromFEN("rnbqkbnr/pppppppp/9/7/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", &ok); CHECK(!ok);
+    Position::fromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPPRNBQKBNR w KQkq - 0 1", &ok); CHECK(!ok);      // seven ranks
+    Position::fromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR/8 w KQkq - 0 1", &ok); CHECK(!ok);   // nine
+    Position::fromFEN("rnbqkbnr/pppppppp/08/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", &ok); CHECK(!ok);
+    // the side to move is w or b
+    Position::fromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR x KQkq - 0 1", &ok); CHECK(!ok);
+    // en passant: only behind a pawn that can just have made a double push
+    Position::fromFEN("4k3/8/8/8/3p4/8/8/4K2R b - e3 0 1", &ok); CHECK(!ok);            // no white pawn on e4
+    Position::fromFEN("4k3/8/8/8/3pP3/8/8/4K2R b - e6 0 1", &ok); CHECK(!ok);           // wrong rank for Black to move
+    Position::fromFEN("4k3/8/8/8/3pP3/4N3/8/4K3 b - e3 0 1", &ok); CHECK(!ok);          // the square is occupied
+    Position::fromFEN("4k3/8/8/8/3pP3/8/4N3/4K3 b - e3 0 1", &ok); CHECK(!ok);          // the pawn's start square is occupied
+    Position::fromFEN("4k3/8/8/8/3pP3/8/8/4K3 b - z9 0 1", &ok); CHECK(!ok);
+    Position p = Position::fromFEN("4k3/8/8/8/3pP3/8/8/4K3 b - e3 0 1", &ok); CHECK(ok);
+    CHECK_EQ(p.epSquare, nameToSquare("e3"));
+    // written after every double push, capturable or not (as most programs do)
+    p = Position::fromFEN("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1", &ok); CHECK(ok);
+    CHECK_EQ(p.epSquare, nameToSquare("e3"));
+    // a negative halfmove clock is read as 0
+    p = Position::fromFEN("4k3/8/8/8/8/8/8/4K3 w - - -5 1", &ok); CHECK(ok);
+    CHECK_EQ(p.halfmoveClock, 0);
+}
+
 TEST_CASE("fen/counters-and-ep"){
     bool ok = false;
     Position p = Position::fromFEN("rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3", &ok);
@@ -199,6 +224,26 @@ TEST_CASE("game/draw-rules"){
     Move m; REQUIRE(g.pos.uciToMove("e3d1", m)); g.tryMove(m);
     CHECK(g.result == GameResult::DRAW);
     CHECK(g.reason == ResultReason::INSUFFICIENT);
+}
+
+TEST_CASE("game/repetition-and-en-passant"){
+    auto play = [](Game& g, std::initializer_list<const char*> moves){
+        for (const char* u : moves){ Move m; REQUIRE(g.pos.uciToMove(u, m)); REQUIRE(g.tryMove(m)); }
+    };
+    // After 1.e4 nobody can capture en passant, so the en-passant square does not make that
+    // position different from its later occurrences: the third one is a draw.
+    Game g; g.reset(Position::startpos());
+    play(g, {"e2e4", "g8f6", "g1f3", "f6g8", "f3g1"});
+    CHECK(g.result == GameResult::ONGOING);                    // second occurrence
+    play(g, {"g8f6", "g1f3", "f6g8", "f3g1"});
+    CHECK(g.result == GameResult::DRAW);
+    CHECK(g.reason == ResultReason::REPETITION);
+    // When the capture is possible, the position with the right is a different one.
+    g.reset(Position::fromFEN("4k1n1/3p4/8/4P3/8/8/8/4K1N1 b - - 0 1"));
+    play(g, {"d7d5", "g1f3", "g8f6", "f3g1", "f6g8", "g1f3", "g8f6", "f3g1", "f6g8"});
+    CHECK(g.result == GameResult::ONGOING);                    // without the right: only twice
+    play(g, {"g1f3"});                                         // (this one is there for the third time)
+    CHECK(g.result == GameResult::DRAW);
 }
 
 TEST_CASE("game/undo"){

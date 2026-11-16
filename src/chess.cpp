@@ -63,20 +63,32 @@ Position Position::fromFEN(const std::string& fen, bool* ok){
     if (!(ss >> castling)) castling = "-";
     if (!(ss >> ep)) ep = "-";
     ss >> hm; ss >> fm;
-    int sq = 0;
+    // eight ranks of exactly eight squares
+    int sq = 0, inRank = 0, ranks = 1;
     for (char c : placement){
-        if (c == '/') continue;
-        if (std::isdigit((unsigned char)c)) { sq += c-'0'; continue; }
-        int v = charPiece(c);
-        if (!v || sq > 63) return p;
-        p.board[sq++] = v;
+        if (c == '/'){ if (inRank != 8) return p; inRank = 0; ranks++; continue; }
+        if (c >= '1' && c <= '8'){ sq += c-'0'; inRank += c-'0'; }
+        else {
+            int v = charPiece(c);
+            if (!v || sq > 63) return p;
+            p.board[sq++] = v; inRank++;
+        }
+        if (inRank > 8) return p;
     }
-    if (sq != 64) return p;
+    if (sq != 64 || ranks != 8 || inRank != 8) return p;
+    if (stm != "w" && stm != "b") return p;
     p.whiteToMove = (stm == "w");
-    p.epSquare = nameToSquare(ep);
-    p.halfmoveClock = hm; p.fullmoveNumber = fm>0?fm:1;
+    p.halfmoveClock = hm>0?hm:0; p.fullmoveNumber = fm>0?fm:1;
     // sanity: both kings present
     if (p.kingSquare(true)<0 || p.kingSquare(false)<0) return p;
+    // en passant: the square behind a pawn that can just have made a double push
+    if (ep != "-"){
+        int e = nameToSquare(ep);
+        if (e < 0 || e / 8 != (p.whiteToMove ? 2 : 5)) return p;
+        int pawnSq = p.whiteToMove ? e + 8 : e - 8, fromSq = p.whiteToMove ? e - 8 : e + 8;
+        if (p.board[e] || p.board[fromSq] || p.board[pawnSq] != (p.whiteToMove ? BLACK_PAWN : WHITE_PAWN)) return p;
+        p.epSquare = e;
+    }
     // castling: KQkq (outermost rook on that side), or the rook's file (X-FEN / Shredder-FEN)
     bool* rights[4] = {&p.castleWK, &p.castleWQ, &p.castleBK, &p.castleBQ};
     bool odd = false;                            // needs Chess960 rules or notation
@@ -138,7 +150,16 @@ std::string Position::toFEN() const{
 std::string Position::repetitionKey() const{
     std::string f = toFEN();
     // strip the two counters
-    size_t p = f.rfind(' '); f = f.substr(0,p); p = f.rfind(' '); return f.substr(0,p);
+    size_t p = f.rfind(' '); f = f.substr(0,p); p = f.rfind(' '); f = f.substr(0,p);
+    // Two positions are the same only if the same moves are possible in both (FIDE 9.2.3):
+    // an en-passant square nobody can capture on does not make a position different.
+    if (epSquare >= 0){
+        std::vector<Move> legal; generateLegal(legal);
+        bool canCapture = false;
+        for (const Move& m : legal) if (m.isEnPassant){ canCapture = true; break; }
+        if (!canCapture){ p = f.rfind(' '); f = f.substr(0,p) + " -"; }
+    }
+    return f;
 }
 
 int Position::kingSquare(bool white) const{
