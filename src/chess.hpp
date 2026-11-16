@@ -106,11 +106,13 @@ struct PgnGame {
     std::vector<std::pair<std::string, std::string>> tags;   // every tag, in file order
     std::string movetext;
 };
-// Split a PGN file/text into games (headers parsed, movetext kept raw).
+// Split a PGN file/text into games (headers parsed; the movetext lines joined into one
+// text, with ';' comments turned into { } comments and '%' escape lines dropped).
 std::vector<PgnGame> parsePGN(const std::string& text);
 // Build a playable Game from one PGN game. Returns false on first illegal
 // move (out contains the moves parsed up to that point; *err explains).
-bool gameFromPGN(const PgnGame& pg, Game& out, std::string* err);
+// maxPlies > 0: read only that many moves (opening books).
+bool gameFromPGN(const PgnGame& pg, Game& out, std::string* err, int maxPlies = 0);
 
 std::string squareName(int sq);
 int nameToSquare(const std::string& n);   // -1 if invalid

@@ -36,6 +36,26 @@ TEST_CASE("openings/pgn-first-plies"){
     CHECK_EQ(all.openings[0].moves.size(), (size_t)8);
 }
 
+TEST_CASE("openings/pgn-variants-and-broken-games"){
+    // castling written with zeros and a ';' comment: nothing is lost
+    auto r = parsePgnBook("[Event \"x\"]\n\n1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 ; Italian\n4. 0-0 Nf6 5. d3 d6 *\n", 10);
+    REQUIRE(r.openings.size() == 1);
+    CHECK_EQ(r.openings[0].moves.size(), (size_t)10);
+    CHECK_EQ(r.truncated, 0);
+    CHECK(r.warning().empty());
+    // a game with an unreadable move inside the plies that are used is reported, and its prefix kept
+    r = parsePgnBook("[Event \"a\"]\n\n1. e4 e5 2. Ke3 Nc6 *\n\n[Event \"b\"]\n\n1. d4 d5 2. c4 e6 *\n", 4);
+    REQUIRE(r.openings.size() == 2);
+    CHECK_EQ(r.openings[0].moves.size(), (size_t)2);
+    CHECK_EQ(r.openings[1].moves.size(), (size_t)4);
+    CHECK_EQ(r.truncated, 1);
+    CHECK(r.warning().find("game 1") != std::string::npos);
+    // ... but not when the bad move comes after them: the rest of the game is never read
+    r = parsePgnBook("[Event \"a\"]\n\n1. e4 e5 2. Ke3 Nc6 *\n", 2);
+    CHECK_EQ(r.truncated, 0);
+    CHECK_EQ(r.openings[0].moves.size(), (size_t)2);
+}
+
 TEST_CASE("openings/schedule"){
     OpeningSchedule seq(5, false, 0);
     for (size_t k = 0; k < 12; k++) CHECK_EQ(seq.forPair(k), k % 5);

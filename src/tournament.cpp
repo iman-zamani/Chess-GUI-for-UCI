@@ -211,10 +211,12 @@ bool MatchRunner::start(const MatchSettings& settings, std::string* err){
     // openings
     retry_.clear();
     book_.clear();
+    std::vector<std::string> warnings;
     if (!s_.bookPath.empty()){
         BookLoadResult r = loadOpeningBook(s_.bookPath, s_.bookFormat, s_.bookPlies);
         if (!r.error.empty()) return fail("opening book: " + r.error);
         book_ = r.openings;
+        if (!r.warning().empty()) warnings.push_back("Opening book: " + r.warning());
     } else if (s_.startFens.empty() && s_.chess960){
         for (int n = 0; n < 960; n++)                        // order: s_.bookRandom / seed, like a book
             book_.push_back({Position::chess960Start(n).toFEN(), {}, "Chess960 #" + std::to_string(n)});
@@ -252,6 +254,7 @@ bool MatchRunner::start(const MatchSettings& settings, std::string* err){
         snap_.llrLower = s_.sprt.lowerBound(); snap_.llrUpper = s_.sprt.upperBound();
         snap_.live.resize(s_.concurrency);
         snap_.running = true;
+        snap_.warnings = warnings;
     }
     loadState();
     nextJob_ = 0;
@@ -262,6 +265,7 @@ bool MatchRunner::start(const MatchSettings& settings, std::string* err){
         + std::to_string(workers) + " in parallel, " + s_.tc.label()
         + (book_.empty() ? ", standard start" : ", " + std::to_string(book_.size()) + " openings")
         + (snap_.gamesResumed ? ", resumed " + std::to_string(snap_.gamesResumed) + " finished games" : ""));
+    for (auto& wn : warnings) log(wn);
     activeWorkers_ = workers;
     for (int w = 0; w < workers; w++) threads_.emplace_back([this, w](){ workerLoop(w); });
     return true;

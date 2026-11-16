@@ -74,7 +74,11 @@ BookLoadResult parsePgnBook(const std::string& text, int plies){
     for (auto& pg : games){
         idx++;
         Game g; std::string err;
-        gameFromPGN(pg, g, &err);                 // a broken tail still gives a usable prefix
+        // only the moves that are used are read; a broken game still gives a usable prefix
+        if (!gameFromPGN(pg, g, &err, plies) && !err.empty() && err != "Invalid FEN tag"){
+            r.truncated++;
+            if (r.firstProblem.empty()) r.firstProblem = "game " + std::to_string(idx) + ": " + err;
+        }
         Position p = g.start;
         if (!enginePositionProblem(p).empty()){ r.skipped++; continue; }
         Opening o;
@@ -88,6 +92,14 @@ BookLoadResult parsePgnBook(const std::string& text, int plies){
     }
     if (r.openings.empty()) r.error = games.empty() ? "no games found" : "no usable games";
     return r;
+}
+
+std::string BookLoadResult::warning() const{
+    std::string s;
+    if (skipped) s += std::to_string(skipped) + " unusable entries skipped";
+    if (truncated) s += std::string(s.empty() ? "" : "; ") + std::to_string(truncated) + " games cut short at a move that "
+                      "could not be read (" + firstProblem + ")";
+    return s;
 }
 
 BookLoadResult loadOpeningBook(const std::string& path, BookFormat fmt, int plies){

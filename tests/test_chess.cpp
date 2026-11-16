@@ -206,6 +206,61 @@ TEST_CASE("pgn/illegal-move-reported"){
     CHECK(err.find("Ke3") != std::string::npos);
 }
 
+TEST_CASE("pgn/comments-over-lines"){
+    Game g; std::string err;
+    // a { } comment continued on a line that starts with '[' is not a tag line
+    auto games = parsePGN("[Event \"x\"]\n[Result \"*\"]\n\n1. e4 {\n[%clk 0:01:00] } e5 2. Nf3 Nc6 *\n");
+    REQUIRE(games.size() == 1);
+    REQUIRE(gameFromPGN(games[0], g, &err));
+    CHECK_EQ(g.sans.size(), (size_t)4);
+    // ';' comments run to the end of their line only
+    games = parsePGN("[Event \"x\"]\n\n1. e4 ; a comment with a } brace\ne5 2. Nf3 Nc6 *\n");
+    REQUIRE(games.size() == 1);
+    REQUIRE(gameFromPGN(games[0], g, &err));
+    CHECK_EQ(g.sans.size(), (size_t)4);
+    // '%' escape lines are skipped; a ';' inside { } is text
+    games = parsePGN("[Event \"x\"]\n\n1. e4 {so; what} e5\n% an escape line\n2. Nf3 *\n");
+    REQUIRE(games.size() == 1);
+    REQUIRE(gameFromPGN(games[0], g, &err));
+    CHECK_EQ(g.sans.size(), (size_t)3);
+    // two games stay two games
+    games = parsePGN("[Event \"a\"]\n\n1. e4 {x\n[y]} *\n\n[Event \"b\"]\n\n1. d4 *\n");
+    CHECK_EQ(games.size(), (size_t)2);
+}
+
+TEST_CASE("san/variants-are-read"){
+    Move m;
+    Position p = Position::fromFEN("r3k2r/pppq1ppp/2n2n2/3pp3/3PP3/2N2N2/PPPQ1PPP/R3K2R w KQkq - 0 8");
+    for (const char* s : {"O-O", "0-0", "O-O+", "0-0-0", "O-O-O"}) CHECK(p.sanToMove(s, m));
+    REQUIRE(p.sanToMove("0-0", m)); CHECK_EQ(p.moveToUCI(m), std::string("e1g1"));
+    // more disambiguation than needed, long algebraic, capture marks
+    REQUIRE(p.sanToMove("Nfxe5", m)); CHECK_EQ(p.moveToUCI(m), std::string("f3e5"));
+    REQUIRE(p.sanToMove("Nf3xe5", m)); CHECK_EQ(p.moveToUCI(m), std::string("f3e5"));
+    REQUIRE(p.sanToMove("Nf3-g5", m)); CHECK_EQ(p.moveToUCI(m), std::string("f3g5"));
+    REQUIRE(p.sanToMove("d4xe5", m)); CHECK_EQ(p.moveToUCI(m), std::string("d4e5"));
+    REQUIRE(p.sanToMove("dxe5!?", m)); CHECK_EQ(p.moveToUCI(m), std::string("d4e5"));
+    REQUIRE(p.sanToMove("a2-a4", m)); CHECK_EQ(p.moveToUCI(m), std::string("a2a4"));
+    // not enough disambiguation, wrong piece, nonsense
+    p = Position::fromFEN("4k3/8/8/8/8/2N3N1/8/4K3 w - - 0 1");
+    CHECK(!p.sanToMove("Ne4", m));                              // two knights can go there
+    CHECK(p.sanToMove("Nce4", m));
+    CHECK(!p.sanToMove("Be4", m));
+    CHECK(!p.sanToMove("", m)); CHECK(!p.sanToMove("x", m)); CHECK(!p.sanToMove("Zz9", m)); CHECK(!p.sanToMove("e9", m));
+    // promotions: with '=', without it, lower case; a missing piece is not a move
+    p = Position::fromFEN("3k4/1P6/8/8/8/8/8/4K3 w - - 0 1");
+    for (const char* s : {"b8=Q", "b8Q", "b8=Q+", "b8q"}){ REQUIRE(p.sanToMove(s, m)); CHECK_EQ(p.moveToUCI(m), std::string("b7b8q")); }
+    REQUIRE(p.sanToMove("b8=N", m)); CHECK_EQ(p.moveToUCI(m), std::string("b7b8n"));
+    CHECK(!p.sanToMove("b8", m));
+    CHECK(!p.sanToMove("b8=K", m));
+    // en passant with its suffix
+    p = Position::fromFEN("rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3");
+    REQUIRE(p.sanToMove("exf6e.p.", m)); CHECK(m.isEnPassant);
+    // the b-file pawn and the bishop are told apart by case
+    p = Position::fromFEN("4k3/8/8/8/8/2p5/1P1B4/4K3 w - - 0 1");
+    REQUIRE(p.sanToMove("bxc3", m)); CHECK_EQ(p.moveToUCI(m), std::string("b2c3"));
+    REQUIRE(p.sanToMove("Bxc3", m)); CHECK_EQ(p.moveToUCI(m), std::string("d2c3"));
+}
+
 TEST_CASE("game/draw-rules"){
     Game g;
     // threefold repetition by knight shuffles

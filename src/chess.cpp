@@ -440,17 +440,66 @@ std::string Position::moveToSAN(const Move& m) const{
     }
     return s;
 }
+// Reads SAN by its parts (piece, origin hints, destination, promotion) and picks the one legal
+// move that fits, so the common variants are understood too: 0-0 for castling, a promotion
+// without '=' (e8Q), more disambiguation than needed (Nbd2, Ng1f3), "e.p." after a capture.
 bool Position::sanToMove(const std::string& sanIn, Move& out) const{
-    // strip annotations
     std::string san;
     for (char c : sanIn) if (c!='+'&&c!='#'&&c!='!'&&c!='?') san+=c;
+    if (size_t ep = san.find("e.p."); ep != std::string::npos) san.erase(ep);
     std::vector<Move> legal; generateLegal(legal);
-    for (const Move& m : legal){
-        std::string s = moveToSAN(m), t;
-        for (char c : s) if (c!='+'&&c!='#') t+=c;
-        if (t==san) { out=m; return true; }
+    std::string castle = san;
+    for (char& c : castle) if (c == '0') c = 'O';
+    if (castle == "O-O" || castle == "O-O-O"){
+        for (const Move& m : legal)
+            if (m.isCastle && isKingsideCastle(m) == (castle == "O-O")){ out = m; return true; }
+        return false;
     }
-    return false;
+    if (san.size() < 2) return false;
+    auto pieceOf = [](char c){
+        switch (std::tolower((unsigned char)c)){ case 'n': return 3; case 'b': return 4; case 'r': return 5; case 'q': return 9; case 'k': return 20; }
+        return 0;
+    };
+    int piece = 1;
+    std::string body = san;
+    if (std::isupper((unsigned char)san[0])){              // a lower-case b is the b-file
+        piece = pieceOf(san[0]);
+        if (!piece) return false;
+        body = san.substr(1);
+    }
+    int promo = 0;
+    if (size_t eq = body.find('='); eq != std::string::npos){
+        promo = eq + 1 < body.size() ? pieceOf(body[eq + 1]) : 0;
+        if (!promo || promo == 20) return false;
+        body.erase(eq);
+    } else if (piece == 1 && body.size() >= 3 && std::isalpha((unsigned char)body.back())
+               && std::isdigit((unsigned char)body[body.size() - 2])){
+        promo = pieceOf(body.back());
+        if (!promo || promo == 20) return false;
+        body.pop_back();
+    }
+    std::string sq;
+    for (char c : body) if (c != 'x' && c != '-' && c != ':') sq += c;
+    if (sq.size() < 2 || sq.size() > 4) return false;
+    int to = nameToSquare(sq.substr(sq.size() - 2));
+    if (to < 0) return false;
+    int fromFile = -1, fromRank = -1;
+    for (size_t k = 0; k + 2 < sq.size(); k++){
+        if (sq[k] >= 'a' && sq[k] <= 'h') fromFile = sq[k] - 'a';
+        else if (sq[k] >= '1' && sq[k] <= '8') fromRank = 8 - (sq[k] - '0');
+        else return false;
+    }
+    int found = 0;
+    Move pick;
+    for (const Move& m : legal){
+        if (m.isCastle || m.to != to || std::abs(board[m.from]) != piece || m.promo != promo) continue;
+        if (fromFile >= 0 && m.from % 8 != fromFile) continue;
+        if (fromRank >= 0 && m.from / 8 != fromRank) continue;
+        pick = m; found++;
+    }
+    if (found != 1) return false;                          // none, or not enough disambiguation
+    out = pick;
+    return true;
 }
 
 // ---------------- Game ----------------
@@ -597,15 +646,17 @@ bool premovePlausible(const Position& p, int from, int to){
 std::vector<PgnGame> parsePGN(const std::string& text){
     std::vector<PgnGame> games;
     PgnGame cur; bool inGame=false, sawMoves=false;
+    bool inBrace = false;                        // inside a { } comment that runs over the line end
     std::istringstream ss(text);
     std::string line;
     auto flush=[&](){
         if (inGame && (sawMoves || !cur.movetext.empty())) games.push_back(cur);
-        cur = PgnGame{}; inGame=false; sawMoves=false;
+        cur = PgnGame{}; inGame=false; sawMoves=false; inBrace=false;
     };
     while (std::getline(ss, line)){
         while (!line.empty() && (line.back()=='\r'||line.back()==' ')) line.pop_back();
-        if (!line.empty() && line[0]=='['){
+        // a tag line; inside a comment a leading '[' is text, e.g. "[%clk 0:01:00]"
+        if (!inBrace && !line.empty() && line[0]=='['){
             if (sawMoves) flush();               // header after movetext = next game
             inGame = true;
             size_t sp = line.find(' ');
@@ -625,14 +676,30 @@ std::vector<PgnGame> parsePGN(const std::string& text){
             continue;
         }
         if (line.empty()) continue;
+        if (!inBrace && line[0]=='%') continue;  // escape line (PGN standard, 6)
         inGame = true; sawMoves = true;
-        cur.movetext += line + " ";
+        // The lines are joined into one text, so a ';' comment (to the end of its line)
+        // is turned into a { } comment here.
+        std::string kept;
+        for (size_t i=0;i<line.size();i++){
+            char c = line[i];
+            if (inBrace){ kept += c; if (c=='}') inBrace=false; continue; }
+            if (c=='{'){ inBrace=true; kept += c; continue; }
+            if (c==';'){
+                std::string t = line.substr(i+1);
+                for (char& ch : t) if (ch=='{'||ch=='}') ch=' ';
+                kept += "{" + t + "}";
+                break;
+            }
+            kept += c;
+        }
+        cur.movetext += kept + " ";
     }
     flush();
     return games;
 }
 
-bool gameFromPGN(const PgnGame& pg, Game& out, std::string* err){
+bool gameFromPGN(const PgnGame& pg, Game& out, std::string* err, int maxPlies){
     Position start = Position::startpos();
     if (!pg.fenTag.empty()){
         bool ok=false;
@@ -662,9 +729,12 @@ bool gameFromPGN(const PgnGame& pg, Game& out, std::string* err){
         i = j;
         if (tok.empty()) continue;
         if (tok=="1-0"||tok=="0-1"||tok=="1/2-1/2"||tok=="*") break;
-        // strip leading move numbers "12." / "12..."
-        size_t k=0; while (k<tok.size() && (std::isdigit((unsigned char)tok[k])||tok[k]=='.')) k++;
-        tok = tok.substr(k);
+        if (maxPlies > 0 && ply >= maxPlies) return true;                    // enough for the caller
+        // strip a leading move number "12." / "12..." (but not the zeros of "0-0")
+        size_t k=0; while (k<tok.size() && std::isdigit((unsigned char)tok[k])) k++;
+        if (k==tok.size()) continue;                                         // a bare number
+        if (k>0 && tok[k]=='.'){ while (k<tok.size() && tok[k]=='.') k++; tok = tok.substr(k); }
+        else if (tok[0]=='.'){ while (!tok.empty() && tok[0]=='.') tok.erase(0,1); }   // "..." on its own
         if (tok.empty()) continue;
         Move m;
         if (!out.pos.sanToMove(tok, m)){

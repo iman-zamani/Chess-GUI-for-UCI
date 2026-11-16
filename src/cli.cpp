@@ -327,6 +327,7 @@ static int runMatch(const std::vector<std::string>& args, bool sprt){
         auto s = runner.snapshot();
         std::fprintf(out, "%s: %d games, %d in parallel, %s\n", tournamentModeName(o.s.mode), s.gamesTotal,
                      o.s.concurrency, o.s.tc.label().c_str());
+        for (auto& wn : s.warnings) std::fprintf(stderr, "chess-cli: warning: %s\n", wn.c_str());
         lastReport = s.gamesDone / o.report;     // don't report resumed games as progress
     }
     while (runner.running()){

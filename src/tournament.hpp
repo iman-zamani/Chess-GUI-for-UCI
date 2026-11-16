@@ -131,6 +131,7 @@ public:
         bool sprt = false; double llr = 0, llrLower = 0, llrUpper = 0;
         SprtOutcome sprtOutcome = SprtOutcome::Continue;
         std::vector<GameRecord> recent;        // last finished games, newest last
+        std::vector<std::string> warnings;     // found when the run started (e.g. unreadable book entries)
         std::vector<std::string> log;          // the last 200 lines
         long long logTotal = 0;                // lines logged so far (to follow the log)
         std::string status;
