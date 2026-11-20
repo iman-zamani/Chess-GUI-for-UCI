@@ -82,7 +82,7 @@ chess-cli perft --engine cmd=./myengine --depth 4
 chess-cli perft-bisect --engine cmd=./myengine --fen "<FEN>" --depth 5
 chess-cli sprt --engine cmd=./dev name=dev --engine cmd=./base name=base --tc 10+0.1 \
                --book book.epd --random --concurrency 4 --elo0 0 --elo1 5
-chess-cli elo-estimate --engine cmd=./myengine --quick     # once a model is shipped
+chess-cli elo-estimate --engine cmd=./myengine --quick
 ```
 
 Every command takes `--json`; exit codes are non-zero when a check fails or the SPRT
