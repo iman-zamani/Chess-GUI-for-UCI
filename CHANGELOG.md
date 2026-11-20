@@ -9,18 +9,24 @@ what happens when something goes wrong.
 - An engine that does not answer is given up on as soon as its clock (plus the margin) has run
   out, told to `stop`, and ended and restarted if it ignores that too. The wait used to be both
   clocks plus 20 seconds, and the engine was left searching into its next game.
-- Stop takes effect at once instead of after the move in progress.
+- Stop takes effect at once instead of after the move in progress, in matches and in the testing
+  tools and game review: a running search is told to `stop`, and an engine that doesn't answer
+  (or is counting a perft) is ended.
+- A reply that reached the program in time counts even when the match was slow to read it; it
+  used to be scored as a loss on time.
 - The time of a move is taken when the engine's reply arrives. On Windows engine output is read
   with blocking reads instead of polling, which could add up to a timer tick (about 15 ms) to
   every move.
-- PGN and state files go to a per-user folder by default (Documents/Chess-GUI-for-UCI) instead
+- PGN and state files go to a per-user folder by default (Documents/Chess-GUI-for-UCI; on Windows
+  the real Documents folder, also when it is redirected or on OneDrive) instead
   of the program's own folder, which can't be written inside an app bundle, an AppImage or
   Program Files. Every write is checked: a run whose files can't be written stops with an error
   instead of finishing without a record.
 - A run stops when an engine can't be started, instead of counting every remaining game as a
   forfeit. A book line ends at its first move that can't be played. A move without a score no
   longer counts as 0.00 for adjudication. Engines are never sent a clock of 0.
-- `chess-cli` runs half the CPU cores' worth of games in parallel by default, as its help said.
+- `chess-cli` runs half the CPU cores' worth of games in parallel by default, as its help said,
+  and `match` / `sprt` exit with code 5 when the run stops on an error.
 
 ### Rules and files
 - Threefold repetition: an en-passant square that nobody can capture on no longer makes a
@@ -29,8 +35,10 @@ what happens when something goes wrong.
   square must sit behind a pawn that can just have moved. Such input used to be accepted.
 - PGN: comments that continue on a line starting with `[`, `;` comments and `%` lines are read
   correctly (games used to be cut short without a message); `0-0`, promotions without `=` and
-  extra disambiguation are understood. Opening books read only the plies they use (a book of
-  full-length games loaded about 45 times faster in a test) and report games they had to cut short.
+  extra disambiguation are understood. A comment that is never closed ends at the next game's
+  tags and is reported, instead of swallowing the rest of the file. Opening books read only the
+  plies they use (2,000 games of 80 plies, 8 plies used: 6.9 s before, 0.15 s after, on an
+  Apple M4) and report games they had to cut short.
 - Saved games with an invalid `Result` tag can be read back; huge FEN move counters and perft
   counts no longer overflow.
 - Windows: paths and command-line arguments outside the ANSI code page work.
