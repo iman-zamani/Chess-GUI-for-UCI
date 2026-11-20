@@ -10,6 +10,8 @@
 #include <thread>
 #include <vector>
 
+struct Settings;
+
 namespace ui {
 
 struct Fonts { ImFont* body = nullptr; ImFont* mono = nullptr; ImFont* large = nullptr; };
@@ -38,13 +40,19 @@ std::string humanCount(long long n);         // 1234567 -> "1.23M"
 void helpMarker(const char* text);           // "(?)" with a tooltip
 std::string clockText(long long ms);         // 4:05, 1:02:03
 std::string timeStamp();                     // 20261020_143501 for file names
+// The folder new files are offered in: the last one the user saved to, else userDataDir().
+// saveDir() creates it, for a dialog or a file about to be written; shownSaveDir() only names it.
+std::string saveDir(const Settings& s);
+std::string shownSaveDir(const Settings& s);
 
 // A long-running task on a worker thread that reports progress as log lines.
 class Job {
 public:
     ~Job(){ abort(); }
     void start(const std::string& title, std::function<void(Job&)> fn);
-    void abort();                           // request stop and wait for the thread
+    // Request stop and wait for the thread. Engines the job uses get abortFlag() as their
+    // cancel flag (UciEngine::setCancel), so this takes a second or two at most.
+    void abort();
     void requestStop(){ abort_ = true; }
     bool running() const { return running_; }
     bool stopRequested() const { return abort_; }

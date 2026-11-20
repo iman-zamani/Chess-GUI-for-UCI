@@ -31,6 +31,9 @@ using clk = std::chrono::steady_clock;
 static long long nowMs(){
     return std::chrono::duration_cast<std::chrono::milliseconds>(clk::now().time_since_epoch()).count();
 }
+static long long nowNs(){
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(clk::now().time_since_epoch()).count();
+}
 static long long msSince(clk::time_point t){
     return std::chrono::duration_cast<std::chrono::milliseconds>(clk::now()-t).count();
 }
@@ -244,6 +247,8 @@ bool UciEngine::start(const EngineConfig& cfg){
         if (bare && cfg_.workingDir.empty()) cfg_.workingDir = fs::current_path(ec).u8string();
     }
     resetSearchInfo();
+    searching_ = false;
+    chess960Mode_ = -1;                               // a new process knows nothing of the old one's options
     opts.clear(); engName = "engine"; engAuthor.clear(); errMsg.clear();
     { std::lock_guard<std::mutex> lk(qMx_); queue_.clear(); stdoutEof_ = false; }
     log_ = std::make_shared<UciLogBuffer>();          // one log per process
@@ -258,13 +263,18 @@ bool UciEngine::start(const EngineConfig& cfg){
     }
     running = true;
     stopReader_ = false;
+#ifdef _WIN32
+    reader_ = std::thread(&UciEngine::pipeLoop, this, true);
+    errReader_ = std::thread(&UciEngine::pipeLoop, this, false);
+#else
     reader_ = std::thread(&UciEngine::readerLoop, this);
+#endif
     // UCI handshake
     sendRaw("uci");
     auto t0 = clk::now();
     bool ok = false;
-    while (msSince(t0) < uciokTimeout && alive()){
-        std::string ln = readLine(200);
+    while (msSince(t0) < uciokTimeout && alive() && !cancelled()){
+        std::string ln = readLine(pollMs(uciokTimeout - msSince(t0), 200));
         if (ln.empty()) continue;
         if (ln.rfind("id name ",0)==0) engName = ln.substr(8);
         else if (ln.rfind("id author ",0)==0) engAuthor = ln.substr(10);
@@ -281,10 +291,11 @@ bool UciEngine::start(const EngineConfig& cfg){
     };
     auto secs = [](int ms){ std::ostringstream o; o << ms / 1000.0 << " s"; return o.str(); };
     updateMonitorLabel();
+    if (cancelled()) return fail("cancelled");
     if (!ok) return fail(alive() ? "no uciok within " + secs(uciokTimeout) + " (not a UCI engine?)"
                                  : "engine exited during the uci handshake");
     for (auto& o : cfg_.options) setOption(o.first, o.second);
-    if (!isReady(readyTimeout)) return fail(alive() ? "no readyok within " + secs(readyTimeout)
+    if (!isReady(readyTimeout)) return fail(cancelled() ? "cancelled" : alive() ? "no readyok within " + secs(readyTimeout)
                                                     : "engine exited after uci");
     return true;
 }
@@ -376,78 +387,96 @@ void UciEngine::sendRaw(const std::string& line){
     if (!running) return;
     addLog('>', line);
     std::string s = line + "\n";
+    // a search is running from here until its bestmove is read ("go perft" prints no bestmove)
+    bool go = line.rfind("go", 0) == 0 && (line.size() == 2 || line[2] == ' ') && line.rfind("go perft", 0) != 0;
+    if (go) searching_ = true;
 #ifdef _WIN32
     DWORD written=0;
     if (!WriteFile((HANDLE)hChildIn, s.c_str(), (DWORD)s.size(), &written, nullptr)) markDead();
 #else
     if (write(inFd, s.c_str(), s.size()) < 0 && errno == EPIPE) markDead();
 #endif
+    if (go) goSentNs_ = nowNs();
 }
 
 void UciEngine::markDead(){
     if (running.exchange(false)) addLog('#', "engine process ended");
+    searching_ = false;
 }
 
-// Reader thread: moves engine output into the log as it arrives and queues
-// stdout lines for readLine(). Ends at stdout EOF or when quit() asks.
+// Engine output goes into the log as it arrives, and stdout lines are queued for
+// readLine() with the time they arrived. `all`: the pipe is closed, so a last line
+// without a line end is delivered too.
+void UciEngine::deliver(std::string& b, bool isOut, bool all){
+    size_t nl;
+    while ((nl = b.find('\n')) != std::string::npos || (all && !b.empty())){
+        std::string ln = nl == std::string::npos ? b : b.substr(0, nl);
+        b.erase(0, nl == std::string::npos ? b.size() : nl + 1);
+        if (!ln.empty() && ln.back() == '\r') ln.pop_back();
+        addLog(isOut ? '<' : '!', ln);
+        if (isOut){
+            std::lock_guard<std::mutex> lk(qMx_);
+            queue_.push_back({ln, nowNs()});
+            if (queue_.size() > 200000) queue_.pop_front();    // nobody is reading
+            qCv_.notify_all();
+        }
+    }
+}
+
+#ifdef _WIN32
+// Windows: one thread per pipe, each in a blocking read, so a reply is seen the moment the
+// engine writes it. (Anonymous pipes can't be waited on together; polling them with a sleep
+// in between added up to a timer tick, about 15 ms, to every line and so to every move.)
+// The read ends when the engine exits and the pipe closes, or when quit() cancels it.
+void UciEngine::pipeLoop(bool isOut){
+    std::string b;
+    char buf[8192];
+    HANDLE h = (HANDLE)(isOut ? hChildOut : hChildErr);
+    while (h){
+        DWORD n = 0;
+        if (!ReadFile(h, buf, sizeof buf, &n, nullptr) || n == 0){
+            if (GetLastError() == ERROR_OPERATION_ABORTED && !stopReader_) continue;   // a cancel that wasn't ours
+            break;
+        }
+        b.append(buf, n);
+        deliver(b, isOut, false);
+    }
+    deliver(b, isOut, true);
+    if (isOut){
+        { std::lock_guard<std::mutex> lk(qMx_); stdoutEof_ = true; }
+        markDead();
+        qCv_.notify_all();
+    }
+}
+#else
+// POSIX: one thread waits on both pipes with poll(), which returns as soon as either has data.
+// Ends at stdout EOF or when quit() asks.
 void UciEngine::readerLoop(){
     std::string rbuf, ebuf;
     char buf[8192];
     bool outOpen = true, errOpen = true;
-    auto flushLines = [&](std::string& b, bool isOut, bool all){
-        size_t nl;
-        while ((nl = b.find('\n')) != std::string::npos || (all && !b.empty())){
-            std::string ln = nl == std::string::npos ? b : b.substr(0, nl);
-            b.erase(0, nl == std::string::npos ? b.size() : nl + 1);
-            if (!ln.empty() && ln.back() == '\r') ln.pop_back();
-            addLog(isOut ? '<' : '!', ln);
-            if (isOut){
-                std::lock_guard<std::mutex> lk(qMx_);
-                queue_.push_back(ln);
-                if (queue_.size() > 200000) queue_.pop_front();    // nobody is reading
-                qCv_.notify_all();
-            }
-        }
-    };
     while (!stopReader_ && (outOpen || errOpen)){
-        bool got = false;
-#ifdef _WIN32
-        for (int k = 0; k < 2; k++){
-            bool& open = k == 0 ? outOpen : errOpen;
-            HANDLE h = (HANDLE)(k == 0 ? hChildOut : hChildErr);
-            if (!open || !h) continue;
-            DWORD avail = 0;
-            if (!PeekNamedPipe(h, nullptr, 0, nullptr, &avail, nullptr)){ open = false; continue; }
-            if (!avail) continue;
-            DWORD n = 0;
-            if (!ReadFile(h, buf, std::min<DWORD>(avail, sizeof buf), &n, nullptr) || !n){ open = false; continue; }
-            (k == 0 ? rbuf : ebuf).append(buf, n);
-            got = true;
-        }
-        if (!got && (outOpen || errOpen)) Sleep(3);
-#else
         pollfd fds[2] = {{outOpen ? outFd : -1, POLLIN, 0}, {errOpen ? errFd : -1, POLLIN, 0}};
         int r = poll(fds, 2, 100);
         if (r > 0){
             for (int k = 0; k < 2; k++){
                 if (!(fds[k].revents & (POLLIN | POLLHUP | POLLERR))) continue;
                 ssize_t n = read(fds[k].fd, buf, sizeof buf);
-                if (n > 0){ (k == 0 ? rbuf : ebuf).append(buf, (size_t)n); got = true; }
+                if (n > 0) (k == 0 ? rbuf : ebuf).append(buf, (size_t)n);
                 else if (n == 0 || (errno != EAGAIN && errno != EINTR)) (k == 0 ? outOpen : errOpen) = false;
             }
         }
-#endif
-        flushLines(ebuf, false, !errOpen);
-        flushLines(rbuf, true, !outOpen);
+        deliver(ebuf, false, !errOpen);
+        deliver(rbuf, true, !outOpen);
         if (!outOpen){
             { std::lock_guard<std::mutex> lk(qMx_); stdoutEof_ = true; }
             markDead();
             qCv_.notify_all();
             if (!errOpen) break;
         }
-        (void)got;
     }
 }
+#endif
 
 std::string UciEngine::readLine(int timeoutMs){
     std::unique_lock<std::mutex> lk(qMx_);
@@ -455,8 +484,13 @@ std::string UciEngine::readLine(int timeoutMs){
         qCv_.wait_for(lk, std::chrono::milliseconds(timeoutMs),
                       [&]{ return !queue_.empty() || stdoutEof_ || !running; });
     if (queue_.empty()) return "";
-    std::string ln = std::move(queue_.front());
+    std::string ln = std::move(queue_.front().text);
+    long long at = queue_.front().atNs;
     queue_.pop_front();
+    if (ln.rfind("bestmove", 0) == 0){                // the search is over: timed when it arrived
+        lastWallMs_ = std::max<long long>(0, (at - goSentNs_) / 1000000);
+        searching_ = false;
+    }
     return ln;
 }
 
@@ -483,7 +517,17 @@ void UciEngine::quit(){
     DWORD code = 0;
     if (GetExitCodeProcess((HANDLE)hProc, &code)) addLog('#', "engine exited with code " + std::to_string(code));
     stopReader_ = true;
-    if (reader_.joinable()) reader_.join();
+    // The pipes close when the engine exits and the readers end by themselves. If a process
+    // the engine started still holds the other end, their blocking read is cancelled instead
+    // (again and again until the thread is out of ReadFile: a cancel can come too early).
+    auto joinReader = [](std::thread& t, HANDLE pipe){
+        if (!t.joinable()) return;
+        HANDLE th = (HANDLE)t.native_handle();
+        while (WaitForSingleObject(th, 20) == WAIT_TIMEOUT) CancelIoEx(pipe, nullptr);
+        t.join();
+    };
+    joinReader(reader_, (HANDLE)hChildOut);
+    joinReader(errReader_, (HANDLE)hChildErr);
     CloseHandle((HANDLE)hProc); CloseHandle((HANDLE)hChildIn); CloseHandle((HANDLE)hChildOut);
     CloseHandle((HANDLE)hChildErr);
     hProc = hChildIn = hChildOut = hChildErr = nullptr;
@@ -517,6 +561,10 @@ void UciEngine::quit(){
     inFd = outFd = errFd = -1;
 #endif
     running = false;
+    searching_ = false;
+    // We ended it: whatever it printed and nobody read is of no use to anyone, and must not
+    // make alive() say "there is still output to read" (the log keeps every line).
+    { std::lock_guard<std::mutex> lk(qMx_); queue_.clear(); }
     // (not from markDead(): that can run inside a console send holding the monitor lock)
     if (monitorId_){ EngineMonitor::instance().ended(monitorId_); monitorId_ = 0; }
 }
@@ -566,20 +614,50 @@ void UciEngine::setOption(const std::string& n, const std::string& v){
     sendRaw(v.empty() ? "setoption name " + n : "setoption name " + n + " value " + v);
 }
 bool UciEngine::isReady(int timeoutMs){
+    if (cancelled()) return false;
     sendRaw("isready");
     auto t0 = clk::now();
-    while (msSince(t0) < timeoutMs && alive()){
-        std::string ln = readLine(100);
+    while (msSince(t0) < timeoutMs && alive() && !cancelled()){
+        std::string ln = readLine(pollMs(timeoutMs - msSince(t0), 100));
         if (ln == "readyok") return true;
         if (!ln.empty()) parseInfo(ln);
     }
     return false;
 }
 void UciEngine::newGame(){
+    ensureIdle();
     sendRaw("ucinewgame");
     isReady(10000);
 }
+bool UciEngine::stopSearch(int waitMs, std::string* bestmove){
+    if (!searching_) return true;
+    if (alive()){
+        sendRaw("stop");
+        auto t0 = clk::now();
+        while (searching_ && msSince(t0) < waitMs && alive()){
+            std::string ln = readLine(std::max(1, (int)std::min<long long>(50, waitMs - msSince(t0))));
+            if (ln.empty()) continue;
+            parseInfo(ln);
+            if (ln.rfind("bestmove", 0) == 0){       // (readLine has set lastWallMs_)
+                std::istringstream ss(ln);
+                std::string a, b, c2, d; ss >> a >> b >> c2 >> d;
+                if (c2 == "ponder"){ std::lock_guard<std::mutex> lk(infoMx); ponder_ = d; }
+                if (bestmove) *bestmove = b;
+            }
+        }
+    }
+    return !searching_;
+}
+bool UciEngine::ensureIdle(){
+    if (!searching_) return true;
+    addLog('#', "the last search has not delivered its bestmove: sending stop");
+    if (stopSearch(2000)) return true;
+    addLog('#', "no bestmove after stop: the engine is out of step and is ended");
+    quit();
+    return false;
+}
 void UciEngine::setPosition(const std::string& fen, const std::vector<std::string>& mv){
+    ensureIdle();
     // Chess960 positions need UCI_Chess960 (and king-takes-rook castling), others must not have it
     int want = Position::fromFEN(fen).chess960 ? 1 : 0;
     if (want != chess960Mode_ && (want || chess960Mode_ == 1) && hasOption("UCI_Chess960")){
@@ -617,6 +695,7 @@ void parseInfoLine(const std::string& line, EngineInfo& info, std::vector<PvLine
         else if (tok=="lowerbound") lower = true;
         else if (tok=="upperbound") upper = true;
         else if (tok=="score"){
+            info.hasScore = true;
             std::string kind; ss >> kind;
             int v = 0; ss >> v;
             if (kind=="cp"){ isMate=false; cp=v; sawScore=true; }
@@ -687,10 +766,24 @@ void UciEngine::resetSearchInfo(){
     info = EngineInfo{}; pvs_.clear(); ponder_.clear();
 }
 
-std::string UciEngine::waitBestmove(int timeoutMs){
+// How long one read may block: short while a cancel flag can end the wait.
+int UciEngine::pollMs(long long leftMs, int usualMs) const{
+    return (int)std::max<long long>(1, std::min<long long>(cancel_ ? 50 : usualMs, leftMs));
+}
+void UciEngine::abandonSearch(){
+    if (!searching_) return;
+    addLog('#', "cancelled: sending stop");
+    if (alive() && stopSearch(1000)) return;
+    addLog('#', "no bestmove after stop: the engine is ended");
+    quit();
+}
+
+std::string UciEngine::waitBestmove(int timeoutMs, const std::atomic<bool>* cancel){
     auto t0 = clk::now();
     while (msSince(t0) < timeoutMs && alive()){
-        std::string ln = readLine(100);
+        if (cancel && *cancel) break;
+        if (cancelled()){ lastWallMs_ = msSince(t0); abandonSearch(); return ""; }
+        std::string ln = readLine(pollMs(timeoutMs - msSince(t0), cancel ? 50 : 100));
         if (ln.empty()) continue;
         parseInfo(ln);
         if (ln.rfind("bestmove",0)==0){
@@ -700,9 +793,12 @@ std::string UciEngine::waitBestmove(int timeoutMs){
             return b=="(none)" ? "" : b;
         }
     }
+    lastWallMs_ = msSince(t0);                        // no bestmove: how long we waited
     return "";
 }
 std::string UciEngine::goMovetime(int ms){
+    if (cancelled()) return "";
+    ensureIdle();
     resetSearchInfo();
     sendRaw("go movetime " + std::to_string(ms));
     return waitBestmove(ms + 8000);
@@ -717,16 +813,18 @@ std::string UciEngine::goNodes(long long n, int timeoutMs){
     return searchTimed("go nodes " + std::to_string(n), timeoutMs);
 }
 std::string UciEngine::searchTimed(const std::string& goCmd, int timeoutMs, int stopWaitMs){
+    if (cancelled()) return "";
+    ensureIdle();
     resetSearchInfo();
     lastStopped_ = false;
     sendRaw(goCmd);
     auto t0 = clk::now();
     while (msSince(t0) < timeoutMs && alive()){
-        std::string ln = readLine(std::max(1, (int)(timeoutMs - msSince(t0))));
+        if (cancelled()){ lastWallMs_ = msSince(t0); lastStopped_ = true; abandonSearch(); return ""; }
+        std::string ln = readLine(pollMs(timeoutMs - msSince(t0), timeoutMs));
         if (ln.empty()) continue;
         parseInfo(ln);
-        if (ln.rfind("bestmove", 0) == 0){
-            lastWallMs_ = msSince(t0);
+        if (ln.rfind("bestmove", 0) == 0){             // (readLine has set lastWallMs_)
             std::istringstream ss(ln);
             std::string a, b; ss >> a >> b;
             return b == "(none)" ? "" : b;
@@ -735,9 +833,7 @@ std::string UciEngine::searchTimed(const std::string& goCmd, int timeoutMs, int 
     lastWallMs_ = msSince(t0);
     if (!alive()) return "";
     lastStopped_ = true;
-    std::string best = stopAndWait(stopWaitMs);
-    lastWallMs_ = msSince(t0);
-    return best;
+    return stopAndWait(stopWaitMs);                    // lastWallMs_: until its bestmove, or until we gave up
 }
 double UciEngine::cpuSeconds(){
 #ifdef _WIN32
@@ -753,18 +849,23 @@ double UciEngine::pCoreSeconds(){
     return pid > 0 ? processPCoreSeconds(pid) : -1;
 #endif
 }
-std::string UciEngine::goClock(int wt,int bt,int wi,int bi){
+std::string UciEngine::goClock(int wt,int bt,int wi,int bi,int timeoutMs,const std::atomic<bool>* cancel){
+    if (cancelled()) return "";
+    ensureIdle();
     resetSearchInfo();
     std::ostringstream o;
     o << "go wtime "<<wt<<" btime "<<bt<<" winc "<<wi<<" binc "<<bi;
     sendRaw(o.str());
-    return waitBestmove(wt + bt + 20000);
+    return waitBestmove(timeoutMs >= 0 ? timeoutMs : wt + bt + 20000, cancel);
 }
 void UciEngine::goInfinite(){
+    ensureIdle();
     resetSearchInfo();
     sendRaw("go infinite");
 }
 std::string UciEngine::goPonderWait(int wt,int bt,int wi,int bi,int timeoutMs){
+    if (cancelled()) return "";
+    ensureIdle();
     resetSearchInfo();
     std::ostringstream o;
     o << "go ponder wtime "<<wt<<" btime "<<bt<<" winc "<<wi<<" binc "<<bi;
@@ -772,16 +873,26 @@ std::string UciEngine::goPonderWait(int wt,int bt,int wi,int bi,int timeoutMs){
     return waitBestmove(timeoutMs);
 }
 std::string UciEngine::stopAndWait(int timeoutMs){
+    if (!searching_) return "";                        // nothing to stop: no bestmove will come
     sendRaw("stop");
-    return waitBestmove(timeoutMs);
+    std::string best = waitBestmove(timeoutMs);
+    if (best.empty() && searching_) lastWallMs_ = (nowNs() - goSentNs_) / 1000000;   // timed from its "go"
+    return best;
 }
 long long UciEngine::goPerft(int depth, int timeoutMs){
     // Stockfish and many engines: "go perft N" prints "Nodes searched: X"
+    if (cancelled()) return -1;
     sendRaw("go perft " + std::to_string(depth));
     auto t0 = clk::now();
     long long nodes = -1;
     while (msSince(t0) < timeoutMs && alive()){
-        std::string ln = readLine(100);
+        if (cancelled()){
+            // perft has no "stop" (many engines don't even read input while counting): end it
+            addLog('#', "cancelled during perft: the engine is ended");
+            quit();
+            return -1;
+        }
+        std::string ln = readLine(pollMs(timeoutMs - msSince(t0), 100));
         if (ln.empty()) continue;
         size_t p = ln.find("Nodes searched:");
         if (p != std::string::npos){

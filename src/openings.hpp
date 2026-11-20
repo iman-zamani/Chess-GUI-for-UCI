@@ -18,6 +18,10 @@ enum class BookFormat { Auto, Epd, Pgn };  // Auto: by extension (.pgn = PGN, el
 struct BookLoadResult {
     std::vector<Opening> openings;
     int skipped = 0;                       // invalid or unusable positions
+    int truncated = 0;                     // PGN games cut short at a move or comment that could not be read
+    std::string firstProblem;              // the first such move, e.g. "game 12: Illegal/unreadable move ..."
+    // "" or one line about skipped and shortened entries, for logs.
+    std::string warning() const;
     std::string error;                     // file-level error (cannot open, nothing found)
 };
 

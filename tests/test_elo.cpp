@@ -542,7 +542,7 @@ TEST_CASE("elo/own-probe-sees-the-engine-slow-down"){
     m.warmupSec = 0.2; m.speedPositions = 6;
     m.minMovetimeMs = 10;
     m.baseMovetimeMs = 300;                    // 150 ms per position: 50 ms overran on Windows timers
-    m.checkEverySec = 0.3;
+    m.checkEverySec = 2.5;                     // a few checks are enough (each takes seconds at half speed)
     EngineConfig cfg; cfg.path = kMock; cfg.args = {"--speed-file", speed.string(), "--real-time", "--burn-cpu"};
     EloOptions opt;
     opt.adaptive = false;

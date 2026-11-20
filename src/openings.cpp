@@ -1,6 +1,7 @@
 /* Chess-GUI-for-UCI — opening books for engine matches. GPL-2.0 */
 #include "openings.hpp"
 #include <algorithm>
+#include <filesystem>
 #include <fstream>
 #include <numeric>
 #include <random>
@@ -74,7 +75,11 @@ BookLoadResult parsePgnBook(const std::string& text, int plies){
     for (auto& pg : games){
         idx++;
         Game g; std::string err;
-        gameFromPGN(pg, g, &err);                 // a broken tail still gives a usable prefix
+        // only the moves that are used are read; a broken game still gives a usable prefix
+        if (!gameFromPGN(pg, g, &err, plies) && !err.empty() && err != "Invalid FEN tag"){
+            r.truncated++;
+            if (r.firstProblem.empty()) r.firstProblem = "game " + std::to_string(idx) + ": " + err;
+        }
         Position p = g.start;
         if (!enginePositionProblem(p).empty()){ r.skipped++; continue; }
         Opening o;
@@ -90,8 +95,16 @@ BookLoadResult parsePgnBook(const std::string& text, int plies){
     return r;
 }
 
+std::string BookLoadResult::warning() const{
+    std::string s;
+    if (skipped) s += std::to_string(skipped) + " unusable entries skipped";
+    if (truncated) s += std::string(s.empty() ? "" : "; ") + std::to_string(truncated) + " games cut short at a move or "
+                      "comment that could not be read (" + firstProblem + ")";
+    return s;
+}
+
 BookLoadResult loadOpeningBook(const std::string& path, BookFormat fmt, int plies){
-    std::ifstream f(path, std::ios::binary);
+    std::ifstream f(std::filesystem::u8path(path), std::ios::binary);
     if (!f){ BookLoadResult r; r.error = "cannot open " + path; return r; }
     std::stringstream ss; ss << f.rdbuf();
     if (fmt == BookFormat::Auto){

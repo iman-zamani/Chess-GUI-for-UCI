@@ -55,5 +55,6 @@ private:
 
 // Builds a tree from a parsed PGN game (variations "( )", comments "{ }" and
 // ";", NAGs "$n" and !? style suffixes, [%eval] / [%clk] in comments). On an
-// illegal move it stops, keeps what was read and returns false with *err.
+// illegal move it stops, keeps what was read and returns false with *err; the
+// same when the game has a PgnGame::problem (the moves before it are kept).
 bool gameTreeFromPGN(const PgnGame& pg, GameTree& out, std::string* err = nullptr);

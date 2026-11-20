@@ -2,6 +2,9 @@
 #include "testlib.hpp"
 #include "perft_bisect.hpp"
 #include <algorithm>
+#include <atomic>
+#include <chrono>
+#include <thread>
 
 static const std::string kMock = MOCK_ENGINE_PATH;
 
@@ -26,6 +29,19 @@ TEST_CASE("bisect/divide-line-formats"){
     CHECK(parseTotalLine("Total: 197281", t)); CHECK_EQ(t, 197281LL);
     CHECK(parseTotalLine("Nodes: 400", t)); CHECK_EQ(t, 400LL);
     CHECK(!parseTotalLine("e2e4: 20", t));
+}
+
+// Found by fuzz/divide-and-args: a count past 2^63 wrapped around and gave a
+// negative total; a token of separators alone was read as 0.
+TEST_CASE("bisect/count-overflow"){
+    long long t = 0;
+    CHECK(!parseTotalLine("Nodes: 9999999999999999999", t));
+    CHECK(parseTotalLine("Nodes: 9223372036854775807", t)); CHECK_EQ(t, 9223372036854775807LL);
+    CHECK(!parseTotalLine("Nodes: 9223372036854775808", t));
+    std::string m; uint64_t n = 0;
+    CHECK(!parseDivideLine("e2e4: 18446744073709551616", m, n));
+    CHECK(!parseDivideLine("e2e4: ,", m, n));
+    CHECK(!parseTotalLine("Total: ''", t));
 }
 
 TEST_CASE("bisect/divide-from-engine"){
@@ -105,4 +121,20 @@ TEST_CASE("bisect/engine-without-perft"){
     auto rep = perftBisect(e, Position::startpos().toFEN(), 2, nullptr, ab);
     CHECK(rep.error);
     CHECK(rep.errorText.find("perft") != std::string::npos);
+}
+
+TEST_CASE("bisect/stop-ends-an-engine-perft"){
+    // the engine side of a deep perft is cut short within about a second of Stop
+    std::atomic<bool> cancel{false};
+    UciEngine e;
+    e.setCancel(&cancel);
+    REQUIRE(startMock(e, {}));
+    std::thread t([&]{ std::this_thread::sleep_for(std::chrono::milliseconds(200)); cancel = true; });
+    auto t0 = std::chrono::steady_clock::now();
+    PerftDivide d = enginePerftDivide(e, Position::startpos().toFEN(), 7);
+    long long took = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
+    t.join();
+    CHECK(!d.ok);
+    CHECK_MSG(took < 2500, "enginePerftDivide returned after " << took << " ms");
+    CHECK(!e.alive());
 }

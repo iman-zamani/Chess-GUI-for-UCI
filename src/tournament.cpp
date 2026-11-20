@@ -86,6 +86,7 @@ bool MatchRunner::adjudicate(const AdjudicationConfig& a, const std::vector<int>
     if (a.resign && a.resignMoves > 0 && (int)ws.size() >= 2 * a.resignMoves){
         bool white = true, black = true;
         for (size_t i = ws.size() - 2 * a.resignMoves; i < ws.size(); i++){
+            if (ws[i] == kNoScore) white = black = false;        // a move without a score agrees with nothing
             if (ws[i] < a.resignCp) white = false;
             if (ws[i] > -a.resignCp) black = false;
         }
@@ -94,7 +95,7 @@ bool MatchRunner::adjudicate(const AdjudicationConfig& a, const std::vector<int>
     }
     if (a.draw && a.drawMoves > 0 && fullMove >= a.drawAfterMove && (int)ws.size() >= 2 * a.drawMoves){
         bool all = true;
-        for (size_t i = ws.size() - 2 * a.drawMoves; i < ws.size(); i++) if (std::abs(ws[i]) > a.drawCp) all = false;
+        for (size_t i = ws.size() - 2 * a.drawMoves; i < ws.size(); i++) if (ws[i] == kNoScore || std::abs(ws[i]) > a.drawCp) all = false;
         if (all){ res = GameResult::DRAW; return true; }
     }
     return false;
@@ -122,7 +123,13 @@ std::string matchGamePgn(const Game& g, const MatchSettings& s, int round, int g
                          const std::vector<std::string>& comments, const std::string& termination, int bookPlies){
     std::ostringstream o;
     char date[16]; std::time_t t = std::time(nullptr);
-    std::strftime(date, sizeof date, "%Y.%m.%d", std::localtime(&t));
+    std::tm local{};                                     // (std::localtime shares one buffer: games end in parallel)
+#ifdef _WIN32
+    localtime_s(&local, &t);
+#else
+    localtime_r(&t, &local);
+#endif
+    std::strftime(date, sizeof date, "%Y.%m.%d", &local);
     auto tag = [&](const char* k, const std::string& v){
         std::string e;
         for (char c : v){ if (c == '"' || c == '\\') e += '\\'; e += c; }
@@ -211,10 +218,12 @@ bool MatchRunner::start(const MatchSettings& settings, std::string* err){
     // openings
     retry_.clear();
     book_.clear();
+    std::vector<std::string> warnings;
     if (!s_.bookPath.empty()){
         BookLoadResult r = loadOpeningBook(s_.bookPath, s_.bookFormat, s_.bookPlies);
         if (!r.error.empty()) return fail("opening book: " + r.error);
         book_ = r.openings;
+        if (!r.warning().empty()) warnings.push_back("Opening book: " + r.warning());
     } else if (s_.startFens.empty() && s_.chess960){
         for (int n = 0; n < 960; n++)                        // order: s_.bookRandom / seed, like a book
             book_.push_back({Position::chess960Start(n).toFEN(), {}, "Chess960 #" + std::to_string(n)});
@@ -252,8 +261,25 @@ bool MatchRunner::start(const MatchSettings& settings, std::string* err){
         snap_.llrLower = s_.sprt.lowerBound(); snap_.llrUpper = s_.sprt.upperBound();
         snap_.live.resize(s_.concurrency);
         snap_.running = true;
+        snap_.warnings = warnings;
+    }
+    // The records of a run must not be lost silently: both files are written once now, so a
+    // folder that can't be written (a read-only disk image, Program Files, a typo) is an
+    // error before the first game instead of an empty file after the last.
+    if (!s_.pgnPath.empty()){
+        std::error_code ec;
+        fs::path p = fs::u8path(s_.pgnPath);
+        if (p.has_parent_path()) fs::create_directories(p.parent_path(), ec);
+        std::ofstream f(p, std::ios::app);
+        if (!f){ std::lock_guard<std::mutex> lk(mx_); snap_.running = false; return fail("cannot write the PGN file " + s_.pgnPath); }
+    }
+    if (!s_.statePath.empty()){
+        std::error_code ec;
+        fs::path p = fs::u8path(s_.statePath);
+        if (p.has_parent_path()) fs::create_directories(p.parent_path(), ec);
     }
     loadState();
+    if (!saveState()){ std::lock_guard<std::mutex> lk(mx_); snap_.running = false; return fail("cannot write the state file " + s_.statePath); }
     nextJob_ = 0;
     stop_ = false; running_ = true;
     int remaining = (int)std::count(done_.begin(), done_.end(), false);
@@ -262,6 +288,7 @@ bool MatchRunner::start(const MatchSettings& settings, std::string* err){
         + std::to_string(workers) + " in parallel, " + s_.tc.label()
         + (book_.empty() ? ", standard start" : ", " + std::to_string(book_.size()) + " openings")
         + (snap_.gamesResumed ? ", resumed " + std::to_string(snap_.gamesResumed) + " finished games" : ""));
+    for (auto& wn : warnings) log(wn);
     activeWorkers_ = workers;
     for (int w = 0; w < workers; w++) threads_.emplace_back([this, w](){ workerLoop(w); });
     return true;
@@ -298,6 +325,17 @@ std::vector<std::string> MatchRunner::collectedPGNs(){
     return pgns_;
 }
 
+void MatchRunner::failRun(const std::string& why){
+    std::lock_guard<std::mutex> lk(mx_);
+    failRunLocked(why);
+}
+
+void MatchRunner::failRunLocked(const std::string& why){
+    if (snap_.error.empty()) snap_.error = why;
+    logLocked("Error: " + why);
+    stop_ = true;
+}
+
 bool MatchRunner::nextJob(Job& j){
     std::lock_guard<std::mutex> lk(mx_);
     if (stop_) return false;
@@ -322,10 +360,12 @@ void MatchRunner::workerLoop(int w){
         std::lock_guard<std::mutex> lk(mx_);
         snap_.running = false;
         snap_.finished = !stop_ || snap_.sprtOutcome != SprtOutcome::Continue;
-        logLocked(snap_.finished ? "Finished." : "Stopped.");
+        logLocked(snap_.finished ? "Finished." : snap_.error.empty() ? "Stopped." : "Stopped: " + snap_.error);
         running_ = false;
     }
 }
+
+static const long long kDeadlineSlackMs = 100;       // on top of clock + margin before a search is given up
 
 static int whitePov(const EngineInfo& i, bool whiteMoved){
     int s = i.isMate ? (i.mateIn > 0 ? 32000 - i.mateIn : -32000 - i.mateIn) : i.scoreCp;
@@ -353,7 +393,11 @@ void MatchRunner::playGame(int w, const Job& job, std::vector<std::unique_ptr<Uc
     g.reset(op ? Position::fromFEN(op->fen) : Position::startpos());
     std::string startFen = g.start.toFEN();
     std::vector<std::string> ucis;
-    if (op) for (auto& u : op->moves){ Move m; if (g.pos.uciToMove(u, m) && g.tryMove(m)) ucis.push_back(u); }
+    if (op) for (auto& u : op->moves){                       // a line ends at its first move that can't be played
+        Move m;
+        if (!g.pos.uciToMove(u, m) || !g.tryMove(m)) break;
+        ucis.push_back(u);
+    }
     int bookPlies = (int)ucis.size();
     g.whiteName = engineNames_[job.white];
     g.blackName = engineNames_[job.black];
@@ -372,10 +416,11 @@ void MatchRunner::playGame(int w, const Job& job, std::vector<std::unique_ptr<Uc
     });
     UciEngine* eng[2] = {ensure(job.white), ensure(job.black)};
     for (int side = 0; side < 2; side++)
-        if (!eng[side]){                                    // can't even start: forfeit
-            g.result = side == 0 ? GameResult::BLACK_WINS : GameResult::WHITE_WINS;
-            g.reason = ResultReason::DISCONNECT;
-            crash = true;
+        if (!eng[side]){
+            // An engine that can't be started would forfeit every game from here on:
+            // that is not a result. The run stops; this game is not counted.
+            failRun(engineNames_[side == 0 ? job.white : job.black] + " could not be started: the run was stopped");
+            return;
         }
     if (g.result == GameResult::ONGOING){
         GameResult r;                                       // a start position already in the tables
@@ -392,9 +437,28 @@ void MatchRunner::playGame(int w, const Job& job, std::vector<std::unique_ptr<Uc
         post([&](LiveGame& L){ L.wClockMs = clock[0]; L.bClockMs = clock[1]; L.postedAtMs = nowMs(); });
         auto t0 = clk::now();
         SuspendMark asleep = suspendMark();
-        std::string bm = e.goClock((int)clock[0], (int)clock[1], s_.tc.incMs, s_.tc.incMs);
-        long long spent = std::chrono::duration_cast<std::chrono::milliseconds>(clk::now() - t0).count();
+        // The mover has lost on time once clock + margin has passed, so that (plus a little
+        // slack for the reply to reach us) is as long as we wait. Engines are never sent a
+        // clock of 0: some treat it as "no limit".
+        long long deadline = clock[side] + s_.timeMarginMs + kDeadlineSlackMs;
+        std::string bm = e.goClock((int)std::max(1LL, clock[0]), (int)std::max(1LL, clock[1]), s_.tc.incMs, s_.tc.incMs,
+                                   (int)deadline, &stop_);
         if (stop_) return;                                   // aborted: the game doesn't count
+        bool overdue = bm.empty() && e.searching(), stopped = true;
+        if (overdue){
+            // End the search, so the engine is in step for its next move or game. Its bestmove
+            // may have arrived in time and only been read late (this thread was delayed): what
+            // counts is when the reader thread received it.
+            std::string late;
+            stopped = e.stopSearch(1000, &late);
+            if (stopped && !late.empty() && e.lastSearchWallMs() <= clock[side] + s_.timeMarginMs){
+                bm = late == "(none)" ? "" : late;
+                overdue = false;
+            }
+        }
+        // the time from writing "go" to the reader thread receiving "bestmove"
+        long long spent = !e.searching() ? e.lastSearchWallMs()
+                        : std::chrono::duration_cast<std::chrono::milliseconds>(clk::now() - t0).count();
         if (long long slept = suspendedMsSince(asleep); slept > 500){
             // the clocks are meaningless across a system sleep: play the game again
             log("Game " + std::to_string(job.index + 1) + " was interrupted: the computer slept for "
@@ -406,9 +470,15 @@ void MatchRunner::playGame(int w, const Job& job, std::vector<std::unique_ptr<Uc
         }
         clock[side] -= spent;
         GameResult loss = side == 0 ? GameResult::BLACK_WINS : GameResult::WHITE_WINS;
-        if (clock[side] < -s_.timeMarginMs){
+        if (clock[side] < -s_.timeMarginMs || overdue){
             g.result = loss; g.reason = ResultReason::TIMEOUT; timeLoss = true;
-            log(std::string(side == 0 ? g.whiteName : g.blackName) + " lost on time (" + std::to_string(-clock[side]) + " ms over)");
+            std::string who = side == 0 ? g.whiteName : g.blackName;
+            if (!overdue) log(who + " lost on time (" + std::to_string(-clock[side]) + " ms over)");
+            else {
+                log(who + " lost on time (no move " + std::to_string(std::max(0LL, -clock[side])) + " ms after its clock ran out; "
+                    + (stopped ? "it stopped when told to)" : "it did not answer \"stop\" either and was ended)"));
+                if (!stopped) e.quit();
+            }
             break;
         }
         if (clock[side] < 0) clock[side] = 0;                // within the margin
@@ -429,7 +499,7 @@ void MatchRunner::playGame(int w, const Job& job, std::vector<std::unique_ptr<Uc
         EngineInfo inf = e.lastInfo();
         MoveStat ms = MoveStat::from(inf, (int)g.moves.size(), side == 0, spent);
         int ws = whitePov(inf, side == 0);
-        whiteScores.push_back(ws);
+        whiteScores.push_back(inf.hasScore ? ws : kNoScore);
         char cm[160];
         if (inf.isMate) std::snprintf(cm, sizeof cm, "[%%eval #%d] [%%clk %s] d=%d", side == 0 ? inf.mateIn : -inf.mateIn,
                                       clockText(clock[side]).c_str(), inf.depth);
@@ -472,6 +542,9 @@ void MatchRunner::recordGame(const Job& job, const Game& g, const std::string& p
     if (!s_.pgnPath.empty()){
         std::ofstream f(fs::u8path(s_.pgnPath), std::ios::app);
         f << pgn << "\n";
+        f.flush();
+        if (!f) failRunLocked("cannot write the PGN file " + s_.pgnPath + ": the run was stopped (game "
+                              + std::to_string(job.index + 1) + " is not in it)");
     }
     // standings and head-to-head statistics
     double whiteScore = g.result == GameResult::WHITE_WINS ? 1 : g.result == GameResult::BLACK_WINS ? 0 : 0.5;
@@ -508,7 +581,7 @@ void MatchRunner::recordGame(const Job& job, const Game& g, const std::string& p
             logLocked(b);
         }
     }
-    saveState();
+    if (!saveState()) failRunLocked("cannot write the state file " + s_.statePath + ": the run was stopped");
 }
 
 // ---------------------------------------------------------------- state / export
@@ -516,17 +589,23 @@ static const char* resultCode(GameResult r){
     return r == GameResult::WHITE_WINS ? "1-0" : r == GameResult::BLACK_WINS ? "0-1" : "1/2-1/2";
 }
 
-void MatchRunner::saveState(){
-    if (s_.statePath.empty()) return;
+bool MatchRunner::saveState(){
+    if (s_.statePath.empty()) return true;
     json games = json::array();
     for (auto& r : allGames_)
         games.push_back({{"index", r.index}, {"white", r.white}, {"black", r.black}, {"opening", r.opening},
                          {"result", resultCode(r.result)}, {"reason", (int)r.reason}, {"plies", r.plies}});
     json j = {{"version", 1}, {"fingerprint", s_.fingerprint()}, {"games", games}};
     std::string tmp = s_.statePath + ".tmp";
-    { std::ofstream f(fs::u8path(tmp)); f << j.dump(1) << "\n"; }
+    {
+        std::ofstream f(fs::u8path(tmp));
+        f << j.dump(1) << "\n";
+        f.flush();
+        if (!f) return false;
+    }
     std::error_code ec;
     fs::rename(fs::u8path(tmp), fs::u8path(s_.statePath), ec);
+    return !ec;
 }
 
 void MatchRunner::loadState(){

@@ -1,9 +1,11 @@
 /* Chess-GUI-for-UCI — shared ImGui widgets and helpers. GPL-2.0 */
 #include "ui/widgets.hpp"
+#include "settings.hpp"
 #include <misc/cpp/imgui_stdlib.h>
 #include <cfloat>
 #include <cstdio>
 #include <ctime>
+#include <filesystem>
 #include <fstream>
 
 namespace ui {
@@ -120,8 +122,22 @@ std::string clockText(long long ms){
 
 std::string timeStamp(){
     char b[32]; std::time_t t = std::time(nullptr);
-    std::strftime(b, sizeof b, "%Y%m%d_%H%M%S", std::localtime(&t));
+    std::tm local{};                                     // (not std::localtime: it shares one buffer between threads)
+#ifdef _WIN32
+    localtime_s(&local, &t);
+#else
+    localtime_r(&t, &local);
+#endif
+    std::strftime(b, sizeof b, "%Y%m%d_%H%M%S", &local);
     return b;
+}
+
+std::string shownSaveDir(const Settings& s){ return s.lastSaveDir.empty() ? userDataDir() : s.lastSaveDir; }
+std::string saveDir(const Settings& s){
+    std::string d = shownSaveDir(s);
+    std::error_code ec;
+    std::filesystem::create_directories(std::filesystem::u8path(d), ec);
+    return d;
 }
 
 // ---------------------------------------------------------------- Job
@@ -179,7 +195,7 @@ void jobPanel(Job& job, const std::function<std::string()>& saveDialog,
     if (ImGui::SmallButton("Save log...") && saveDialog){
         std::string path = saveDialog();
         if (!path.empty()){
-            std::ofstream f(path);
+            std::ofstream f(std::filesystem::u8path(path));
             f << job.text();
             if (toast) toast(f ? "Saved " + path : "Could not write " + path);
         }

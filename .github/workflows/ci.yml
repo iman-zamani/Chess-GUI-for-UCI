@@ -65,6 +65,108 @@ jobs:
           path: build/gui_smoke.png
           if-no-files-found: ignore
 
+  # The core, the CLI and the tests under AddressSanitizer + UBSan and under
+  # ThreadSanitizer (CHESSGUI_SANITIZE, no GUI). Every sanitizer report, also
+  # from child processes such as the mock engine, goes to san-logs/ and fails
+  # the job. The address job also runs the libFuzzer parser harness (fixed seed).
+  sanitizers:
+    name: sanitizer (${{ matrix.sanitizer }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        sanitizer: [address, thread]
+    steps:
+      - uses: actions/checkout@v6
+
+      # The runner's high mmap randomisation breaks the sanitizer runtimes'
+      # fixed memory layout ("unexpected memory mapping").
+      - name: Lower ASLR entropy for the sanitizers
+        run: sudo sysctl -w vm.mmap_rnd_bits=28
+
+      - name: Configure
+        shell: bash
+        run: |
+          mkdir -p ci-logs
+          set -o pipefail
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCHESSGUI_BUILD_GUI=OFF \
+            -DCHESSGUI_SANITIZE=${{ matrix.sanitizer }} 2>&1 | tee ci-logs/configure.log
+
+      - name: Build
+        shell: bash
+        run: |
+          set -o pipefail
+          cmake --build build --parallel 2>&1 | tee ci-logs/build.log
+
+      - name: Test
+        shell: bash
+        run: |
+          # Test groups left out under a sanitizer: only ones that fail solely
+          # because everything runs several times slower (timing assertions).
+          # Empty for now: every group passes under both sanitizers.
+          SKIP=""
+          mkdir -p san-logs
+          export ASAN_OPTIONS="log_path=$PWD/san-logs/asan:strict_string_checks=1:detect_stack_use_after_return=1"
+          export UBSAN_OPTIONS="log_path=$PWD/san-logs/ubsan:print_stacktrace=1"
+          export TSAN_OPTIONS="log_path=$PWD/san-logs/tsan:second_deadlock_stack=1"
+          status=0
+          set -o pipefail
+          if [ -n "$SKIP" ]; then
+            ctest --test-dir build --output-on-failure -E "$SKIP" 2>&1 | tee ci-logs/test.log || status=1
+          else
+            ctest --test-dir build --output-on-failure 2>&1 | tee ci-logs/test.log || status=1
+          fi
+          if compgen -G "san-logs/*" > /dev/null; then
+            cat san-logs/* | tee ci-logs/sanitizer.log
+            status=1
+          fi
+          exit $status
+
+      - name: Build the parser fuzzer (clang, libFuzzer)
+        if: matrix.sanitizer == 'address'
+        shell: bash
+        run: |
+          set -o pipefail
+          # libFuzzer lives in clang's runtime package
+          sudo apt-get update
+          sudo apt-get install -y clang libclang-rt-dev \
+            || sudo apt-get install -y clang "libclang-rt-$(clang -dumpversion | cut -d. -f1)-dev"
+          CC=clang CXX=clang++ cmake -S . -B build-fuzz -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCHESSGUI_BUILD_GUI=OFF -DCHESSGUI_FUZZ=ON 2>&1 | tee ci-logs/fuzz-configure.log
+          cmake --build build-fuzz --parallel --target fuzz_parsers 2>&1 | tee ci-logs/fuzz-build.log
+
+      # A fixed seed and number of runs: the same inputs on every CI run, so a failure
+      # here is caused by the change under test, not by luck.
+      - name: Fuzz the parsers (200,000 inputs, fixed seed)
+        if: matrix.sanitizer == 'address'
+        shell: bash
+        run: |
+          # seed corpus: the first byte picks the parser (see tests/fuzz/fuzz_parsers.cpp)
+          mkdir -p fuzz-corpus fuzz-artifacts
+          printf '\000rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1' > fuzz-corpus/fen
+          printf '\001exf6e.p.' > fuzz-corpus/san
+          printf '\002[Event "x"]\n\n1. e4 {[%%eval 0.2]} e5 (1... c5 $1) 2. Nf3 *\n' > fuzz-corpus/pgn
+          printf '\003r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - hmvc 2; id "x";\n' > fuzz-corpus/epd
+          printf '\004[Event "a"]\n\n1. d4 Nf6 2. c4 e6 *\n' > fuzz-corpus/pgnbook
+          printf '\005depth 12 multipv 2 score cp 34 lowerbound nodes 1000 pv e2e4 e7e5' > fuzz-corpus/info
+          printf '\006e2e4: 20' > fuzz-corpus/divide
+          set -o pipefail
+          ./build-fuzz/tests/fuzz_parsers -seed=1 -runs=200000 -max_total_time=300 -timeout=10 -artifact_prefix=fuzz-artifacts/ \
+            fuzz-corpus 2>&1 | tail -n 200 | tee ci-logs/fuzz.log
+
+      - name: Annotate failure logs
+        if: failure()
+        shell: bash
+        run: .github/scripts/annotate-logs.sh
+
+      - name: Upload fuzzer crash inputs
+        if: failure() && matrix.sanitizer == 'address'
+        uses: actions/upload-artifact@v6
+        with:
+          name: fuzz-artifacts
+          path: fuzz-artifacts/
+          if-no-files-found: ignore
+
   # The composite action at the repo root, run the way an engine repository
   # would use it, but with the chess-cli built here (no release needed).
   github-action:

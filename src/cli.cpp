@@ -29,7 +29,7 @@ namespace fs = std::filesystem;
 
 // Exit codes (documented in --help).
 enum Exit { EXIT_OK = 0, EXIT_H0 = 1, EXIT_FAILED = 1, EXIT_USAGE = 2, EXIT_INCONCLUSIVE = 3, EXIT_NO_ESTIMATE = 4,
-            EXIT_INTERRUPTED = 130 };
+            EXIT_RUN_ERROR = 5, EXIT_INTERRUPTED = 130 };
 
 static std::atomic<bool> g_interrupted{false};
 static void onSignal(int){ g_interrupted = true; }
@@ -93,8 +93,9 @@ Output:
 
 Exit codes: 0 success (sprt: H1 accepted), 1 a check failed (perft mismatch, movegen bug found,
 UCI check FAIL; sprt: H0 accepted), 2 usage or start error, 3 sprt: games ran out before a
-decision, 4 elo-estimate: no estimate (the run failed a check), 130 interrupted (the match state
-file can resume it).
+decision, 4 elo-estimate: no estimate (the run failed a check), 5 match/sprt: the run stopped on
+an error (an engine could not be started, a file could not be written), 130 interrupted (the
+match state file can resume it).
 )";
 
 static bool parseDouble(const std::string& s, double& v){
@@ -124,7 +125,7 @@ struct CliOptions {
     MatchSettings s;
     bool sprt = false, json = false, verbose = false;
     int report = 10;
-    bool gamesSet = false;
+    bool gamesSet = false, concurrencySet = false;
 };
 
 static int fail(const std::string& msg){
@@ -193,7 +194,7 @@ static int parseMatchArgs(const std::vector<std::string>& a, CliOptions& o){
         else if (k == "--tc"){ if (!need(i, v) || !parseTc(v, o.s.tc)) return fail("bad --tc (use seconds, e.g. 10+0.1)"); }
         else if (k == "--margin"){ if (!need(i, v) || !parseInt(v, o.s.timeMarginMs) || o.s.timeMarginMs < 0) return fail("bad --margin"); }
         else if (k == "--games"){ if (!need(i, v) || !parseInt(v, o.s.gamesPerPairing) || o.s.gamesPerPairing < 1) return fail("bad --games"); o.gamesSet = true; }
-        else if (k == "--concurrency"){ if (!need(i, v) || !parseInt(v, o.s.concurrency) || o.s.concurrency < 1) return fail("bad --concurrency"); }
+        else if (k == "--concurrency"){ if (!need(i, v) || !parseInt(v, o.s.concurrency) || o.s.concurrency < 1) return fail("bad --concurrency"); o.concurrencySet = true; }
         else if (k == "--book"){ if (!need(i, v)) return fail("--book needs a file"); o.s.bookPath = v; }
         else if (k == "--book-plies"){ if (!need(i, v) || !parseInt(v, o.s.bookPlies) || o.s.bookPlies < 0) return fail("bad --book-plies"); }
         else if (k == "--random") o.s.bookRandom = true;
@@ -243,7 +244,7 @@ static int parseMatchArgs(const std::vector<std::string>& a, CliOptions& o){
         o.s.sprtEnabled = true;
         if (!o.gamesSet) o.s.gamesPerPairing = 20000;
     }
-    if (o.s.concurrency < 1) o.s.concurrency = std::max(1, (int)std::thread::hardware_concurrency() / 2);
+    if (!o.concurrencySet) o.s.concurrency = std::max(1, (int)std::thread::hardware_concurrency() / 2);
     return -1;
 }
 
@@ -327,6 +328,7 @@ static int runMatch(const std::vector<std::string>& args, bool sprt){
         auto s = runner.snapshot();
         std::fprintf(out, "%s: %d games, %d in parallel, %s\n", tournamentModeName(o.s.mode), s.gamesTotal,
                      o.s.concurrency, o.s.tc.label().c_str());
+        for (auto& wn : s.warnings) std::fprintf(stderr, "chess-cli: warning: %s\n", wn.c_str());
         lastReport = s.gamesDone / o.report;     // don't report resumed games as progress
     }
     while (runner.running()){
@@ -338,6 +340,7 @@ static int runMatch(const std::vector<std::string>& args, bool sprt){
     follow(s);
     printFinal(out, s, o.s);
     if (o.json) std::printf("%s\n", runner.resultsJson().c_str());
+    if (!s.error.empty()){ std::fprintf(stderr, "chess-cli: %s\n", s.error.c_str()); return EXIT_RUN_ERROR; }
     if (g_interrupted){
         if (!o.s.statePath.empty()) std::fprintf(out, "Interrupted; run the same command again to resume.\n");
         return EXIT_INTERRUPTED;
@@ -668,7 +671,7 @@ static int cmdEloEstimate(const std::vector<std::string>& args){
 }
 
 int main(int argc, char** argv){
-    std::vector<std::string> args(argv + 1, argv + argc);
+    std::vector<std::string> args = utf8Args(argc, argv);
     if (!args.empty() && (args[0] == "--version" || args[0] == "version")){
         std::printf("chess-cli %s\n", CHESSGUI_VERSION);
         return EXIT_OK;

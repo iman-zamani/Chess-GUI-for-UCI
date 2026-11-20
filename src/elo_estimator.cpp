@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <filesystem>
 #include <cmath>
 #include <fstream>
 #include <sstream>
@@ -128,7 +129,7 @@ bool EloModel::loadJson(const std::string& text, std::string* err){
 }
 
 bool EloModel::load(const std::string& path, std::string* err){
-    std::ifstream f(path, std::ios::binary);
+    std::ifstream f(std::filesystem::u8path(path), std::ios::binary);
     if (!f){ if (err) *err = "cannot open " + path; return false; }
     std::stringstream ss; ss << f.rdbuf();
     return loadJson(ss.str(), err);
@@ -495,6 +496,7 @@ EloResult runEloEstimate(const EngineConfig& cfg, const EloModel& m, const EloOp
 
     UciEngine e;
     e.setPlacement(pl);
+    e.setCancel(opt.abort);
     if (!e.start(cfg)){ fail.error = "cannot start the engine: " + e.lastError(); return fail; }
     d.placementApplied = e.placementApplied();
     if (!e.powerThrottlingOff())
@@ -618,6 +620,7 @@ EloResult runEloEstimate(const EngineConfig& cfg, const EloModel& m, const EloOp
                 if (suspendedMsSince(sm) > 500) continue;          // the computer slept: ask again
                 break;
             }
+            if (aborted()) break;                                  // a search cut short by Stop is no answer
             EngineInfo inf = e.lastInfo();
             a.depth = inf.depth; a.nodes = inf.nodes; a.timeMs = inf.timeMs;
             a.wallMs = e.lastSearchWallMs(); a.stopped = e.lastSearchStopped();

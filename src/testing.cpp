@@ -2,6 +2,7 @@
 #include "testing.hpp"
 #include "openings.hpp"
 #include <algorithm>
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <chrono>
@@ -37,7 +38,7 @@ std::vector<PerftCase> builtinPerftSuite(){
 
 std::vector<PerftCase> loadEpdSuite(const std::string& path){
     std::vector<PerftCase> out;
-    std::ifstream f(path);
+    std::ifstream f(std::filesystem::u8path(path));
     if (!f) return out;
     std::string line;
     while (std::getline(f, line)){
@@ -80,6 +81,7 @@ std::vector<PerftResult> runEnginePerftSuite(
             PerftResult r;
             r.fen = c.fen; r.depth = d.first; r.expected = d.second;
             r.engineNodes = eng.goPerft(d.first);
+            if (abortFlag) return out;               // (a cancelled perft is no result)
             r.pass = (r.engineNodes >= 0 && (uint64_t)r.engineNodes == r.expected);
             out.push_back(r);
             i++;
@@ -255,6 +257,7 @@ AccuracyReport runAccuracyTest(
             if (m.cpLoss < 0) m.cpLoss = 0;
             if (m.cpLoss > 1000) m.cpLoss = 1000;
         }
+        if (abortFlag) break;                        // a search cut short by Stop is no answer
         if (m.cpLoss >= 300) rep.blunders++;
         else if (m.cpLoss >= 100) rep.mistakes++;
         else if (m.cpLoss >= 50) rep.inaccuracies++;

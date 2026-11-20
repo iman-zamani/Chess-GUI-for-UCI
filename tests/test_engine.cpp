@@ -4,6 +4,7 @@
 #include "engine_config.hpp"
 #include "uci_engine.hpp"
 #include "settings.hpp"
+#include <atomic>
 #include <chrono>
 #include <thread>
 #include <filesystem>
@@ -140,6 +141,206 @@ TEST_CASE("engine/quit-kills-unresponsive-engine"){
     e.quit();
     CHECK(!e.alive());
     CHECK(std::chrono::steady_clock::now() - t0 < std::chrono::seconds(3));
+}
+
+TEST_CASE("engine/search-that-never-answers-is-not-left-running"){
+    auto ms = [](std::chrono::steady_clock::time_point t){
+        return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t).count(); };
+    const std::string start = Position::startpos().toFEN();
+    // an engine that thinks far beyond the time we give the call, but obeys "stop"
+    { EngineConfig c; c.path = kMock; c.args = {"--think-ms", "20000"};
+      UciEngine e;
+      REQUIRE(e.start(c));
+      e.setPosition(start, {});
+      auto t0 = std::chrono::steady_clock::now();
+      CHECK(e.goClock(1000, 1000, 0, 0, 150).empty());           // gives up after 150 ms...
+      CHECK(ms(t0) < 1000);
+      CHECK(e.searching());                                      // ...and says the search is still on
+      CHECK(e.stopSearch(1000));
+      CHECK(!e.searching());
+      // the old bestmove was consumed: the next search gets its own answer
+      e.setPosition("4k3/8/8/8/8/8/8/4K2R b - - 0 1", {});
+      e.sendRaw("setoption name Clear Hash");
+      std::string bm = e.goDepth(1, 3000);
+      Move m;
+      CHECK(Position::fromFEN("4k3/8/8/8/8/8/8/4K2R b - - 0 1").uciToMove(bm, m));
+      CHECK(e.alive()); }
+    // forgetting to stop it: the next command does, before anything else is sent
+    { EngineConfig c; c.path = kMock; c.args = {"--think-ms", "20000"};
+      UciEngine e;
+      REQUIRE(e.start(c));
+      e.setPosition(start, {});
+      CHECK(e.goClock(1000, 1000, 0, 0, 100).empty());
+      e.setPosition("4k3/8/8/8/8/8/8/4K2R b - - 0 1", {});
+      CHECK(!e.searching());
+      CHECK(e.alive()); }
+    // an engine that ignores "stop" as well can't be brought back in step: it is ended
+    { EngineConfig c; c.path = kMock; c.args = {"--think-ms", "20000", "--ignore-stop"};
+      UciEngine e;
+      REQUIRE(e.start(c));
+      e.setPosition(start, {});
+      CHECK(e.goClock(1000, 1000, 0, 0, 100).empty());
+      CHECK(!e.stopSearch(300));
+      CHECK(e.searching());
+      auto t0 = std::chrono::steady_clock::now();
+      e.newGame();                                               // stop (2 s), then quit / kill (1 s)
+      CHECK(!e.alive());                                         // (also with unread output left in the queue)
+      CHECK(ms(t0) < 5000); }
+    // a caller can cancel the wait
+    { EngineConfig c; c.path = kMock; c.args = {"--think-ms", "20000"};
+      UciEngine e;
+      REQUIRE(e.start(c));
+      e.setPosition(start, {});
+      std::atomic<bool> cancel{false};
+      std::thread t([&]{ std::this_thread::sleep_for(std::chrono::milliseconds(150)); cancel = true; });
+      auto t0 = std::chrono::steady_clock::now();
+      CHECK(e.goClock(60000, 60000, 0, 0, -1, &cancel).empty());
+      CHECK(ms(t0) < 1500);
+      t.join(); }
+}
+
+TEST_CASE("engine/cancel-ends-every-wait-promptly"){
+    auto ms = [](std::chrono::steady_clock::time_point t){
+        return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t).count(); };
+    const std::string start = Position::startpos().toFEN();
+    // sets the flag after 200 ms, as Stop in a tool would
+    auto cancelSoon = [](std::atomic<bool>& f){
+        return std::thread([&f]{ std::this_thread::sleep_for(std::chrono::milliseconds(200)); f = true; }); };
+    for (bool ignoreStop : {false, true}){
+        EngineConfig c; c.path = kMock; c.args = {"--think-ms", "20000"};
+        if (ignoreStop) c.args.push_back("--ignore-stop");
+        for (int kind = 0; kind < 2; kind++){
+            std::atomic<bool> cancel{false};
+            UciEngine e;
+            e.setCancel(&cancel);
+            REQUIRE(e.start(c));
+            e.setPosition(start, {});
+            std::thread t = cancelSoon(cancel);
+            auto t0 = std::chrono::steady_clock::now();
+            // (the mock never gets past depth 60, and thinks the whole movetime)
+            std::string bm = kind == 0 ? e.goDepth(100, 600000) : e.goMovetime(20000);
+            long long took = ms(t0);
+            t.join();
+            CHECK(bm.empty());
+            CHECK_MSG(took < 2500, (kind == 0 ? "goDepth" : "goMovetime") << (ignoreStop ? " (ignores stop)" : "")
+                                   << " returned after " << took << " ms");
+            CHECK(!e.searching());
+            if (ignoreStop) CHECK(!e.alive());                   // ended: it can't answer out of step
+            else CHECK(e.alive());
+            CHECK(e.goDepth(1, 3000).empty());                   // no new search while the flag is set
+            CHECK(!e.isReady(3000));
+        }
+    }
+    // perft: the mock counts in its input loop, so it reads neither "stop" nor "quit" meanwhile
+    { std::atomic<bool> cancel{false};
+      UciEngine e;
+      e.setCancel(&cancel);
+      REQUIRE(e.start(kMock));
+      e.setPosition(start, {});
+      std::thread t = cancelSoon(cancel);
+      auto t0 = std::chrono::steady_clock::now();
+      CHECK_EQ(e.goPerft(7, 600000), -1LL);
+      long long took = ms(t0);
+      t.join();
+      CHECK_MSG(took < 2500, "goPerft returned after " << took << " ms");
+      CHECK(!e.alive()); }
+    // the start handshake
+    { std::atomic<bool> cancel{false};
+      EngineConfig c; c.path = kMock; c.args = {"--slow-uciok", "20000"};
+      UciEngine e;
+      e.setCancel(&cancel);
+      std::thread t = cancelSoon(cancel);
+      auto t0 = std::chrono::steady_clock::now();
+      CHECK(!e.start(c));
+      long long took = ms(t0);
+      t.join();
+      CHECK_MSG(took < 2500, "start returned after " << took << " ms");
+      CHECK(!e.alive()); }
+}
+
+TEST_CASE("engine/search-time-is-taken-when-the-reply-arrives"){
+    EngineConfig c; c.path = kMock; c.args = {"--think-ms", "120"};
+    UciEngine e;
+    REQUIRE(e.start(c));
+    e.setPosition(Position::startpos().toFEN(), {});
+    CHECK(!e.goClock(5000, 5000, 0, 0).empty());
+    CHECK(e.lastSearchWallMs() >= 100);
+    CHECK(e.lastSearchWallMs() < 1000);
+    CHECK(!e.searching());
+}
+
+TEST_CASE("engine/a-reply-read-late-keeps-its-arrival-time"){
+    // The caller gives up before the reply (as a delayed match worker would), the bestmove
+    // arrives meanwhile and waits in the queue: stopSearch() returns it, timed when it
+    // arrived (about 120 ms), not when it was read (after 600 ms).
+    EngineConfig c; c.path = kMock; c.args = {"--think-ms", "120"};
+    UciEngine e;
+    REQUIRE(e.start(c));
+    e.setPosition(Position::startpos().toFEN(), {});
+    CHECK(e.goClock(5000, 5000, 0, 0, 1).empty());
+    CHECK(e.searching());
+    std::this_thread::sleep_for(std::chrono::milliseconds(600));
+    std::string bm;
+    CHECK(e.stopSearch(1000, &bm));
+    Move m;
+    CHECK(Position::startpos().uciToMove(bm, m));
+    CHECK(e.lastSearchWallMs() >= 100);
+    CHECK_MSG(e.lastSearchWallMs() < 500, "measured " << e.lastSearchWallMs() << " ms");
+    CHECK(!e.searching());
+}
+
+TEST_CASE("engine/user-data-dir"){
+    // (the default, a folder in the user's Documents, is not touched by the tests)
+    fs::path own = scratchDir("data-dir") / "sub";
+#ifdef _WIN32
+    _putenv_s("CHESSGUI_DATA_DIR", own.u8string().c_str());
+#else
+    setenv("CHESSGUI_DATA_DIR", own.u8string().c_str(), 1);
+#endif
+    CHECK(fs::u8path(userDataDir()) == own);
+    CHECK(!fs::exists(own));                                       // naming it creates nothing
+#ifdef _WIN32
+    _putenv_s("CHESSGUI_DATA_DIR", "");
+#else
+    unsetenv("CHESSGUI_DATA_DIR");
+#endif
+}
+
+TEST_CASE("engine/paths-outside-ascii"){
+    // An engine, its working folder and data files in a folder whose name no single-byte
+    // code page holds: everything is UTF-8 inside the program and wide at the Windows APIs.
+    fs::path dir = scratchDir("unicode") / fs::u8path(u8"\u0434\u0432\u0438\u0436\u043e\u043a \u265e \u68cb");
+    fs::create_directories(dir);
+    fs::path exe = dir / fs::path(kMock).filename();
+    fs::copy_file(fs::u8path(kMock), exe, fs::copy_options::overwrite_existing);
+    EngineConfig c; c.path = exe.u8string(); c.args = {"--report-env"};
+    UciEngine e;
+    REQUIRE(e.start(c));
+    CHECK(sameDir(reported(e, "cwd"), dir));
+    e.setPosition(Position::startpos().toFEN(), {});
+    CHECK(!e.goMovetime(20).empty());
+    e.quit();
+    // registry file in that folder
+    EngineRegistry reg; reg.add(c);
+    std::string err;
+    REQUIRE(reg.save((dir / "engines.json").u8string(), &err));
+    EngineRegistry back;
+    REQUIRE(back.load((dir / "engines.json").u8string(), &err));
+    REQUIRE(back.engines().size() == 1);
+    CHECK_EQ(back.engines()[0].path, c.path);
+    // the override of the data folder
+#ifdef _WIN32
+    _wputenv_s(L"CHESSGUI_DATA_DIR", (dir / "data").wstring().c_str());
+#else
+    setenv("CHESSGUI_DATA_DIR", (dir / "data").u8string().c_str(), 1);
+#endif
+    CHECK(fs::u8path(userDataDir()) == dir / "data");
+    CHECK_EQ(envUtf8("CHESSGUI_DATA_DIR"), (dir / "data").u8string());
+#ifdef _WIN32
+    _wputenv_s(L"CHESSGUI_DATA_DIR", L"");
+#else
+    unsetenv("CHESSGUI_DATA_DIR");
+#endif
 }
 
 TEST_CASE("engine/info-line-parsing"){

@@ -13,7 +13,7 @@
 namespace fs = std::filesystem;
 
 std::string ToolsScreen::saveDialog(const std::string& stem){
-    return filedialog::saveFile("Save", app_.settings().lastSaveDir + "/" + stem + "_" + ui::timeStamp() + ".txt",
+    return filedialog::saveFile("Save", ui::saveDir(app_.settings()) + "/" + stem + "_" + ui::timeStamp() + ".txt",
                                 {"Text files", "*.txt", "All files", "*"});
 }
 
@@ -118,6 +118,7 @@ void ToolsScreen::runEnginePerft(const EngineConfig& cfg){
     job_.start("Engine move-generator test: " + cfg.name, [this, cfg, suitePath, maxDepth](ui::Job& j){
         UciEngine e;
         e.setRole("Perft test");
+        e.setCancel(&j.abortFlag());
         if (!e.start(cfg)){ j.log("FAIL: cannot start engine: " + e.lastError()); return; }
         j.log("Engine: " + e.name());
         auto suite = loadEpdSuite(suitePath);
@@ -190,6 +191,7 @@ void ToolsScreen::runBisect(const EngineConfig& cfg, const std::string& fen, int
     job_.start("Perft bisection: " + cfg.name + ", depth " + std::to_string(depth), [this, cfg, fen, depth](ui::Job& j){
         UciEngine e;
         e.setRole("Perft bisection");
+        e.setCancel(&j.abortFlag());
         if (!e.start(cfg)){
             j.log("FAIL: cannot start engine: " + e.lastError());
             std::lock_guard<std::mutex> lk(resMx_);
@@ -319,7 +321,7 @@ void ToolsScreen::drawUciCheckResult(){
     ImGui::SameLine();
     if (ImGui::SmallButton("Save report...")){
         std::string path = saveDialog("uci_check");
-        if (!path.empty()){ std::ofstream f(path); f << checkReportText(name, res); app_.toast(f ? "Saved " + path : "Could not write " + path); }
+        if (!path.empty()){ std::ofstream f(fs::u8path(path)); f << checkReportText(name, res); app_.toast(f ? "Saved " + path : "Could not write " + path); }
     }
     float h = ImGui::GetContentRegionAvail().y * 0.65f;
     ImGui::BeginChild("checks", ImVec2(0, h), ImGuiChildFlags_Borders);
@@ -394,6 +396,7 @@ void ToolsScreen::runAccuracy(const EngineConfig& tee, const EngineConfig& ree){
                [tee, ree, cnt, tms, rms, mpv](ui::Job& j){
         UciEngine te, re;
         te.setRole("Accuracy test"); re.setRole("Reference");
+        te.setCancel(&j.abortFlag()); re.setCancel(&j.abortFlag());
         if (!te.start(tee)){ j.log("FAIL: cannot start test engine: " + te.lastError()); return; }
         if (!re.start(ree)){ j.log("FAIL: cannot start reference engine: " + re.lastError()); return; }
         te.newGame(); re.newGame();
@@ -592,11 +595,10 @@ void ToolsScreen::drawEloResult(){
     if (r.ok){
         auto save = [&](const char* ext, const std::string& text){
             std::string path = filedialog::saveFile("Save the Elo estimate",
-                app_.settings().lastSaveDir + "/elo_" + ui::timeStamp() + ext, {ext[1] == 'j' ? "JSON" : "Markdown", std::string("*") + ext});
+                ui::saveDir(app_.settings()) + "/elo_" + ui::timeStamp() + ext, {ext[1] == 'j' ? "JSON" : "Markdown", std::string("*") + ext});
             if (path.empty()){
                 if (filedialog::available()) return;
-                std::error_code ec; fs::create_directories("games", ec);
-                path = "games/elo_" + ui::timeStamp() + ext;
+                path = ui::saveDir(app_.settings()) + "/elo_" + ui::timeStamp() + ext;
             }
             std::ofstream f(fs::u8path(path)); f << text;
             app_.toast(f ? "Saved " + path : "Could not write " + path);

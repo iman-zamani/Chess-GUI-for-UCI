@@ -12,6 +12,9 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
+#include <shellapi.h>
+#include <shlobj.h>
+#include <knownfolders.h>
 #elif defined(__APPLE__)
 #include <mach-o/dyld.h>
 #include <climits>
@@ -186,18 +189,92 @@ std::string joinArgs(const std::vector<std::string>& args){
     return s;
 }
 
-std::string userConfigDir(){
-    if (const char* o = std::getenv("CHESSGUI_CONFIG_DIR")) if (*o) return o;
+std::vector<std::string> utf8Args(int argc, char** argv){
+    std::vector<std::string> out;
+#ifdef _WIN32
+    (void)argc; (void)argv;
+    int n = 0;
+    if (wchar_t** w = CommandLineToArgvW(GetCommandLineW(), &n)){
+        for (int i = 1; i < n; i++) out.push_back(fs::path(w[i]).u8string());
+        LocalFree(w);
+    }
+#else
+    for (int i = 1; i < argc; i++) out.push_back(argv[i]);
+#endif
+    return out;
+}
+
+std::string envUtf8(const char* name){
+#ifdef _WIN32
+    std::wstring w(name, name + std::strlen(name));          // names are ASCII
+    const wchar_t* v = _wgetenv(w.c_str());
+    return v ? fs::path(v).u8string() : std::string();
+#else
+    const char* v = std::getenv(name);
+    return v ? v : "";
+#endif
+}
+
+#ifdef _WIN32
+// Where a known folder really is: Documents can be redirected or moved to OneDrive, so it is
+// not always %USERPROFILE%\Documents. Empty if the shell can't say.
+static fs::path knownFolder(const KNOWNFOLDERID& id){
+    PWSTR p = nullptr;
+    fs::path r;
+    if (SUCCEEDED(SHGetKnownFolderPath(id, KF_FLAG_DEFAULT, nullptr, &p)) && p) r = fs::path(std::wstring(p));
+    CoTaskMemFree(p);                                        // freed whether the call succeeded or not
+    return r;
+}
+#endif
+
+// The default data folder, worked out once: it does not change while the program runs, and
+// the match screen asks for it every frame.
+static fs::path defaultDataDir(){
+    fs::path base;
+    std::error_code ec;
+#ifdef _WIN32
+    fs::path docs = knownFolder(FOLDERID_Documents);
+    if (!docs.empty()) base = docs / "Chess-GUI-for-UCI";
+    else if (std::string home = envUtf8("USERPROFILE"); !home.empty()) base = fs::u8path(home) / "Documents" / "Chess-GUI-for-UCI";
+#elif defined(__APPLE__)
+    std::string home = envUtf8("HOME");
+    if (!home.empty()) base = fs::u8path(home) / "Documents" / "Chess-GUI-for-UCI";
+#else
+    std::string home = envUtf8("HOME"), xdg = envUtf8("XDG_DATA_HOME");
+    if (!home.empty() && fs::is_directory(fs::u8path(home) / "Documents", ec)) base = fs::u8path(home) / "Documents" / "Chess-GUI-for-UCI";
+    else if (!xdg.empty()) base = fs::u8path(xdg) / "chess-gui-for-uci";
+    else if (!home.empty()) base = fs::u8path(home) / ".local" / "share" / "chess-gui-for-uci";
+#endif
+    if (base.empty()) base = fs::temp_directory_path(ec) / "Chess-GUI-for-UCI";
+    return base;
+}
+
+std::string userDataDir(){
+    std::string over = envUtf8("CHESSGUI_DATA_DIR");
+    if (!over.empty()) return over;
+    static const std::string def = defaultDataDir().u8string();
+    return def;
+}
+
+static fs::path defaultConfigDir(){
     fs::path base;
 #ifdef _WIN32
-    if (const char* a = std::getenv("APPDATA")) base = fs::u8path(a) / "ChessGUIforUCI";
+    fs::path roaming = knownFolder(FOLDERID_RoamingAppData);
+    if (!roaming.empty()) base = roaming / "ChessGUIforUCI";
+    else if (std::string a = envUtf8("APPDATA"); !a.empty()) base = fs::u8path(a) / "ChessGUIforUCI";
 #elif defined(__APPLE__)
-    if (const char* h = std::getenv("HOME")) base = fs::u8path(h) / "Library" / "Application Support" / "ChessGUIforUCI";
+    if (std::string h = envUtf8("HOME"); !h.empty()) base = fs::u8path(h) / "Library" / "Application Support" / "ChessGUIforUCI";
 #else
-    if (const char* x = std::getenv("XDG_CONFIG_HOME"); x && *x) base = fs::u8path(x) / "chess-gui-for-uci";
-    else if (const char* h = std::getenv("HOME")) base = fs::u8path(h) / ".config" / "chess-gui-for-uci";
+    if (std::string x = envUtf8("XDG_CONFIG_HOME"); !x.empty()) base = fs::u8path(x) / "chess-gui-for-uci";
+    else if (std::string h = envUtf8("HOME"); !h.empty()) base = fs::u8path(h) / ".config" / "chess-gui-for-uci";
 #endif
     if (base.empty()) base = fs::current_path() / "config";
+    return base;
+}
+
+std::string userConfigDir(){
+    if (std::string o = envUtf8("CHESSGUI_CONFIG_DIR"); !o.empty()) return o;
+    static const fs::path base = defaultConfigDir();         // (asked for on every frame of some screens)
     std::error_code ec;
     fs::create_directories(base, ec);
     return base.u8string();
@@ -225,7 +302,7 @@ std::string executableDir(){
 
 std::string findResource(const std::string& rel){
     std::vector<fs::path> roots;
-    if (const char* e = std::getenv("CHESSGUI_RESOURCES")) roots.push_back(fs::u8path(e));
+    if (std::string e = envUtf8("CHESSGUI_RESOURCES"); !e.empty()) roots.push_back(fs::u8path(e));
     std::string exe = executableDir();
     if (!exe.empty()){
         roots.push_back(fs::u8path(exe) / "Resources");

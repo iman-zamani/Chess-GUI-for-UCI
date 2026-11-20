@@ -147,6 +147,134 @@ TEST_CASE("match/time-loss-and-crash-recorded"){
     CHECK_EQ(snap.standings[1].losses, 4);
 }
 
+TEST_CASE("match/hung-engine-costs-one-clock-not-two"){
+    // An engine that thinks 20 s on a 0.4 s clock loses on time after 0.4 s + margin, is told to
+    // stop, and plays its next game normally. (The wait used to be both clocks + 20 s.)
+    MatchSettings s = base();
+    s.engines = {mock("Alpha"), mock("Slow")};
+    s.engines[1].args = {"--name", "Slow", "--think-ms", "20000"};
+    s.tc = {400, 0};
+    s.gamesPerPairing = 2;
+    s.concurrency = 1;
+    auto t0 = std::chrono::steady_clock::now();
+    MatchRunner r;
+    REQUIRE(r.start(s));
+    waitDone(r);
+    double sec = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+    auto snap = r.snapshot();
+    CHECK_EQ(snap.gamesDone, 2);
+    CHECK_EQ(snap.pairings[0].timeLosses, 2);
+    CHECK_EQ(snap.standings[0].wins, 2);
+    CHECK_MSG(sec < 6.0, "two games took " << sec << " s");
+    bool stopped = false, restarted = false;
+    for (auto& l : snap.log){ stopped |= l.find("it stopped when told to") != std::string::npos; restarted |= l.find("Restarted") != std::string::npos; }
+    CHECK(stopped);
+    CHECK(!restarted);
+
+    // one that ignores "stop" as well is ended and started again for the next game
+    s.engines[1].args = {"--name", "Deaf", "--think-ms", "20000", "--ignore-stop"};
+    s.engines[1].name = "Deaf";
+    t0 = std::chrono::steady_clock::now();
+    MatchRunner r2;
+    REQUIRE(r2.start(s));
+    waitDone(r2);
+    sec = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+    snap = r2.snapshot();
+    CHECK_EQ(snap.gamesDone, 2);
+    CHECK_EQ(snap.pairings[0].timeLosses, 2);
+    CHECK_MSG(sec < 10.0, "two games took " << sec << " s");
+    bool ended = false; restarted = false;
+    for (auto& l : snap.log){ ended |= l.find("was ended") != std::string::npos; restarted |= l.find("Restarted Deaf") != std::string::npos; }
+    CHECK(ended);
+    CHECK(restarted);
+}
+
+TEST_CASE("match/stop-does-not-wait-for-the-move"){
+    MatchSettings s = base();
+    s.engines = {mock("A"), mock("B")};
+    for (auto& e : s.engines) e.args = {"--name", e.name, "--think-ms", "20000"};
+    s.tc = {60000, 0};
+    MatchRunner r;
+    REQUIRE(r.start(s));
+    std::this_thread::sleep_for(std::chrono::milliseconds(400));
+    auto t0 = std::chrono::steady_clock::now();
+    r.abort();
+    double sec = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+    CHECK_MSG(sec < 4.0, "abort took " << sec << " s");
+    CHECK_EQ(r.snapshot().gamesDone, 0);                            // aborted games don't count
+}
+
+TEST_CASE("match/engine-that-cannot-start-stops-the-run"){
+    MatchSettings s = base();
+    s.engines[1].path = kMock + "-does-not-exist";
+    s.gamesPerPairing = 20;
+    MatchRunner r;
+    REQUIRE(r.start(s));
+    waitDone(r);
+    auto snap = r.snapshot();
+    CHECK_EQ(snap.gamesDone, 0);                                    // no string of forfeits
+    CHECK(snap.error.find("could not be started") != std::string::npos);
+    CHECK(!snap.finished);
+}
+
+TEST_CASE("match/moves-without-a-score-adjudicate-nothing"){
+    AdjudicationConfig a; a.draw = true; a.drawAfterMove = 1; a.drawCp = 10; a.drawMoves = 2;
+    a.resign = true; a.resignCp = 500; a.resignMoves = 2;
+    const int none = MatchRunner::kNoScore;
+    GameResult r = GameResult::ONGOING;
+    CHECK(MatchRunner::adjudicate(a, {0, 3, -2, 1}, 30, r));
+    CHECK(!MatchRunner::adjudicate(a, {0, none, -2, 1}, 30, r));       // an engine that reports no score is not "0.00"
+    CHECK(!MatchRunner::adjudicate(a, {none, none, none, none}, 30, r));
+    CHECK(MatchRunner::adjudicate(a, {600, 700, 800, 900}, 30, r));
+    CHECK(!MatchRunner::adjudicate(a, {600, none, 800, 900}, 30, r));
+}
+
+TEST_CASE("match/output-that-cannot-be-written-is-an-error"){
+    // a folder that can't exist (its parent is a file): refused before any game is played
+    fs::path blocker = tmpFile("blocker");
+    { std::ofstream f(blocker); f << "x"; }
+    MatchSettings s = base();
+    s.pgnPath = (blocker / "games.pgn").u8string();
+    MatchRunner r;
+    std::string err;
+    CHECK(!r.start(s, &err));
+    CHECK(err.find("cannot write the PGN file") != std::string::npos);
+    CHECK(!r.running());
+    s.pgnPath.clear();
+    s.statePath = (blocker / "run.state.json").u8string();
+    CHECK(!r.start(s, &err));
+    CHECK(err.find("cannot write the state file") != std::string::npos);
+
+    // the folder disappears during the run: the run stops and says so, instead of playing on
+    fs::path dir = fs::temp_directory_path() / "chessgui-match-vanishing";
+    std::error_code ec;
+    fs::remove_all(dir, ec);
+    s = base();
+    s.gamesPerPairing = 200;
+    s.concurrency = 1;
+    s.pgnPath = (dir / "games.pgn").u8string();
+    s.statePath = (dir / "run.state.json").u8string();
+    MatchRunner r2;
+    REQUIRE(r2.start(s, &err));
+    CHECK(fs::exists(dir / "run.state.json"));                      // written once at the start
+    for (int i = 0; i < 400 && r2.snapshot().gamesDone < 2; i++) std::this_thread::sleep_for(std::chrono::milliseconds(25));
+    // A plain file takes the folder's place, so every later write fails on every system. The
+    // worker may be writing into the folder at this moment (and on Windows a file that is open
+    // can't be deleted), so this is retried until it holds.
+    for (int i = 0; i < 400 && !fs::is_regular_file(dir, ec); i++){
+        fs::remove_all(dir, ec);
+        { std::ofstream f(dir); f << "x"; }
+        if (!fs::is_regular_file(dir, ec)) std::this_thread::sleep_for(std::chrono::milliseconds(25));
+    }
+    REQUIRE(fs::is_regular_file(dir, ec));
+    waitDone(r2);
+    auto snap = r2.snapshot();
+    CHECK(snap.error.find("cannot write") != std::string::npos);
+    CHECK(snap.gamesDone < 200);
+    CHECK(!snap.finished);
+    fs::remove_all(dir, ec);
+}
+
 TEST_CASE("match/sprt-stops-early"){
     MatchSettings s = base();
     s.engines = {mock("Good"), mock("Broken", {"--illegal-bestmove"})};

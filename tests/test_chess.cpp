@@ -1,6 +1,7 @@
 /* Chess-GUI-for-UCI — tests for the core rules: perft, FEN, SAN, PGN. GPL-2.0 */
 #include "testlib.hpp"
 #include "chess.hpp"
+#include "game_tree.hpp"
 #include "testing.hpp"
 #include <algorithm>
 
@@ -83,6 +84,31 @@ TEST_CASE("fen/rejects-garbage"){
     Position::fromFEN("4k3/8/8/8/8/8/8/4K3 w - - 0 1", &ok); CHECK(ok);
 }
 
+TEST_CASE("fen/validation"){
+    bool ok = true;
+    // ranks must have eight squares each, not just 64 in total
+    Position::fromFEN("rnbqkbnr/pppppppp/9/7/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", &ok); CHECK(!ok);
+    Position::fromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPPRNBQKBNR w KQkq - 0 1", &ok); CHECK(!ok);      // seven ranks
+    Position::fromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR/8 w KQkq - 0 1", &ok); CHECK(!ok);   // nine
+    Position::fromFEN("rnbqkbnr/pppppppp/08/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", &ok); CHECK(!ok);
+    // the side to move is w or b
+    Position::fromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR x KQkq - 0 1", &ok); CHECK(!ok);
+    // en passant: only behind a pawn that can just have made a double push
+    Position::fromFEN("4k3/8/8/8/3p4/8/8/4K2R b - e3 0 1", &ok); CHECK(!ok);            // no white pawn on e4
+    Position::fromFEN("4k3/8/8/8/3pP3/8/8/4K2R b - e6 0 1", &ok); CHECK(!ok);           // wrong rank for Black to move
+    Position::fromFEN("4k3/8/8/8/3pP3/4N3/8/4K3 b - e3 0 1", &ok); CHECK(!ok);          // the square is occupied
+    Position::fromFEN("4k3/8/8/8/3pP3/8/4N3/4K3 b - e3 0 1", &ok); CHECK(!ok);          // the pawn's start square is occupied
+    Position::fromFEN("4k3/8/8/8/3pP3/8/8/4K3 b - z9 0 1", &ok); CHECK(!ok);
+    Position p = Position::fromFEN("4k3/8/8/8/3pP3/8/8/4K3 b - e3 0 1", &ok); CHECK(ok);
+    CHECK_EQ(p.epSquare, nameToSquare("e3"));
+    // written after every double push, capturable or not (as most programs do)
+    p = Position::fromFEN("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1", &ok); CHECK(ok);
+    CHECK_EQ(p.epSquare, nameToSquare("e3"));
+    // a negative halfmove clock is read as 0
+    p = Position::fromFEN("4k3/8/8/8/8/8/8/4K3 w - - -5 1", &ok); CHECK(ok);
+    CHECK_EQ(p.halfmoveClock, 0);
+}
+
 TEST_CASE("fen/counters-and-ep"){
     bool ok = false;
     Position p = Position::fromFEN("rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3", &ok);
@@ -93,6 +119,22 @@ TEST_CASE("fen/counters-and-ep"){
     REQUIRE(p.uciToMove("e5f6", m));
     CHECK(m.isEnPassant);
     CHECK_EQ(p.moveToSAN(m), std::string("exf6"));
+}
+
+// Found by fuzz/fen under UBSan: counters of INT_MAX were accepted, and the
+// next move overflowed them (signed overflow in makeMove).
+TEST_CASE("fen/huge-counters"){
+    bool ok = false;
+    Position p = Position::fromFEN("4k3/8/8/8/8/8/8/R3K3 b - - 2147483647 2147483647", &ok);
+    REQUIRE(ok);
+    CHECK_EQ(p.halfmoveClock, 1000000);
+    CHECK_EQ(p.fullmoveNumber, 1000000);
+    std::vector<Move> legal;
+    p.generateLegal(legal);
+    REQUIRE(!legal.empty());
+    p.makeMove(legal[0]);
+    CHECK_EQ(p.halfmoveClock, 1000001);
+    CHECK_EQ(p.fullmoveNumber, 1000001);
 }
 
 TEST_CASE("san/roundtrip-all-legal-moves"){
@@ -181,6 +223,96 @@ TEST_CASE("pgn/illegal-move-reported"){
     CHECK(err.find("Ke3") != std::string::npos);
 }
 
+TEST_CASE("pgn/comments-over-lines"){
+    Game g; std::string err;
+    // a { } comment continued on a line that starts with '[' is not a tag line
+    auto games = parsePGN("[Event \"x\"]\n[Result \"*\"]\n\n1. e4 {\n[%clk 0:01:00] } e5 2. Nf3 Nc6 *\n");
+    REQUIRE(games.size() == 1);
+    REQUIRE(gameFromPGN(games[0], g, &err));
+    CHECK_EQ(g.sans.size(), (size_t)4);
+    // ';' comments run to the end of their line only
+    games = parsePGN("[Event \"x\"]\n\n1. e4 ; a comment with a } brace\ne5 2. Nf3 Nc6 *\n");
+    REQUIRE(games.size() == 1);
+    REQUIRE(gameFromPGN(games[0], g, &err));
+    CHECK_EQ(g.sans.size(), (size_t)4);
+    // '%' escape lines are skipped; a ';' inside { } is text
+    games = parsePGN("[Event \"x\"]\n\n1. e4 {so; what} e5\n% an escape line\n2. Nf3 *\n");
+    REQUIRE(games.size() == 1);
+    REQUIRE(gameFromPGN(games[0], g, &err));
+    CHECK_EQ(g.sans.size(), (size_t)3);
+    // two games stay two games
+    games = parsePGN("[Event \"a\"]\n\n1. e4 {x\n[y]} *\n\n[Event \"b\"]\n\n1. d4 *\n");
+    CHECK_EQ(games.size(), (size_t)2);
+    // a comment with clock lines after a blank line is still one comment
+    games = parsePGN("[Event \"x\"]\n\n1. e4 {\n\n[%clk 0:01:00]\n} e5 *\n");
+    REQUIRE(games.size() == 1);
+    CHECK(games[0].problem.empty());
+    REQUIRE(gameFromPGN(games[0], g, &err));
+    CHECK_EQ(g.sans.size(), (size_t)2);
+}
+
+TEST_CASE("pgn/unclosed-comment-is-reported"){
+    const char* text =
+        "[Event \"a\"]\n\n1. e4 e5 2. Nf3 {oops 2... Nc6 *\n\n"
+        "[Event \"b\"]\n\n1. d4 d5 *\n\n"
+        "[Event \"c\"]\n\n1. c4 {fine} e5 *\n";
+    auto games = parsePGN(text);
+    REQUIRE(games.size() == 3);
+    CHECK(!games[0].problem.empty());
+    CHECK(games[1].problem.empty());
+    CHECK(games[2].problem.empty());
+    CHECK_EQ(games[1].event, std::string("b"));
+    Game g; std::string err;
+    CHECK(!gameFromPGN(games[0], g, &err));
+    CHECK(err.find("comment") != std::string::npos);
+    CHECK_EQ(g.sans.size(), (size_t)3);                      // the moves before it are kept
+    GameTree t; err.clear();
+    CHECK(!gameTreeFromPGN(games[0], t, &err));
+    CHECK(err.find("comment") != std::string::npos);
+    REQUIRE(gameFromPGN(games[1], g, &err));
+    CHECK_EQ(g.sans.size(), (size_t)2);
+    REQUIRE(gameFromPGN(games[2], g, &err));
+    CHECK_EQ(g.sans.size(), (size_t)2);
+    // an open comment at the end of the file
+    games = parsePGN("[Event \"x\"]\n\n1. e4 e5 {never closed\n");
+    REQUIRE(games.size() == 1);
+    CHECK(!gameFromPGN(games[0], g, &err));
+    CHECK_EQ(g.sans.size(), (size_t)2);
+}
+
+TEST_CASE("san/variants-are-read"){
+    Move m;
+    Position p = Position::fromFEN("r3k2r/pppq1ppp/2n2n2/3pp3/3PP3/2N2N2/PPPQ1PPP/R3K2R w KQkq - 0 8");
+    for (const char* s : {"O-O", "0-0", "O-O+", "0-0-0", "O-O-O"}) CHECK(p.sanToMove(s, m));
+    REQUIRE(p.sanToMove("0-0", m)); CHECK_EQ(p.moveToUCI(m), std::string("e1g1"));
+    // more disambiguation than needed, long algebraic, capture marks
+    REQUIRE(p.sanToMove("Nfxe5", m)); CHECK_EQ(p.moveToUCI(m), std::string("f3e5"));
+    REQUIRE(p.sanToMove("Nf3xe5", m)); CHECK_EQ(p.moveToUCI(m), std::string("f3e5"));
+    REQUIRE(p.sanToMove("Nf3-g5", m)); CHECK_EQ(p.moveToUCI(m), std::string("f3g5"));
+    REQUIRE(p.sanToMove("d4xe5", m)); CHECK_EQ(p.moveToUCI(m), std::string("d4e5"));
+    REQUIRE(p.sanToMove("dxe5!?", m)); CHECK_EQ(p.moveToUCI(m), std::string("d4e5"));
+    REQUIRE(p.sanToMove("a2-a4", m)); CHECK_EQ(p.moveToUCI(m), std::string("a2a4"));
+    // not enough disambiguation, wrong piece, nonsense
+    p = Position::fromFEN("4k3/8/8/8/8/2N3N1/8/4K3 w - - 0 1");
+    CHECK(!p.sanToMove("Ne4", m));                              // two knights can go there
+    CHECK(p.sanToMove("Nce4", m));
+    CHECK(!p.sanToMove("Be4", m));
+    CHECK(!p.sanToMove("", m)); CHECK(!p.sanToMove("x", m)); CHECK(!p.sanToMove("Zz9", m)); CHECK(!p.sanToMove("e9", m));
+    // promotions: with '=', without it, lower case; a missing piece is not a move
+    p = Position::fromFEN("3k4/1P6/8/8/8/8/8/4K3 w - - 0 1");
+    for (const char* s : {"b8=Q", "b8Q", "b8=Q+", "b8q"}){ REQUIRE(p.sanToMove(s, m)); CHECK_EQ(p.moveToUCI(m), std::string("b7b8q")); }
+    REQUIRE(p.sanToMove("b8=N", m)); CHECK_EQ(p.moveToUCI(m), std::string("b7b8n"));
+    CHECK(!p.sanToMove("b8", m));
+    CHECK(!p.sanToMove("b8=K", m));
+    // en passant with its suffix
+    p = Position::fromFEN("rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3");
+    REQUIRE(p.sanToMove("exf6e.p.", m)); CHECK(m.isEnPassant);
+    // the b-file pawn and the bishop are told apart by case
+    p = Position::fromFEN("4k3/8/8/8/8/2p5/1P1B4/4K3 w - - 0 1");
+    REQUIRE(p.sanToMove("bxc3", m)); CHECK_EQ(p.moveToUCI(m), std::string("b2c3"));
+    REQUIRE(p.sanToMove("Bxc3", m)); CHECK_EQ(p.moveToUCI(m), std::string("d2c3"));
+}
+
 TEST_CASE("game/draw-rules"){
     Game g;
     // threefold repetition by knight shuffles
@@ -199,6 +331,26 @@ TEST_CASE("game/draw-rules"){
     Move m; REQUIRE(g.pos.uciToMove("e3d1", m)); g.tryMove(m);
     CHECK(g.result == GameResult::DRAW);
     CHECK(g.reason == ResultReason::INSUFFICIENT);
+}
+
+TEST_CASE("game/repetition-and-en-passant"){
+    auto play = [](Game& g, std::initializer_list<const char*> moves){
+        for (const char* u : moves){ Move m; REQUIRE(g.pos.uciToMove(u, m)); REQUIRE(g.tryMove(m)); }
+    };
+    // After 1.e4 nobody can capture en passant, so the en-passant square does not make that
+    // position different from its later occurrences: the third one is a draw.
+    Game g; g.reset(Position::startpos());
+    play(g, {"e2e4", "g8f6", "g1f3", "f6g8", "f3g1"});
+    CHECK(g.result == GameResult::ONGOING);                    // second occurrence
+    play(g, {"g8f6", "g1f3", "f6g8", "f3g1"});
+    CHECK(g.result == GameResult::DRAW);
+    CHECK(g.reason == ResultReason::REPETITION);
+    // When the capture is possible, the position with the right is a different one.
+    g.reset(Position::fromFEN("4k1n1/3p4/8/4P3/8/8/8/4K1N1 b - - 0 1"));
+    play(g, {"d7d5", "g1f3", "g8f6", "f3g1", "f6g8", "g1f3", "g8f6", "f3g1", "f6g8"});
+    CHECK(g.result == GameResult::ONGOING);                    // without the right: only twice
+    play(g, {"g1f3"});                                         // (this one is there for the third time)
+    CHECK(g.result == GameResult::DRAW);
 }
 
 TEST_CASE("game/undo"){

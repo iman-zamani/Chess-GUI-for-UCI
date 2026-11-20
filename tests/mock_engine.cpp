@@ -403,7 +403,8 @@ int main(int argc, char** argv){
             out("option name UCI_Chess960 type check default false");
             if (F.reportEnv){
                 std::error_code ec;
-                out("info string cwd " + std::filesystem::current_path(ec).string());
+                // u8string: on Windows string() throws for a folder name outside the code page
+                out("info string cwd " + std::filesystem::current_path(ec).u8string());
                 std::string all;
                 for (int i = 1; i < argc; i++) all += std::string(i > 1 ? "|" : "") + argv[i];
                 out("info string args " + all);

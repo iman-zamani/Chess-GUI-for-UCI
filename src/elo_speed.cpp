@@ -59,6 +59,7 @@ SpeedMeasurement measureSpeed(const std::vector<SpeedReference>& refs, const Spe
         if (path.empty()){ s.error = "not installed (Resources/reference/" + ref.file + ")"; m.engines.push_back(s); continue; }
         UciEngine e;
         e.setPlacement(opt.placement);
+        e.setCancel(opt.abort);
         auto open = [&]{
             if (!e.start(path)){ s.error = "does not start: " + e.lastError(); return false; }
             if (!startsWithNoCase(e.name(), ref.idName)){
