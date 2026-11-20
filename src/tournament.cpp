@@ -123,7 +123,13 @@ std::string matchGamePgn(const Game& g, const MatchSettings& s, int round, int g
                          const std::vector<std::string>& comments, const std::string& termination, int bookPlies){
     std::ostringstream o;
     char date[16]; std::time_t t = std::time(nullptr);
-    std::strftime(date, sizeof date, "%Y.%m.%d", std::localtime(&t));
+    std::tm local{};                                     // (std::localtime shares one buffer: games end in parallel)
+#ifdef _WIN32
+    localtime_s(&local, &t);
+#else
+    localtime_r(&t, &local);
+#endif
+    std::strftime(date, sizeof date, "%Y.%m.%d", &local);
     auto tag = [&](const char* k, const std::string& v){
         std::string e;
         for (char c : v){ if (c == '"' || c == '\\') e += '\\'; e += c; }

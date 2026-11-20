@@ -122,7 +122,13 @@ std::string clockText(long long ms){
 
 std::string timeStamp(){
     char b[32]; std::time_t t = std::time(nullptr);
-    std::strftime(b, sizeof b, "%Y%m%d_%H%M%S", std::localtime(&t));
+    std::tm local{};                                     // (not std::localtime: it shares one buffer between threads)
+#ifdef _WIN32
+    localtime_s(&local, &t);
+#else
+    localtime_r(&t, &local);
+#endif
+    std::strftime(b, sizeof b, "%Y%m%d_%H%M%S", &local);
     return b;
 }
 
