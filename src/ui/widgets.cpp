@@ -126,7 +126,13 @@ std::string timeStamp(){
     return b;
 }
 
-std::string saveDir(const Settings& s){ return s.lastSaveDir.empty() ? userDataDir() : s.lastSaveDir; }
+std::string shownSaveDir(const Settings& s){ return s.lastSaveDir.empty() ? userDataDir() : s.lastSaveDir; }
+std::string saveDir(const Settings& s){
+    std::string d = shownSaveDir(s);
+    std::error_code ec;
+    std::filesystem::create_directories(std::filesystem::u8path(d), ec);
+    return d;
+}
 
 // ---------------------------------------------------------------- Job
 void Job::start(const std::string& title, std::function<void(Job&)> fn){

@@ -55,8 +55,9 @@ std::string joinArgs(const std::vector<std::string>& args);   // inverse of spli
 // CHESSGUI_CONFIG_DIR overrides it (used by the tests).
 std::string userConfigDir();
 
-// Where match records and saved games go unless the user chose another folder (created on
-// demand): Documents/Chess-GUI-for-UCI on Windows and macOS; on Linux ~/Documents/Chess-GUI-for-UCI
+// Where match records and saved games go unless the user chose another folder (not created
+// here: whoever writes there does that, so showing the path touches nothing):
+// Documents/Chess-GUI-for-UCI on Windows and macOS; on Linux ~/Documents/Chess-GUI-for-UCI
 // when ~/Documents exists, else $XDG_DATA_HOME/chess-gui-for-uci (default ~/.local/share/...).
 // Never the program's own folder: an app bundle, an AppImage or Program Files can't be written.
 // CHESSGUI_DATA_DIR overrides it (used by the tests).

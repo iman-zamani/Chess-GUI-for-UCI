@@ -343,7 +343,7 @@ void MatchScreen::drawRulesBlock(){
 
 std::string MatchScreen::outputBase() const{
     const Settings& st = app_.settings();
-    return ui::saveDir(st) + "/match_<date>";
+    return ui::shownSaveDir(st) + "/match_<date>";          // every frame: must not touch the disk
 }
 
 void MatchScreen::drawSetup(){
@@ -399,7 +399,6 @@ void MatchScreen::start(bool resume){
     s.sprt = setup_.sprtCfg;
     if (!resume){
         std::string dir = ui::saveDir(st);
-        std::error_code ec; fs::create_directories(fs::u8path(dir), ec);
         std::string stem = dir + "/match_" + ui::timeStamp();
         lastPgnPath_ = setup_.savePgn ? stem + ".pgn" : "";
         lastStatePath_ = setup_.resumable ? stem + ".state.json" : "";

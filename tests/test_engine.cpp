@@ -238,7 +238,8 @@ TEST_CASE("engine/user-data-dir"){
 #else
     setenv("CHESSGUI_DATA_DIR", own.u8string().c_str(), 1);
 #endif
-    CHECK(sameDir(userDataDir(), own));                            // created on demand
+    CHECK(fs::u8path(userDataDir()) == own);
+    CHECK(!fs::exists(own));                                       // naming it creates nothing
 #ifdef _WIN32
     _putenv_s("CHESSGUI_DATA_DIR", "");
 #else
@@ -274,7 +275,7 @@ TEST_CASE("engine/paths-outside-ascii"){
 #else
     setenv("CHESSGUI_DATA_DIR", (dir / "data").u8string().c_str(), 1);
 #endif
-    CHECK(sameDir(userDataDir(), dir / "data"));
+    CHECK(fs::u8path(userDataDir()) == dir / "data");
     CHECK_EQ(envUtf8("CHESSGUI_DATA_DIR"), (dir / "data").u8string());
 #ifdef _WIN32
     _wputenv_s(L"CHESSGUI_DATA_DIR", L"");

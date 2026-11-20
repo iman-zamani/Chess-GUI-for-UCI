@@ -213,29 +213,32 @@ std::string envUtf8(const char* name){
 #endif
 }
 
-std::string userDataDir(){
+// The default data folder, worked out once: it does not change while the program runs, and
+// the match screen asks for it every frame.
+static fs::path defaultDataDir(){
     fs::path base;
-    std::string over = envUtf8("CHESSGUI_DATA_DIR");
-    if (!over.empty()) base = fs::u8path(over);
-    else {
-        std::error_code ec;
-#ifdef _WIN32
-        std::string home = envUtf8("USERPROFILE");
-        if (!home.empty()) base = fs::u8path(home) / "Documents" / "Chess-GUI-for-UCI";
-#elif defined(__APPLE__)
-        std::string home = envUtf8("HOME");
-        if (!home.empty()) base = fs::u8path(home) / "Documents" / "Chess-GUI-for-UCI";
-#else
-        std::string home = envUtf8("HOME"), xdg = envUtf8("XDG_DATA_HOME");
-        if (!home.empty() && fs::is_directory(fs::u8path(home) / "Documents", ec)) base = fs::u8path(home) / "Documents" / "Chess-GUI-for-UCI";
-        else if (!xdg.empty()) base = fs::u8path(xdg) / "chess-gui-for-uci";
-        else if (!home.empty()) base = fs::u8path(home) / ".local" / "share" / "chess-gui-for-uci";
-#endif
-        if (base.empty()) base = fs::temp_directory_path(ec) / "Chess-GUI-for-UCI";
-    }
     std::error_code ec;
-    fs::create_directories(base, ec);
-    return base.u8string();
+#ifdef _WIN32
+    std::string home = envUtf8("USERPROFILE");
+    if (!home.empty()) base = fs::u8path(home) / "Documents" / "Chess-GUI-for-UCI";
+#elif defined(__APPLE__)
+    std::string home = envUtf8("HOME");
+    if (!home.empty()) base = fs::u8path(home) / "Documents" / "Chess-GUI-for-UCI";
+#else
+    std::string home = envUtf8("HOME"), xdg = envUtf8("XDG_DATA_HOME");
+    if (!home.empty() && fs::is_directory(fs::u8path(home) / "Documents", ec)) base = fs::u8path(home) / "Documents" / "Chess-GUI-for-UCI";
+    else if (!xdg.empty()) base = fs::u8path(xdg) / "chess-gui-for-uci";
+    else if (!home.empty()) base = fs::u8path(home) / ".local" / "share" / "chess-gui-for-uci";
+#endif
+    if (base.empty()) base = fs::temp_directory_path(ec) / "Chess-GUI-for-UCI";
+    return base;
+}
+
+std::string userDataDir(){
+    std::string over = envUtf8("CHESSGUI_DATA_DIR");
+    if (!over.empty()) return over;
+    static const std::string def = defaultDataDir().u8string();
+    return def;
 }
 
 std::string userConfigDir(){
