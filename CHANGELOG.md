@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased
+## 1.3.0 (2026-11-21)
+
+A second way to rate an engine: from real games against Stockfish's strength levels, at the
+time control you choose. The estimate from positions stays as the quick check.
 
 ### Elo from games
 - New: **Tools > Elo from games** and `chess-cli elo-games` rate an engine from games against
