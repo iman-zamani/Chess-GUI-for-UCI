@@ -2,6 +2,7 @@
 #include "testing.hpp"
 #include "openings.hpp"
 #include <algorithm>
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <chrono>
@@ -37,7 +38,7 @@ std::vector<PerftCase> builtinPerftSuite(){
 
 std::vector<PerftCase> loadEpdSuite(const std::string& path){
     std::vector<PerftCase> out;
-    std::ifstream f(path);
+    std::ifstream f(std::filesystem::u8path(path));
     if (!f) return out;
     std::string line;
     while (std::getline(f, line)){

@@ -55,6 +55,17 @@ std::string joinArgs(const std::vector<std::string>& args);   // inverse of spli
 // CHESSGUI_CONFIG_DIR overrides it (used by the tests).
 std::string userConfigDir();
 
+// Where match records and saved games go unless the user chose another folder (created on
+// demand): Documents/Chess-GUI-for-UCI on Windows and macOS; on Linux ~/Documents/Chess-GUI-for-UCI
+// when ~/Documents exists, else $XDG_DATA_HOME/chess-gui-for-uci (default ~/.local/share/...).
+// Never the program's own folder: an app bundle, an AppImage or Program Files can't be written.
+// CHESSGUI_DATA_DIR overrides it (used by the tests).
+std::string userDataDir();
+// The program's arguments (without argv[0]) as UTF-8. On Windows argv is in the ANSI code
+// page, which can't hold every path: the arguments are taken from the wide command line.
+std::vector<std::string> utf8Args(int argc, char** argv);
+// An environment variable as UTF-8 ("" if unset): Windows keeps them as UTF-16.
+std::string envUtf8(const char* name);
 // Directory of the running executable ("" if unknown).
 std::string executableDir();
 // A bundled resource, e.g. "elo/model.json": looked up in $CHESSGUI_RESOURCES,

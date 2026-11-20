@@ -170,6 +170,9 @@ target_link_libraries(chesscore PUBLIC Threads::Threads nlohmann_json::nlohmann_
 if(APPLE)
     target_link_libraries(chesscore PUBLIC "-framework IOKit" "-framework CoreFoundation")   # KeepAwake
 endif()
+if(WIN32)
+    target_link_libraries(chesscore PUBLIC shell32)                                          # CommandLineToArgvW
+endif()
 
 # Headless command-line tool: core only, no SFML.
 add_executable(chess-cli src/cli.cpp)

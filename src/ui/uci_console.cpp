@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
+#include <filesystem>
 #include <fstream>
 
 static const size_t kMaxLines = 50000;
@@ -94,7 +95,7 @@ void UciConsole::draw(bool* open, const std::function<std::string()>& saveDialog
     if (ImGui::Button("Save...") && cur && saveDialog){
         std::string path = saveDialog();
         if (!path.empty()){
-            std::ofstream f(path);
+            std::ofstream f(std::filesystem::u8path(path));
             f << "# " << cur->label << "\n" << visibleText(*cur);
             toast(f ? "Saved " + path : "Could not write " + path);
         }

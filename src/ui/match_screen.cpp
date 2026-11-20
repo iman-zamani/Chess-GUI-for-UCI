@@ -343,7 +343,7 @@ void MatchScreen::drawRulesBlock(){
 
 std::string MatchScreen::outputBase() const{
     const Settings& st = app_.settings();
-    return (st.lastSaveDir.empty() ? std::string("games") : st.lastSaveDir) + "/match_<date>";
+    return ui::saveDir(st) + "/match_<date>";
 }
 
 void MatchScreen::drawSetup(){
@@ -398,7 +398,7 @@ void MatchScreen::start(bool resume){
     s.sprtEnabled = setup_.sprt && setup_.mode == TournamentMode::Match;
     s.sprt = setup_.sprtCfg;
     if (!resume){
-        std::string dir = st.lastSaveDir.empty() ? std::string("games") : st.lastSaveDir;
+        std::string dir = ui::saveDir(st);
         std::error_code ec; fs::create_directories(fs::u8path(dir), ec);
         std::string stem = dir + "/match_" + ui::timeStamp();
         lastPgnPath_ = setup_.savePgn ? stem + ".pgn" : "";
@@ -430,12 +430,11 @@ void MatchScreen::savePgns(){
     if (pgns.empty()){ app_.toast("No finished games yet"); return; }
     Settings& st = app_.settings();
     std::string path = filedialog::saveFile("Save games as PGN",
-        (st.lastSaveDir.empty() ? std::string("games") : st.lastSaveDir) + "/match_" + ui::timeStamp() + ".pgn",
+        ui::saveDir(st) + "/match_" + ui::timeStamp() + ".pgn",
         {"PGN files", "*.pgn"});
     if (path.empty()){
         if (filedialog::available()) return;
-        std::error_code ec; fs::create_directories("games", ec);
-        path = "games/match_" + ui::timeStamp() + ".pgn";
+        path = ui::saveDir(st) + "/match_" + ui::timeStamp() + ".pgn";
     } else st.lastSaveDir = fs::u8path(path).parent_path().u8string();
     std::ofstream f(fs::u8path(path));
     for (auto& p : pgns) f << p << "\n";
@@ -445,12 +444,11 @@ void MatchScreen::savePgns(){
 void MatchScreen::exportJson(){
     Settings& st = app_.settings();
     std::string path = filedialog::saveFile("Export results as JSON",
-        (st.lastSaveDir.empty() ? std::string("games") : st.lastSaveDir) + "/match_" + ui::timeStamp() + ".json",
+        ui::saveDir(st) + "/match_" + ui::timeStamp() + ".json",
         {"JSON files", "*.json"});
     if (path.empty()){
         if (filedialog::available()) return;
-        std::error_code ec; fs::create_directories("games", ec);
-        path = "games/match_" + ui::timeStamp() + ".json";
+        path = ui::saveDir(st) + "/match_" + ui::timeStamp() + ".json";
     }
     std::ofstream f(fs::u8path(path));
     f << runner_.resultsJson() << "\n";

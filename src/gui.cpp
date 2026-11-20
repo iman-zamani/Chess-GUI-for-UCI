@@ -272,7 +272,7 @@ void App::drawFrame(){
     }
     ImGui::End();
     console_.draw(&showConsole_,
-        [this](){ return filedialog::saveFile("Save UCI log", settings_.lastSaveDir + "/uci_" + ui::timeStamp() + ".log",
+        [this](){ return filedialog::saveFile("Save UCI log", ui::saveDir(settings_) + "/uci_" + ui::timeStamp() + ".log",
                                               {"Log files", "*.log *.txt", "All files", "*"}); },
         [this](const std::string& m){ toast(m); });
     drawAbout();

@@ -1,6 +1,8 @@
 /* Chess-GUI-for-UCI — opening book tests. GPL-2.0 */
 #include "testlib.hpp"
 #include "openings.hpp"
+#include <filesystem>
+#include <fstream>
 #include <set>
 
 TEST_CASE("openings/epd-with-opcodes"){
@@ -54,6 +56,19 @@ TEST_CASE("openings/pgn-variants-and-broken-games"){
     r = parsePgnBook("[Event \"a\"]\n\n1. e4 e5 2. Ke3 Nc6 *\n", 2);
     CHECK_EQ(r.truncated, 0);
     CHECK_EQ(r.openings[0].moves.size(), (size_t)2);
+}
+
+TEST_CASE("openings/book-in-a-folder-outside-ascii"){
+    namespace fs = std::filesystem;
+    fs::path dir = fs::temp_directory_path() / fs::u8path(u8"chessgui-\u00e9checs-\u68cb");
+    std::error_code ec;
+    fs::create_directories(dir, ec);
+    fs::path book = dir / fs::u8path(u8"d\u00e9buts.epd");
+    { std::ofstream f(book); f << "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1\n"; }
+    auto r = loadOpeningBook(book.u8string());
+    CHECK(r.error.empty());
+    CHECK_EQ(r.openings.size(), (size_t)1);
+    fs::remove_all(dir, ec);
 }
 
 TEST_CASE("openings/schedule"){

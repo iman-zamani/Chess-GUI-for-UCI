@@ -1,6 +1,7 @@
 /* Chess-GUI-for-UCI — opening books for engine matches. GPL-2.0 */
 #include "openings.hpp"
 #include <algorithm>
+#include <filesystem>
 #include <fstream>
 #include <numeric>
 #include <random>
@@ -103,7 +104,7 @@ std::string BookLoadResult::warning() const{
 }
 
 BookLoadResult loadOpeningBook(const std::string& path, BookFormat fmt, int plies){
-    std::ifstream f(path, std::ios::binary);
+    std::ifstream f(std::filesystem::u8path(path), std::ios::binary);
     if (!f){ BookLoadResult r; r.error = "cannot open " + path; return r; }
     std::stringstream ss; ss << f.rdbuf();
     if (fmt == BookFormat::Auto){

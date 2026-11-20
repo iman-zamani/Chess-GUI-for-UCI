@@ -1,9 +1,11 @@
 /* Chess-GUI-for-UCI — shared ImGui widgets and helpers. GPL-2.0 */
 #include "ui/widgets.hpp"
+#include "settings.hpp"
 #include <misc/cpp/imgui_stdlib.h>
 #include <cfloat>
 #include <cstdio>
 #include <ctime>
+#include <filesystem>
 #include <fstream>
 
 namespace ui {
@@ -124,6 +126,8 @@ std::string timeStamp(){
     return b;
 }
 
+std::string saveDir(const Settings& s){ return s.lastSaveDir.empty() ? userDataDir() : s.lastSaveDir; }
+
 // ---------------------------------------------------------------- Job
 void Job::start(const std::string& title, std::function<void(Job&)> fn){
     abort();
@@ -179,7 +183,7 @@ void jobPanel(Job& job, const std::function<std::string()>& saveDialog,
     if (ImGui::SmallButton("Save log...") && saveDialog){
         std::string path = saveDialog();
         if (!path.empty()){
-            std::ofstream f(path);
+            std::ofstream f(std::filesystem::u8path(path));
             f << job.text();
             if (toast) toast(f ? "Saved " + path : "Could not write " + path);
         }

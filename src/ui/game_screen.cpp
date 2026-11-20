@@ -645,7 +645,7 @@ void GameScreen::draw(){
     if (!review_.empty()){
         ImGui::SeparatorText("Game review");
         ImGui::BeginChild("review", ImVec2(0, std::max(em * 8, ImGui::GetContentRegionAvail().y)));
-        ui::jobPanel(review_, [&](){ return filedialog::saveFile("Save review", st.lastSaveDir + "/review_" + ui::timeStamp() + ".txt",
+        ui::jobPanel(review_, [&](){ return filedialog::saveFile("Save review", ui::saveDir(st) + "/review_" + ui::timeStamp() + ".txt",
                                                                  {"Text files", "*.txt"}); },
                      [&](const std::string& m){ app_.toast(m); });
         ImGui::EndChild();
@@ -1195,12 +1195,11 @@ void GameScreen::drawPgnDialogs(){
 void GameScreen::savePgn(){
     Settings& st = app_.settings();
     std::string path = filedialog::saveFile("Save game as PGN",
-        (st.lastSaveDir.empty() ? std::string("games") : st.lastSaveDir) + "/game_" + ui::timeStamp() + ".pgn",
+        ui::saveDir(st) + "/game_" + ui::timeStamp() + ".pgn",
         {"PGN files", "*.pgn"});
     if (path.empty()){
         if (filedialog::available()) return;                 // cancelled
-        std::error_code ec; fs::create_directories("games", ec);
-        path = "games/game_" + ui::timeStamp() + ".pgn";
+        path = ui::saveDir(st) + "/game_" + ui::timeStamp() + ".pgn";
     } else { st.lastSaveDir = fs::u8path(path).parent_path().u8string(); app_.saveSettings(); }
     tree_.white = game_.whiteName; tree_.black = game_.blackName;
     if (game_.result != GameResult::ONGOING) tree_.result = game_.resultString();

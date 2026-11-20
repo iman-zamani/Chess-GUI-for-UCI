@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <filesystem>
 #include <cmath>
 #include <fstream>
 #include <sstream>
@@ -128,7 +129,7 @@ bool EloModel::loadJson(const std::string& text, std::string* err){
 }
 
 bool EloModel::load(const std::string& path, std::string* err){
-    std::ifstream f(path, std::ios::binary);
+    std::ifstream f(std::filesystem::u8path(path), std::ios::binary);
     if (!f){ if (err) *err = "cannot open " + path; return false; }
     std::stringstream ss; ss << f.rdbuf();
     return loadJson(ss.str(), err);

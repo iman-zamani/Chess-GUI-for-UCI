@@ -142,6 +142,61 @@ TEST_CASE("engine/quit-kills-unresponsive-engine"){
     CHECK(std::chrono::steady_clock::now() - t0 < std::chrono::seconds(3));
 }
 
+TEST_CASE("engine/user-data-dir"){
+    // (the default, a folder in the user's Documents, is not touched by the tests)
+    fs::path own = scratchDir("data-dir") / "sub";
+#ifdef _WIN32
+    _putenv_s("CHESSGUI_DATA_DIR", own.u8string().c_str());
+#else
+    setenv("CHESSGUI_DATA_DIR", own.u8string().c_str(), 1);
+#endif
+    CHECK(sameDir(userDataDir(), own));                            // created on demand
+#ifdef _WIN32
+    _putenv_s("CHESSGUI_DATA_DIR", "");
+#else
+    unsetenv("CHESSGUI_DATA_DIR");
+#endif
+}
+
+
+TEST_CASE("engine/paths-outside-ascii"){
+    // An engine, its working folder and data files in a folder whose name no single-byte
+    // code page holds: everything is UTF-8 inside the program and wide at the Windows APIs.
+    fs::path dir = scratchDir("unicode") / fs::u8path(u8"\u0434\u0432\u0438\u0436\u043e\u043a \u265e \u68cb");
+    fs::create_directories(dir);
+    fs::path exe = dir / fs::path(kMock).filename();
+    fs::copy_file(fs::u8path(kMock), exe, fs::copy_options::overwrite_existing);
+    EngineConfig c; c.path = exe.u8string(); c.args = {"--report-env"};
+    UciEngine e;
+    REQUIRE(e.start(c));
+    CHECK(sameDir(reported(e, "cwd"), dir));
+    e.setPosition(Position::startpos().toFEN(), {});
+    CHECK(!e.goMovetime(20).empty());
+    e.quit();
+    // registry file in that folder
+    EngineRegistry reg; reg.add(c);
+    std::string err;
+    REQUIRE(reg.save((dir / "engines.json").u8string(), &err));
+    EngineRegistry back;
+    REQUIRE(back.load((dir / "engines.json").u8string(), &err));
+    REQUIRE(back.engines().size() == 1);
+    CHECK_EQ(back.engines()[0].path, c.path);
+    // the override of the data folder
+#ifdef _WIN32
+    _wputenv_s(L"CHESSGUI_DATA_DIR", (dir / "data").wstring().c_str());
+#else
+    setenv("CHESSGUI_DATA_DIR", (dir / "data").u8string().c_str(), 1);
+#endif
+    CHECK(sameDir(userDataDir(), dir / "data"));
+    CHECK_EQ(envUtf8("CHESSGUI_DATA_DIR"), (dir / "data").u8string());
+#ifdef _WIN32
+    _wputenv_s(L"CHESSGUI_DATA_DIR", L"");
+#else
+    unsetenv("CHESSGUI_DATA_DIR");
+#endif
+}
+
+
 TEST_CASE("engine/info-line-parsing"){
     EngineInfo inf; std::vector<PvLine> pvs;
     parseInfoLine("info depth 24 seldepth 31 multipv 1 score cp 37 lowerbound nodes 1234567 nps 987654 "
