@@ -417,6 +417,7 @@ void GameScreen::startReview(){
         auto worker = [&](int k){
             UciEngine e;
             e.setRole("Review " + std::to_string(k + 1));
+            e.setCancel(&j.abortFlag());
             if (!e.start(cfg)){ j.log("FAIL: cannot start engine: " + e.lastError()); return; }
             { std::lock_guard<std::mutex> lk(nameMx); engineName = e.name(); }
             e.newGame();

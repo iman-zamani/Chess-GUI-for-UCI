@@ -92,6 +92,13 @@ PerftDivide enginePerftDivide(UciEngine& e, const std::string& fen, int depth, i
     bool quietAfterTotal = false;
     long long lastDivideAt = -1;
     while (elapsed() < timeoutMs && e.alive()){
+        if (e.cancelled()){
+            // a perft can't be stopped: the engine is ended, or its late output would be read as
+            // the answer to the next command
+            e.quit();
+            d.error = "aborted";
+            return d;
+        }
         std::string ln = e.readLine(quietAfterTotal ? 150 : 200);
         if (ln.empty()){
             if (quietAfterTotal) break;
@@ -168,6 +175,7 @@ BisectReport perftBisect(UciEngine& e, const std::string& startFen, int depth,
         st.fen = pos.toFEN(); st.depth = depth;
         PerftDivide truth = internalPerftDivide(pos, depth);
         PerftDivide eng = enginePerftDivide(e, st.fen, depth);
+        if (abortFlag) break;
         st.expected = (uint64_t)truth.total;
         st.engineNodes = eng.total;
         if (!eng.ok){

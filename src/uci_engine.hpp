@@ -135,6 +135,13 @@ public:
     void quit();
     // True while the process runs and its stdout is open.
     bool alive();
+    // A flag that cancels whatever this engine is waiting for (a search, perft, isready, the
+    // start handshake); every wait looks at it. A running search is sent "stop", and if its
+    // bestmove does not follow within a second the engine is ended, as is one running perft,
+    // so it can never be used out of step. The call returns its failure value ("", -1, false)
+    // and no new search is started while the flag is set. Null (the default): none.
+    void setCancel(const std::atomic<bool>* flag){ cancel_ = flag; }
+    bool cancelled() const { return cancel_ && *cancel_; }
 
     void setOption(const std::string& name, const std::string& value);
     bool isReady(int timeoutMs = 10000);            // isready -> readyok
@@ -207,6 +214,8 @@ private:
     bool spawn();
     void markDead();
     std::string waitBestmove(int timeoutMs, const std::atomic<bool>* cancel = nullptr);
+    void abandonSearch();                        // after a cancel: idle (stopped) or ended
+    int pollMs(long long leftMs, int usualMs) const;
     std::string searchTimed(const std::string& goCmd, int timeoutMs, int stopWaitMs = 5000);
     void resetSearchInfo();
     // Before any command that needs an idle engine: if the last search never delivered
@@ -253,6 +262,7 @@ private:
     std::atomic<bool> searching_{false};
     std::atomic<long long> goSentNs_{0};         // steady-clock time the last "go" was written
     int uciokTimeout = 10000, readyTimeout = 30000;
+    const std::atomic<bool>* cancel_ = nullptr;
 
     std::shared_ptr<UciLogBuffer> log_ = std::make_shared<UciLogBuffer>();
     size_t logCap_ = 20000;

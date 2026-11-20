@@ -118,6 +118,7 @@ void ToolsScreen::runEnginePerft(const EngineConfig& cfg){
     job_.start("Engine move-generator test: " + cfg.name, [this, cfg, suitePath, maxDepth](ui::Job& j){
         UciEngine e;
         e.setRole("Perft test");
+        e.setCancel(&j.abortFlag());
         if (!e.start(cfg)){ j.log("FAIL: cannot start engine: " + e.lastError()); return; }
         j.log("Engine: " + e.name());
         auto suite = loadEpdSuite(suitePath);
@@ -190,6 +191,7 @@ void ToolsScreen::runBisect(const EngineConfig& cfg, const std::string& fen, int
     job_.start("Perft bisection: " + cfg.name + ", depth " + std::to_string(depth), [this, cfg, fen, depth](ui::Job& j){
         UciEngine e;
         e.setRole("Perft bisection");
+        e.setCancel(&j.abortFlag());
         if (!e.start(cfg)){
             j.log("FAIL: cannot start engine: " + e.lastError());
             std::lock_guard<std::mutex> lk(resMx_);
@@ -394,6 +396,7 @@ void ToolsScreen::runAccuracy(const EngineConfig& tee, const EngineConfig& ree){
                [tee, ree, cnt, tms, rms, mpv](ui::Job& j){
         UciEngine te, re;
         te.setRole("Accuracy test"); re.setRole("Reference");
+        te.setCancel(&j.abortFlag()); re.setCancel(&j.abortFlag());
         if (!te.start(tee)){ j.log("FAIL: cannot start test engine: " + te.lastError()); return; }
         if (!re.start(ree)){ j.log("FAIL: cannot start reference engine: " + re.lastError()); return; }
         te.newGame(); re.newGame();

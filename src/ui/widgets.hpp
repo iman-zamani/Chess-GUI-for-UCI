@@ -50,7 +50,9 @@ class Job {
 public:
     ~Job(){ abort(); }
     void start(const std::string& title, std::function<void(Job&)> fn);
-    void abort();                           // request stop and wait for the thread
+    // Request stop and wait for the thread. Engines the job uses get abortFlag() as their
+    // cancel flag (UciEngine::setCancel), so this takes a second or two at most.
+    void abort();
     void requestStop(){ abort_ = true; }
     bool running() const { return running_; }
     bool stopRequested() const { return abort_; }

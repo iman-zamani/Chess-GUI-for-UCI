@@ -273,8 +273,8 @@ bool UciEngine::start(const EngineConfig& cfg){
     sendRaw("uci");
     auto t0 = clk::now();
     bool ok = false;
-    while (msSince(t0) < uciokTimeout && alive()){
-        std::string ln = readLine(200);
+    while (msSince(t0) < uciokTimeout && alive() && !cancelled()){
+        std::string ln = readLine(pollMs(uciokTimeout - msSince(t0), 200));
         if (ln.empty()) continue;
         if (ln.rfind("id name ",0)==0) engName = ln.substr(8);
         else if (ln.rfind("id author ",0)==0) engAuthor = ln.substr(10);
@@ -291,10 +291,11 @@ bool UciEngine::start(const EngineConfig& cfg){
     };
     auto secs = [](int ms){ std::ostringstream o; o << ms / 1000.0 << " s"; return o.str(); };
     updateMonitorLabel();
+    if (cancelled()) return fail("cancelled");
     if (!ok) return fail(alive() ? "no uciok within " + secs(uciokTimeout) + " (not a UCI engine?)"
                                  : "engine exited during the uci handshake");
     for (auto& o : cfg_.options) setOption(o.first, o.second);
-    if (!isReady(readyTimeout)) return fail(alive() ? "no readyok within " + secs(readyTimeout)
+    if (!isReady(readyTimeout)) return fail(cancelled() ? "cancelled" : alive() ? "no readyok within " + secs(readyTimeout)
                                                     : "engine exited after uci");
     return true;
 }
@@ -613,10 +614,11 @@ void UciEngine::setOption(const std::string& n, const std::string& v){
     sendRaw(v.empty() ? "setoption name " + n : "setoption name " + n + " value " + v);
 }
 bool UciEngine::isReady(int timeoutMs){
+    if (cancelled()) return false;
     sendRaw("isready");
     auto t0 = clk::now();
-    while (msSince(t0) < timeoutMs && alive()){
-        std::string ln = readLine(100);
+    while (msSince(t0) < timeoutMs && alive() && !cancelled()){
+        std::string ln = readLine(pollMs(timeoutMs - msSince(t0), 100));
         if (ln == "readyok") return true;
         if (!ln.empty()) parseInfo(ln);
     }
@@ -764,11 +766,24 @@ void UciEngine::resetSearchInfo(){
     info = EngineInfo{}; pvs_.clear(); ponder_.clear();
 }
 
+// How long one read may block: short while a cancel flag can end the wait.
+int UciEngine::pollMs(long long leftMs, int usualMs) const{
+    return (int)std::max<long long>(1, std::min<long long>(cancel_ ? 50 : usualMs, leftMs));
+}
+void UciEngine::abandonSearch(){
+    if (!searching_) return;
+    addLog('#', "cancelled: sending stop");
+    if (alive() && stopSearch(1000)) return;
+    addLog('#', "no bestmove after stop: the engine is ended");
+    quit();
+}
+
 std::string UciEngine::waitBestmove(int timeoutMs, const std::atomic<bool>* cancel){
     auto t0 = clk::now();
     while (msSince(t0) < timeoutMs && alive()){
         if (cancel && *cancel) break;
-        std::string ln = readLine(std::max(1, (int)std::min<long long>(cancel ? 50 : 100, timeoutMs - msSince(t0))));
+        if (cancelled()){ lastWallMs_ = msSince(t0); abandonSearch(); return ""; }
+        std::string ln = readLine(pollMs(timeoutMs - msSince(t0), cancel ? 50 : 100));
         if (ln.empty()) continue;
         parseInfo(ln);
         if (ln.rfind("bestmove",0)==0){
@@ -782,6 +797,7 @@ std::string UciEngine::waitBestmove(int timeoutMs, const std::atomic<bool>* canc
     return "";
 }
 std::string UciEngine::goMovetime(int ms){
+    if (cancelled()) return "";
     ensureIdle();
     resetSearchInfo();
     sendRaw("go movetime " + std::to_string(ms));
@@ -797,13 +813,15 @@ std::string UciEngine::goNodes(long long n, int timeoutMs){
     return searchTimed("go nodes " + std::to_string(n), timeoutMs);
 }
 std::string UciEngine::searchTimed(const std::string& goCmd, int timeoutMs, int stopWaitMs){
+    if (cancelled()) return "";
     ensureIdle();
     resetSearchInfo();
     lastStopped_ = false;
     sendRaw(goCmd);
     auto t0 = clk::now();
     while (msSince(t0) < timeoutMs && alive()){
-        std::string ln = readLine(std::max(1, (int)(timeoutMs - msSince(t0))));
+        if (cancelled()){ lastWallMs_ = msSince(t0); lastStopped_ = true; abandonSearch(); return ""; }
+        std::string ln = readLine(pollMs(timeoutMs - msSince(t0), timeoutMs));
         if (ln.empty()) continue;
         parseInfo(ln);
         if (ln.rfind("bestmove", 0) == 0){             // (readLine has set lastWallMs_)
@@ -832,6 +850,7 @@ double UciEngine::pCoreSeconds(){
 #endif
 }
 std::string UciEngine::goClock(int wt,int bt,int wi,int bi,int timeoutMs,const std::atomic<bool>* cancel){
+    if (cancelled()) return "";
     ensureIdle();
     resetSearchInfo();
     std::ostringstream o;
@@ -845,6 +864,7 @@ void UciEngine::goInfinite(){
     sendRaw("go infinite");
 }
 std::string UciEngine::goPonderWait(int wt,int bt,int wi,int bi,int timeoutMs){
+    if (cancelled()) return "";
     ensureIdle();
     resetSearchInfo();
     std::ostringstream o;
@@ -861,11 +881,18 @@ std::string UciEngine::stopAndWait(int timeoutMs){
 }
 long long UciEngine::goPerft(int depth, int timeoutMs){
     // Stockfish and many engines: "go perft N" prints "Nodes searched: X"
+    if (cancelled()) return -1;
     sendRaw("go perft " + std::to_string(depth));
     auto t0 = clk::now();
     long long nodes = -1;
     while (msSince(t0) < timeoutMs && alive()){
-        std::string ln = readLine(100);
+        if (cancelled()){
+            // perft has no "stop" (many engines don't even read input while counting): end it
+            addLog('#', "cancelled during perft: the engine is ended");
+            quit();
+            return -1;
+        }
+        std::string ln = readLine(pollMs(timeoutMs - msSince(t0), 100));
         if (ln.empty()) continue;
         size_t p = ln.find("Nodes searched:");
         if (p != std::string::npos){

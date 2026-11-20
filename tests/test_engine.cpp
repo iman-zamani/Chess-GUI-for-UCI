@@ -199,6 +199,65 @@ TEST_CASE("engine/search-that-never-answers-is-not-left-running"){
       t.join(); }
 }
 
+TEST_CASE("engine/cancel-ends-every-wait-promptly"){
+    auto ms = [](std::chrono::steady_clock::time_point t){
+        return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t).count(); };
+    const std::string start = Position::startpos().toFEN();
+    // sets the flag after 200 ms, as Stop in a tool would
+    auto cancelSoon = [](std::atomic<bool>& f){
+        return std::thread([&f]{ std::this_thread::sleep_for(std::chrono::milliseconds(200)); f = true; }); };
+    for (bool ignoreStop : {false, true}){
+        EngineConfig c; c.path = kMock; c.args = {"--think-ms", "20000"};
+        if (ignoreStop) c.args.push_back("--ignore-stop");
+        for (int kind = 0; kind < 2; kind++){
+            std::atomic<bool> cancel{false};
+            UciEngine e;
+            e.setCancel(&cancel);
+            REQUIRE(e.start(c));
+            e.setPosition(start, {});
+            std::thread t = cancelSoon(cancel);
+            auto t0 = std::chrono::steady_clock::now();
+            // (the mock never gets past depth 60, and thinks the whole movetime)
+            std::string bm = kind == 0 ? e.goDepth(100, 600000) : e.goMovetime(20000);
+            long long took = ms(t0);
+            t.join();
+            CHECK(bm.empty());
+            CHECK_MSG(took < 2500, (kind == 0 ? "goDepth" : "goMovetime") << (ignoreStop ? " (ignores stop)" : "")
+                                   << " returned after " << took << " ms");
+            CHECK(!e.searching());
+            if (ignoreStop) CHECK(!e.alive());                   // ended: it can't answer out of step
+            else CHECK(e.alive());
+            CHECK(e.goDepth(1, 3000).empty());                   // no new search while the flag is set
+            CHECK(!e.isReady(3000));
+        }
+    }
+    // perft: the mock counts in its input loop, so it reads neither "stop" nor "quit" meanwhile
+    { std::atomic<bool> cancel{false};
+      UciEngine e;
+      e.setCancel(&cancel);
+      REQUIRE(e.start(kMock));
+      e.setPosition(start, {});
+      std::thread t = cancelSoon(cancel);
+      auto t0 = std::chrono::steady_clock::now();
+      CHECK_EQ(e.goPerft(7, 600000), -1LL);
+      long long took = ms(t0);
+      t.join();
+      CHECK_MSG(took < 2500, "goPerft returned after " << took << " ms");
+      CHECK(!e.alive()); }
+    // the start handshake
+    { std::atomic<bool> cancel{false};
+      EngineConfig c; c.path = kMock; c.args = {"--slow-uciok", "20000"};
+      UciEngine e;
+      e.setCancel(&cancel);
+      std::thread t = cancelSoon(cancel);
+      auto t0 = std::chrono::steady_clock::now();
+      CHECK(!e.start(c));
+      long long took = ms(t0);
+      t.join();
+      CHECK_MSG(took < 2500, "start returned after " << took << " ms");
+      CHECK(!e.alive()); }
+}
+
 TEST_CASE("engine/search-time-is-taken-when-the-reply-arrives"){
     EngineConfig c; c.path = kMock; c.args = {"--think-ms", "120"};
     UciEngine e;

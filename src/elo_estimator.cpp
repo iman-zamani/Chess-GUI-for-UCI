@@ -496,6 +496,7 @@ EloResult runEloEstimate(const EngineConfig& cfg, const EloModel& m, const EloOp
 
     UciEngine e;
     e.setPlacement(pl);
+    e.setCancel(opt.abort);
     if (!e.start(cfg)){ fail.error = "cannot start the engine: " + e.lastError(); return fail; }
     d.placementApplied = e.placementApplied();
     if (!e.powerThrottlingOff())
@@ -619,6 +620,7 @@ EloResult runEloEstimate(const EngineConfig& cfg, const EloModel& m, const EloOp
                 if (suspendedMsSince(sm) > 500) continue;          // the computer slept: ask again
                 break;
             }
+            if (aborted()) break;                                  // a search cut short by Stop is no answer
             EngineInfo inf = e.lastInfo();
             a.depth = inf.depth; a.nodes = inf.nodes; a.timeMs = inf.timeMs;
             a.wallMs = e.lastSearchWallMs(); a.stopped = e.lastSearchStopped();

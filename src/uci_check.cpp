@@ -50,7 +50,7 @@ std::string firstWords(const std::string& s, size_t n){ return s.size() > n ? s.
 // line read meanwhile is in the engine log.
 std::string readBestmove(UciEngine& e, int timeoutMs, long long* elapsed = nullptr){
     auto t0 = clk::now();
-    while (msSince(t0) < timeoutMs && e.alive()){
+    while (msSince(t0) < timeoutMs && e.alive() && !e.cancelled()){
         std::string ln = e.readLine(50);
         if (ln.rfind("bestmove", 0) == 0){ if (elapsed) *elapsed = msSince(t0); return ln; }
     }
@@ -64,7 +64,7 @@ std::string moveOf(const std::string& bestmoveLine){
 std::vector<std::string> trailingOutput(UciEngine& e, int ms){
     std::vector<std::string> out;
     auto t0 = clk::now();
-    while (msSince(t0) < ms && e.alive()){
+    while (msSince(t0) < ms && e.alive() && !e.cancelled()){
         std::string ln = e.readLine(20);
         if (!ln.empty()) out.push_back(ln);
     }
@@ -73,7 +73,7 @@ std::vector<std::string> trailingOutput(UciEngine& e, int ms){
 bool waitReadyok(UciEngine& e, int timeoutMs, long long* elapsed = nullptr){
     auto t0 = clk::now();
     e.sendRaw("isready");
-    while (msSince(t0) < timeoutMs && e.alive()){
+    while (msSince(t0) < timeoutMs && e.alive() && !e.cancelled()){
         if (e.readLine(20) == "readyok"){ if (elapsed) *elapsed = msSince(t0); return true; }
     }
     if (elapsed) *elapsed = msSince(t0);
@@ -98,7 +98,11 @@ std::string judgeMove(const Position& p, const std::string& line){
     return "";
 }
 
+// The run's abort flag, for every engine the checks start (they run on the caller's thread).
+thread_local std::atomic<bool>* tAbort = nullptr;
+
 bool started(Check& c, UciEngine& e, const EngineConfig& cfg){
+    e.setCancel(tAbort);
     e.setStartTimeouts(10000, 30000);
     e.setRole("UCI check");
     if (e.start(cfg)) return true;
@@ -346,7 +350,7 @@ void timeManagementGame(Check& c, UciEngine& e, int baseMs, int incMs, int moves
     std::vector<std::string> ucis;
     std::string startFen = g.start.toFEN();
     bool lost = false;
-    while (g.result == GameResult::ONGOING && moves[0] < movesPerSide && e.alive()){
+    while (g.result == GameResult::ONGOING && moves[0] < movesPerSide && e.alive() && !e.cancelled()){
         int side = g.pos.whiteToMove ? 0 : 1;
         e.setPosition(startFen, ucis);
         char cmd[160];
@@ -513,12 +517,18 @@ const std::vector<std::string>& uciCheckIds(){
 
 std::vector<CheckResult> runUciChecks(const EngineConfig& cfg, const UciCheckOptions& opt){
     std::vector<CheckResult> out;
+    struct AbortScope {
+        explicit AbortScope(std::atomic<bool>* a){ tAbort = a; }
+        ~AbortScope(){ tAbort = nullptr; }
+    } scope(opt.abort);
+    auto aborted = [&]{ return opt.abort && *opt.abort; };
     auto add = [&](CheckResult r){
+        if (aborted()) return;                            // cut short by Stop: not a result
         out.push_back(r);
         if (opt.progress) opt.progress(out.back());
     };
     auto want = [&](const char* id){
-        if (opt.abort && *opt.abort) return false;
+        if (aborted()) return false;
         return opt.only.empty() || std::find(opt.only.begin(), opt.only.end(), id) != opt.only.end();
     };
     UciEngine e;
