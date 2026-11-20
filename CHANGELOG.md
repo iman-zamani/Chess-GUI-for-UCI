@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.2.1 (2026-11-20)
 
 Fixes from a full code review. Nothing here changes how a correct engine is tested; it changes
 what happens when something goes wrong.
