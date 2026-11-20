@@ -120,6 +120,22 @@ TEST_CASE("fen/counters-and-ep"){
     CHECK_EQ(p.moveToSAN(m), std::string("exf6"));
 }
 
+// Found by fuzz/fen under UBSan: counters of INT_MAX were accepted, and the
+// next move overflowed them (signed overflow in makeMove).
+TEST_CASE("fen/huge-counters"){
+    bool ok = false;
+    Position p = Position::fromFEN("4k3/8/8/8/8/8/8/R3K3 b - - 2147483647 2147483647", &ok);
+    REQUIRE(ok);
+    CHECK_EQ(p.halfmoveClock, 1000000);
+    CHECK_EQ(p.fullmoveNumber, 1000000);
+    std::vector<Move> legal;
+    p.generateLegal(legal);
+    REQUIRE(!legal.empty());
+    p.makeMove(legal[0]);
+    CHECK_EQ(p.halfmoveClock, 1000001);
+    CHECK_EQ(p.fullmoveNumber, 1000001);
+}
+
 TEST_CASE("san/roundtrip-all-legal-moves"){
     auto suite = loadEpdSuite(CHESSGUI_SOURCE_DIR "/Resources/perftsuite.epd");
     REQUIRE(!suite.empty());

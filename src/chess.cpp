@@ -78,7 +78,11 @@ Position Position::fromFEN(const std::string& fen, bool* ok){
     if (sq != 64 || ranks != 8 || inRank != 8) return p;
     if (stm != "w" && stm != "b") return p;
     p.whiteToMove = (stm == "w");
-    p.halfmoveClock = hm>0?hm:0; p.fullmoveNumber = fm>0?fm:1;
+    // Counters are clamped like negatives are: no real game gets near the cap, and
+    // INT_MAX would overflow on the next move (makeMove increments both).
+    const int kMaxCounter = 1000000;
+    p.halfmoveClock = hm>0 ? std::min(hm, kMaxCounter) : 0;
+    p.fullmoveNumber = fm>0 ? std::min(fm, kMaxCounter) : 1;
     // sanity: both kings present
     if (p.kingSquare(true)<0 || p.kingSquare(false)<0) return p;
     // en passant: the square behind a pawn that can just have made a double push

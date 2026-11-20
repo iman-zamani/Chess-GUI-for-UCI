@@ -28,6 +28,19 @@ TEST_CASE("bisect/divide-line-formats"){
     CHECK(!parseTotalLine("e2e4: 20", t));
 }
 
+// Found by fuzz/divide-and-args: a count past 2^63 wrapped around and gave a
+// negative total; a token of separators alone was read as 0.
+TEST_CASE("bisect/count-overflow"){
+    long long t = 0;
+    CHECK(!parseTotalLine("Nodes: 9999999999999999999", t));
+    CHECK(parseTotalLine("Nodes: 9223372036854775807", t)); CHECK_EQ(t, 9223372036854775807LL);
+    CHECK(!parseTotalLine("Nodes: 9223372036854775808", t));
+    std::string m; uint64_t n = 0;
+    CHECK(!parseDivideLine("e2e4: 18446744073709551616", m, n));
+    CHECK(!parseDivideLine("e2e4: ,", m, n));
+    CHECK(!parseTotalLine("Total: ''", t));
+}
+
 TEST_CASE("bisect/divide-from-engine"){
     UciEngine e;
     REQUIRE(startMock(e, {}));

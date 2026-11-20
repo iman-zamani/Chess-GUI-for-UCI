@@ -244,7 +244,11 @@ bool gameTreeFromPGN(const PgnGame& pg, GameTree& out, std::string* err){
     for (auto& c : v) c = (char)std::tolower((unsigned char)c);
     if (v.find("960") != std::string::npos || v.find("fischer") != std::string::npos) start.chess960 = true;
     out.reset(start);
-    out.white = pg.white; out.black = pg.black; out.result = pg.result.empty() ? "*" : pg.result;
+    out.white = pg.white; out.black = pg.black;
+    // toPGN() ends the movetext with the result, so only a real termination
+    // marker may be kept: anything else would be read back as a move.
+    const std::string& r = pg.result;
+    out.result = r == "1-0" || r == "0-1" || r == "1/2-1/2" ? r : "*";
     for (auto& [k, val] : pg.tags) out.tags[k] = val;
     const std::string& s = pg.movetext;
     size_t i = 0, n = s.size();

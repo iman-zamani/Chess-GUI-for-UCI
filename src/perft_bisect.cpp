@@ -1,6 +1,7 @@
 /* Chess-GUI-for-UCI — perft divide comparison and bisection. GPL-2.0 */
 #include "perft_bisect.hpp"
 #include <cctype>
+#include <cstdint>
 #include <chrono>
 #include <sstream>
 
@@ -14,11 +15,15 @@ static bool isUciMove(const std::string& s){
 static bool parseCount(const std::string& tok, uint64_t& out){
     if (tok.empty()) return false;
     uint64_t v = 0;
+    bool digit = false;
     for (char c : tok){
         if (c == ',' || c == '\'') continue;              // thousands separators
         if (!std::isdigit((unsigned char)c)) return false;
+        if (v > (uint64_t)INT64_MAX / 10) return false;   // too big for any count (and for a long long total)
         v = v * 10 + (uint64_t)(c - '0');
+        digit = true;
     }
+    if (!digit || v > (uint64_t)INT64_MAX) return false;
     out = v;
     return true;
 }

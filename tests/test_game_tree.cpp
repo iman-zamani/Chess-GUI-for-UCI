@@ -93,3 +93,19 @@ TEST_CASE("tree/chess960-and-fen-start"){
     CHECK(back.start().chess960);
     CHECK_EQ(back.at(back.mainLineEnd()).pos.toFEN(), t.at(t.mainLineEnd()).pos.toFEN());
 }
+
+// Found by fuzz/pgn: a Result tag that is not a termination marker was written
+// at the end of the movetext and read back as an illegal move.
+TEST_CASE("tree/pgn-bad-result-tag"){
+    auto games = parsePGN("[Result \"1/2N-1/2\"]\n\n1. e4 1/2-1/2\n");
+    REQUIRE(games.size() == 1);
+    GameTree t;
+    REQUIRE(gameTreeFromPGN(games[0], t));
+    CHECK_EQ(t.result, std::string("*"));
+    auto again = parsePGN(t.toPGN());
+    REQUIRE(again.size() == 1);
+    GameTree back;
+    std::string err;
+    CHECK(gameTreeFromPGN(again[0], back, &err));
+    CHECK_EQ((int)back.mainLine().size(), 1);
+}
