@@ -105,12 +105,16 @@ struct PgnGame {
     std::string white="?", black="?", result="*", event, fenTag, variant;
     std::vector<std::pair<std::string, std::string>> tags;   // every tag, in file order
     std::string movetext;
+    std::string problem;      // set when the movetext could not be read to its end (unclosed '{')
 };
 // Split a PGN file/text into games (headers parsed; the movetext lines joined into one
 // text, with ';' comments turned into { } comments and '%' escape lines dropped).
+// A '{' comment still open at a blank line followed by a tag line ends there, so one
+// broken game does not swallow the rest of the file; that game gets a problem.
 std::vector<PgnGame> parsePGN(const std::string& text);
 // Build a playable Game from one PGN game. Returns false on first illegal
-// move (out contains the moves parsed up to that point; *err explains).
+// move or when pg.problem is set (out contains the moves parsed up to that
+// point; *err explains).
 // maxPlies > 0: read only that many moves (opening books).
 bool gameFromPGN(const PgnGame& pg, Game& out, std::string* err, int maxPlies = 0);
 

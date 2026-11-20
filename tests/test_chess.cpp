@@ -1,6 +1,7 @@
 /* Chess-GUI-for-UCI — tests for the core rules: perft, FEN, SAN, PGN. GPL-2.0 */
 #include "testlib.hpp"
 #include "chess.hpp"
+#include "game_tree.hpp"
 #include "testing.hpp"
 #include <algorithm>
 
@@ -242,6 +243,41 @@ TEST_CASE("pgn/comments-over-lines"){
     // two games stay two games
     games = parsePGN("[Event \"a\"]\n\n1. e4 {x\n[y]} *\n\n[Event \"b\"]\n\n1. d4 *\n");
     CHECK_EQ(games.size(), (size_t)2);
+    // a comment with clock lines after a blank line is still one comment
+    games = parsePGN("[Event \"x\"]\n\n1. e4 {\n\n[%clk 0:01:00]\n} e5 *\n");
+    REQUIRE(games.size() == 1);
+    CHECK(games[0].problem.empty());
+    REQUIRE(gameFromPGN(games[0], g, &err));
+    CHECK_EQ(g.sans.size(), (size_t)2);
+}
+
+TEST_CASE("pgn/unclosed-comment-is-reported"){
+    const char* text =
+        "[Event \"a\"]\n\n1. e4 e5 2. Nf3 {oops 2... Nc6 *\n\n"
+        "[Event \"b\"]\n\n1. d4 d5 *\n\n"
+        "[Event \"c\"]\n\n1. c4 {fine} e5 *\n";
+    auto games = parsePGN(text);
+    REQUIRE(games.size() == 3);
+    CHECK(!games[0].problem.empty());
+    CHECK(games[1].problem.empty());
+    CHECK(games[2].problem.empty());
+    CHECK_EQ(games[1].event, std::string("b"));
+    Game g; std::string err;
+    CHECK(!gameFromPGN(games[0], g, &err));
+    CHECK(err.find("comment") != std::string::npos);
+    CHECK_EQ(g.sans.size(), (size_t)3);                      // the moves before it are kept
+    GameTree t; err.clear();
+    CHECK(!gameTreeFromPGN(games[0], t, &err));
+    CHECK(err.find("comment") != std::string::npos);
+    REQUIRE(gameFromPGN(games[1], g, &err));
+    CHECK_EQ(g.sans.size(), (size_t)2);
+    REQUIRE(gameFromPGN(games[2], g, &err));
+    CHECK_EQ(g.sans.size(), (size_t)2);
+    // an open comment at the end of the file
+    games = parsePGN("[Event \"x\"]\n\n1. e4 e5 {never closed\n");
+    REQUIRE(games.size() == 1);
+    CHECK(!gameFromPGN(games[0], g, &err));
+    CHECK_EQ(g.sans.size(), (size_t)2);
 }
 
 TEST_CASE("san/variants-are-read"){

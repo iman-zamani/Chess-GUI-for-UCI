@@ -58,6 +58,21 @@ TEST_CASE("openings/pgn-variants-and-broken-games"){
     CHECK_EQ(r.openings[0].moves.size(), (size_t)2);
 }
 
+TEST_CASE("openings/pgn-unclosed-comment"){
+    // the open comment ends at the next game's tags; the broken game is counted and named
+    auto r = parsePgnBook("[Event \"a\"]\n\n1. e4 {oops e5 2. Nf3 *\n\n"
+                          "[Event \"b\"]\n\n1. d4 d5 *\n\n"
+                          "[Event \"c\"]\n\n1. c4 e5 *\n", 2);
+    REQUIRE(r.openings.size() == 3);
+    CHECK_EQ(r.openings[0].moves.size(), (size_t)1);
+    CHECK_EQ(r.openings[1].moves.size(), (size_t)2);
+    CHECK_EQ(r.openings[2].moves.size(), (size_t)2);
+    CHECK_EQ(r.truncated, 1);
+    CHECK(r.firstProblem.find("game 1") != std::string::npos);
+    CHECK(r.firstProblem.find("comment") != std::string::npos);
+    CHECK(!r.warning().empty());
+}
+
 TEST_CASE("openings/book-in-a-folder-outside-ascii"){
     namespace fs = std::filesystem;
     fs::path dir = fs::temp_directory_path() / fs::u8path(u8"chessgui-\u00e9checs-\u68cb");

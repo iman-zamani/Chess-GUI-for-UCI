@@ -647,18 +647,34 @@ bool premovePlausible(const Position& p, int from, int to){
 }
 
 // ---------------- PGN import ----------------
+// [Key "value"] on its own line
+static bool looksLikeTagLine(const std::string& line){
+    if (line.size() < 6 || line[0]!='[' || line.back()!=']' || line[line.size()-2]!='"') return false;
+    if (!std::isalpha((unsigned char)line[1])) return false;
+    size_t sp = line.find(' ');
+    return sp!=std::string::npos && sp+1 < line.size()-2 && line[sp+1]=='"';
+}
+
 std::vector<PgnGame> parsePGN(const std::string& text){
     std::vector<PgnGame> games;
     PgnGame cur; bool inGame=false, sawMoves=false;
     bool inBrace = false;                        // inside a { } comment that runs over the line end
+    bool afterBlank = false;
     std::istringstream ss(text);
     std::string line;
     auto flush=[&](){
+        if (inBrace && cur.problem.empty())
+            cur.problem = "a '{' comment is never closed, the moves after it are lost";
         if (inGame && (sawMoves || !cur.movetext.empty())) games.push_back(cur);
         cur = PgnGame{}; inGame=false; sawMoves=false; inBrace=false;
     };
     while (std::getline(ss, line)){
         while (!line.empty() && (line.back()=='\r'||line.back()==' ')) line.pop_back();
+        bool prevBlank = afterBlank;
+        afterBlank = line.empty();
+        // An unclosed comment would otherwise run to the end of the file. A tag line
+        // after a blank line ends it (as other PGN readers do); flush() reports it.
+        if (inBrace && prevBlank && looksLikeTagLine(line)) flush();
         // a tag line; inside a comment a leading '[' is text, e.g. "[%clk 0:01:00]"
         if (!inBrace && !line.empty() && line[0]=='['){
             if (sawMoves) flush();               // header after movetext = next game
@@ -719,6 +735,7 @@ bool gameFromPGN(const PgnGame& pg, Game& out, std::string* err, int maxPlies){
     const std::string& s = pg.movetext;
     size_t i=0, n=s.size();
     int ply=0, depth=0;
+    bool enough = false;
     while (i<n){
         char ch = s[i];
         if (ch==' '||ch=='\t'){ i++; continue; }
@@ -733,7 +750,7 @@ bool gameFromPGN(const PgnGame& pg, Game& out, std::string* err, int maxPlies){
         i = j;
         if (tok.empty()) continue;
         if (tok=="1-0"||tok=="0-1"||tok=="1/2-1/2"||tok=="*") break;
-        if (maxPlies > 0 && ply >= maxPlies) return true;                    // enough for the caller
+        if (maxPlies > 0 && ply >= maxPlies){ enough = true; break; }       // enough for the caller
         // strip a leading move number "12." / "12..." (but not the zeros of "0-0")
         size_t k=0; while (k<tok.size() && std::isdigit((unsigned char)tok[k])) k++;
         if (k==tok.size()) continue;                                         // a bare number
@@ -748,6 +765,8 @@ bool gameFromPGN(const PgnGame& pg, Game& out, std::string* err, int maxPlies){
         out.tryMove(m);
         ply++;
     }
+    if (!pg.problem.empty()){ if (err) *err = pg.problem; return false; }
+    if (enough) return true;
     // keep PGN's stated result if the moves alone did not decide the game
     // (the reason is unknown: resignation, time, agreement, adjudication...)
     if (out.result==GameResult::ONGOING){

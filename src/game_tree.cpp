@@ -297,5 +297,6 @@ bool gameTreeFromPGN(const PgnGame& pg, GameTree& out, std::string* err){
         cur = out.add(cur, m);
         if (int g = suffixNag(suf)) out.at(cur).nags.push_back(g);
     }
+    if (!pg.problem.empty()){ if (err) *err = pg.problem; return false; }
     return true;
 }

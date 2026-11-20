@@ -98,8 +98,8 @@ BookLoadResult parsePgnBook(const std::string& text, int plies){
 std::string BookLoadResult::warning() const{
     std::string s;
     if (skipped) s += std::to_string(skipped) + " unusable entries skipped";
-    if (truncated) s += std::string(s.empty() ? "" : "; ") + std::to_string(truncated) + " games cut short at a move that "
-                      "could not be read (" + firstProblem + ")";
+    if (truncated) s += std::string(s.empty() ? "" : "; ") + std::to_string(truncated) + " games cut short at a move or "
+                      "comment that could not be read (" + firstProblem + ")";
     return s;
 }
 
