@@ -214,7 +214,8 @@ if(APPLE)
     target_link_libraries(chesscore PUBLIC "-framework IOKit" "-framework CoreFoundation")   # KeepAwake
 endif()
 if(WIN32)
-    target_link_libraries(chesscore PUBLIC shell32)                                          # CommandLineToArgvW
+    # CommandLineToArgvW and SHGetKnownFolderPath; CoTaskMemFree; the FOLDERID_ constants
+    target_link_libraries(chesscore PUBLIC shell32 ole32 uuid)
 endif()
 
 # Headless command-line tool: core only, no SFML.

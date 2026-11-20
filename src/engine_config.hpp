@@ -50,14 +50,16 @@ std::vector<std::string> splitArgs(const std::string& line, std::string* err = n
 std::string joinArgs(const std::vector<std::string>& args);   // inverse of splitArgs
 
 // Per-user configuration directory (created on demand):
-//   Windows %APPDATA%\ChessGUIforUCI, macOS ~/Library/Application Support/ChessGUIforUCI,
+//   Windows <Roaming AppData>\ChessGUIforUCI (the shell's known folder, else %APPDATA%),
+//   macOS ~/Library/Application Support/ChessGUIforUCI,
 //   Linux $XDG_CONFIG_HOME/chess-gui-for-uci (default ~/.config/chess-gui-for-uci).
 // CHESSGUI_CONFIG_DIR overrides it (used by the tests).
 std::string userConfigDir();
 
 // Where match records and saved games go unless the user chose another folder (not created
 // here: whoever writes there does that, so showing the path touches nothing):
-// Documents/Chess-GUI-for-UCI on Windows and macOS; on Linux ~/Documents/Chess-GUI-for-UCI
+// Documents/Chess-GUI-for-UCI on Windows (the shell's Documents folder, which can be redirected
+// or on OneDrive; else %USERPROFILE%\Documents) and macOS; on Linux ~/Documents/Chess-GUI-for-UCI
 // when ~/Documents exists, else $XDG_DATA_HOME/chess-gui-for-uci (default ~/.local/share/...).
 // Never the program's own folder: an app bundle, an AppImage or Program Files can't be written.
 // CHESSGUI_DATA_DIR overrides it (used by the tests).
