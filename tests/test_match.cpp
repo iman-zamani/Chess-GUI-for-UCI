@@ -258,12 +258,21 @@ TEST_CASE("match/output-that-cannot-be-written-is-an-error"){
     REQUIRE(r2.start(s, &err));
     CHECK(fs::exists(dir / "run.state.json"));                      // written once at the start
     for (int i = 0; i < 400 && r2.snapshot().gamesDone < 2; i++) std::this_thread::sleep_for(std::chrono::milliseconds(25));
-    fs::remove_all(dir, ec);
+    // A plain file takes the folder's place, so every later write fails on every system. The
+    // worker may be writing into the folder at this moment (and on Windows a file that is open
+    // can't be deleted), so this is retried until it holds.
+    for (int i = 0; i < 400 && !fs::is_regular_file(dir, ec); i++){
+        fs::remove_all(dir, ec);
+        { std::ofstream f(dir); f << "x"; }
+        if (!fs::is_regular_file(dir, ec)) std::this_thread::sleep_for(std::chrono::milliseconds(25));
+    }
+    REQUIRE(fs::is_regular_file(dir, ec));
     waitDone(r2);
     auto snap = r2.snapshot();
     CHECK(snap.error.find("cannot write") != std::string::npos);
     CHECK(snap.gamesDone < 200);
     CHECK(!snap.finished);
+    fs::remove_all(dir, ec);
 }
 
 TEST_CASE("match/sprt-stops-early"){
