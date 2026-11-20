@@ -1,6 +1,7 @@
 /* Chess-GUI-for-UCI — engine testing tools screen. GPL-2.0 */
 #pragma once
 #include "elo_estimator.hpp"
+#include "elo_ladder.hpp"
 #include "perft_bisect.hpp"
 #include "uci_check.hpp"
 #include "ui/widgets.hpp"
@@ -20,7 +21,7 @@ public:
     void openEloTab(){ selectEloTab_ = true; }
     ui::Job& job(){ return job_; }
 private:
-    enum class View { Log, Bisect, UciCheck, Elo };
+    enum class View { Log, Bisect, UciCheck, Elo, Ladder };
     void drawPerftTab();
     void drawBisectTab();
     void drawUciCheckTab();
@@ -29,6 +30,12 @@ private:
     void drawEloResult();
     void runElo(const EngineConfig& cfg, bool full);
     bool loadEloModel();
+    void drawLadderTab();
+    void drawLadderResult();
+    void drawLadderChart(const std::vector<LadderLevel>& levels, const LadderFit& fit);
+    void runLadder(const LadderSettings& s);
+    void startLadder(bool resume);
+    const std::string& bundledReference();
     void drawBisectResult();
     void drawUciCheckResult();
     void runSelfTest();
@@ -64,4 +71,11 @@ private:
     EloResult elo_;
     EloProgress eloProgress_;
     bool eloRunning_ = false;
+    // Elo from games
+    LadderResult ladder_;
+    LadderProgress ladderProgress_;
+    bool ladderRunning_ = false;
+    bool ladderEnded_ = false;                           // a run ended (handled on the UI thread)
+    bool referenceLooked_ = false;
+    std::string referencePath_;                          // the bundled Stockfish 11 ("" = not installed)
 };
