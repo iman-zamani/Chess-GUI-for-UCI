@@ -1,0 +1,303 @@
+% Chess-GUI-for-UCI - 50 well-known, roughly balanced opening lines, 8 plies each.
+% Used by default for Elo from games (each line is played twice, colours swapped).
+% Written for this program; the move sequences are standard opening theory. GPL-2.0.
+
+[Event "Ruy Lopez"]
+[Round "1"]
+[Result "*"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 *
+
+[Event "Ruy Lopez, Berlin"]
+[Round "2"]
+[Result "*"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 Nf6 4. O-O Nxe4 *
+
+[Event "Ruy Lopez, Exchange"]
+[Round "3"]
+[Result "*"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Bxc6 dxc6 *
+
+[Event "Italian Game"]
+[Round "4"]
+[Result "*"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. c3 Nf6 *
+
+[Event "Two Knights, quiet"]
+[Round "5"]
+[Result "*"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. d3 Be7 *
+
+[Event "Scotch Game"]
+[Round "6"]
+[Result "*"]
+
+1. e4 e5 2. Nf3 Nc6 3. d4 exd4 4. Nxd4 Nf6 *
+
+[Event "Four Knights"]
+[Round "7"]
+[Result "*"]
+
+1. e4 e5 2. Nf3 Nc6 3. Nc3 Nf6 4. Bb5 Bb4 *
+
+[Event "Petrov Defence"]
+[Round "8"]
+[Result "*"]
+
+1. e4 e5 2. Nf3 Nf6 3. Nxe5 d6 4. Nf3 Nxe4 *
+
+[Event "Vienna Game"]
+[Round "9"]
+[Result "*"]
+
+1. e4 e5 2. Nc3 Nf6 3. f4 d5 4. fxe5 Nxe4 *
+
+[Event "Philidor Defence"]
+[Round "10"]
+[Result "*"]
+
+1. e4 e5 2. Nf3 d6 3. d4 Nf6 4. Nc3 Nbd7 *
+
+[Event "Sicilian, Open"]
+[Round "11"]
+[Result "*"]
+
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 *
+
+[Event "Sicilian, Accelerated Dragon"]
+[Round "12"]
+[Result "*"]
+
+1. e4 c5 2. Nf3 Nc6 3. d4 cxd4 4. Nxd4 g6 *
+
+[Event "Sicilian, Kan"]
+[Round "13"]
+[Result "*"]
+
+1. e4 c5 2. Nf3 e6 3. d4 cxd4 4. Nxd4 a6 *
+
+[Event "Sicilian, Closed"]
+[Round "14"]
+[Result "*"]
+
+1. e4 c5 2. Nc3 Nc6 3. g3 g6 4. Bg2 Bg7 *
+
+[Event "Sicilian, Alapin"]
+[Round "15"]
+[Result "*"]
+
+1. e4 c5 2. c3 Nf6 3. e5 Nd5 4. d4 cxd4 *
+
+[Event "Sicilian, Moscow"]
+[Round "16"]
+[Result "*"]
+
+1. e4 c5 2. Nf3 d6 3. Bb5+ Bd7 4. Bxd7+ Qxd7 *
+
+[Event "Sicilian, c3 with e6"]
+[Round "17"]
+[Result "*"]
+
+1. e4 c5 2. Nf3 e6 3. c3 d5 4. exd5 exd5 *
+
+[Event "French, Winawer"]
+[Round "18"]
+[Result "*"]
+
+1. e4 e6 2. d4 d5 3. Nc3 Bb4 4. e5 c5 *
+
+[Event "French, Tarrasch"]
+[Round "19"]
+[Result "*"]
+
+1. e4 e6 2. d4 d5 3. Nd2 Nf6 4. e5 Nfd7 *
+
+[Event "French, Advance"]
+[Round "20"]
+[Result "*"]
+
+1. e4 e6 2. d4 d5 3. e5 c5 4. c3 Nc6 *
+
+[Event "Caro-Kann, Classical"]
+[Round "21"]
+[Result "*"]
+
+1. e4 c6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Bf5 *
+
+[Event "Caro-Kann, Advance"]
+[Round "22"]
+[Result "*"]
+
+1. e4 c6 2. d4 d5 3. e5 Bf5 4. Nf3 e6 *
+
+[Event "Pirc, Austrian"]
+[Round "23"]
+[Result "*"]
+
+1. e4 d6 2. d4 Nf6 3. Nc3 g6 4. f4 Bg7 *
+
+[Event "Scandinavian"]
+[Round "24"]
+[Result "*"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nc3 Qa5 4. d4 Nf6 *
+
+[Event "Alekhine Defence"]
+[Round "25"]
+[Result "*"]
+
+1. e4 Nf6 2. e5 Nd5 3. d4 d6 4. Nf3 g6 *
+
+[Event "Modern Defence"]
+[Round "26"]
+[Result "*"]
+
+1. e4 g6 2. d4 Bg7 3. Nc3 d6 4. Be3 a6 *
+
+[Event "Queen's Gambit Declined"]
+[Round "27"]
+[Result "*"]
+
+1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Be7 *
+
+[Event "Slav Defence"]
+[Round "28"]
+[Result "*"]
+
+1. d4 d5 2. c4 c6 3. Nf3 Nf6 4. Nc3 dxc4 *
+
+[Event "Queen's Gambit Accepted"]
+[Round "29"]
+[Result "*"]
+
+1. d4 d5 2. c4 dxc4 3. Nf3 Nf6 4. e3 e6 *
+
+[Event "Semi-Slav"]
+[Round "30"]
+[Result "*"]
+
+1. d4 d5 2. c4 c6 3. Nc3 Nf6 4. e3 e6 *
+
+[Event "Chigorin Defence"]
+[Round "31"]
+[Result "*"]
+
+1. d4 d5 2. c4 Nc6 3. Nc3 dxc4 4. Nf3 Nf6 *
+
+[Event "Semi-Tarrasch"]
+[Round "32"]
+[Result "*"]
+
+1. d4 Nf6 2. c4 e6 3. Nf3 d5 4. Nc3 c5 *
+
+[Event "Nimzo-Indian"]
+[Round "33"]
+[Result "*"]
+
+1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 4. e3 O-O *
+
+[Event "Queen's Indian"]
+[Round "34"]
+[Result "*"]
+
+1. d4 Nf6 2. c4 e6 3. Nf3 b6 4. g3 Ba6 *
+
+[Event "Bogo-Indian"]
+[Round "35"]
+[Result "*"]
+
+1. d4 Nf6 2. c4 e6 3. Nf3 Bb4+ 4. Bd2 Qe7 *
+
+[Event "King's Indian"]
+[Round "36"]
+[Result "*"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 *
+
+[Event "Gruenfeld"]
+[Round "37"]
+[Result "*"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 d5 4. cxd5 Nxd5 *
+
+[Event "Benoni"]
+[Round "38"]
+[Result "*"]
+
+1. d4 Nf6 2. c4 c5 3. d5 e6 4. Nc3 exd5 *
+
+[Event "Catalan"]
+[Round "39"]
+[Result "*"]
+
+1. d4 Nf6 2. c4 e6 3. g3 d5 4. Bg2 Be7 *
+
+[Event "Dutch, Leningrad"]
+[Round "40"]
+[Result "*"]
+
+1. d4 f5 2. g3 Nf6 3. Bg2 g6 4. Nf3 Bg7 *
+
+[Event "London System"]
+[Round "41"]
+[Result "*"]
+
+1. d4 Nf6 2. Bf4 d5 3. e3 c5 4. c3 Nc6 *
+
+[Event "Colle System"]
+[Round "42"]
+[Result "*"]
+
+1. d4 d5 2. Nf3 Nf6 3. e3 e6 4. Bd3 c5 *
+
+[Event "Torre Attack"]
+[Round "43"]
+[Result "*"]
+
+1. d4 Nf6 2. Nf3 e6 3. Bg5 h6 4. Bxf6 Qxf6 *
+
+[Event "English, Reversed Sicilian"]
+[Round "44"]
+[Result "*"]
+
+1. c4 e5 2. Nc3 Nf6 3. Nf3 Nc6 4. g3 d5 *
+
+[Event "English, Symmetrical"]
+[Round "45"]
+[Result "*"]
+
+1. c4 c5 2. Nf3 Nf6 3. Nc3 Nc6 4. g3 g6 *
+
+[Event "English, King's Indian setup"]
+[Round "46"]
+[Result "*"]
+
+1. c4 Nf6 2. Nc3 g6 3. e4 d6 4. d4 Bg7 *
+
+[Event "Reti Opening"]
+[Round "47"]
+[Result "*"]
+
+1. Nf3 d5 2. g3 Nf6 3. Bg2 c6 4. O-O Bg4 *
+
+[Event "English, Queen's Indian setup"]
+[Round "48"]
+[Result "*"]
+
+1. Nf3 Nf6 2. c4 b6 3. g3 Bb7 4. Bg2 e6 *
+
+[Event "Nimzo-Larsen Attack"]
+[Round "49"]
+[Result "*"]
+
+1. b3 e5 2. Bb2 Nc6 3. e3 d5 4. Bb5 Bd6 *
+
+[Event "Bird Opening"]
+[Round "50"]
+[Result "*"]
+
+1. f4 d5 2. Nf3 Nf6 3. e3 g6 4. Be2 Bg7 *

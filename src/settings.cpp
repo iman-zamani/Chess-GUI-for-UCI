@@ -27,6 +27,12 @@ static void forEachField(S& s, F&& f){
     f("accCount", s.accCount); f("accTestMs", s.accTestMs); f("accRefMs", s.accRefMs);
     f("accMultiPV", s.accMultiPV);
     f("matchGamesPerPair", s.matchGamesPerPair);
+    f("ladderEngine", s.ladderEngine); f("ladderOwnReference", s.ladderOwnReference);
+    f("ladderReference", s.ladderReference); f("ladderBaseSec", s.ladderBaseSec); f("ladderIncSec", s.ladderIncSec);
+    f("ladderGames", s.ladderGames); f("ladderConcurrency", s.ladderConcurrency);
+    f("ladderAutoLevels", s.ladderAutoLevels); f("ladderLevels", s.ladderLevels);
+    f("ladderBook", s.ladderBook); f("ladderSavePgn", s.ladderSavePgn);
+    f("ladderUnfinished", s.ladderUnfinished); f("ladderSeed", s.ladderSeed); f("ladderPgnPath", s.ladderPgnPath);
 }
 
 bool Settings::load(const std::string& file, std::string* err){

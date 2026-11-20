@@ -5,10 +5,12 @@
 #include "ui/file_dialog.hpp"
 #include <misc/cpp/imgui_stdlib.h>
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
+#include <thread>
 
 namespace fs = std::filesystem;
 
@@ -32,6 +34,7 @@ void ToolsScreen::draw(){
             drawEloTab(); ImGui::EndTabItem();
         }
         selectEloTab_ = false;
+        if (ImGui::BeginTabItem("Elo from games")){ drawLadderTab(); ImGui::EndTabItem(); }
         ImGui::EndTabBar();
     }
     ImGui::EndChild();
@@ -40,6 +43,7 @@ void ToolsScreen::draw(){
     if (view_ == View::Bisect) drawBisectResult();
     else if (view_ == View::UciCheck) drawUciCheckResult();
     else if (view_ == View::Elo) drawEloResult();
+    else if (view_ == View::Ladder) drawLadderResult();
     ui::jobPanel(job_, [&](){ return saveDialog("test"); }, [&](const std::string& m){ app_.toast(m); });
     ImGui::EndChild();
 }
@@ -606,6 +610,375 @@ void ToolsScreen::drawEloResult(){
         if (ImGui::Button("Export JSON...")) save(".json", eloResultJson(r, model_));
         ImGui::SameLine();
         if (ImGui::Button("Export Markdown...")) save(".md", eloResultMarkdown(r, model_));
+    }
+    ImGui::Separator();
+}
+
+// =============================================================== Elo from games
+static int halfTheCores(){ return std::max(1, (int)std::thread::hardware_concurrency() / 2); }
+
+static std::string ladderStatePath(){ return (fs::u8path(userConfigDir()) / "elo_games_state.json").u8string(); }
+
+static void removeLadderState(){
+    std::error_code ec;
+    for (const char* x : {"", ".stage1", ".stage2"}) fs::remove(fs::u8path(ladderStatePath() + x), ec);
+}
+
+const std::string& ToolsScreen::bundledReference(){
+    if (!referenceLooked_){ referencePath_ = defaultLadderReference(); referenceLooked_ = true; }
+    return referencePath_;
+}
+
+void ToolsScreen::drawLadderTab(){
+    Settings& st = app_.settings();
+    float em = ImGui::GetFontSize();
+    bool changed = false;
+    {
+        // a run that finished is not resumable any more (its state files go)
+        std::lock_guard<std::mutex> lk(resMx_);
+        if (ladderEnded_){
+            ladderEnded_ = false;
+            if (ladder_.ok){ st.ladderUnfinished = false; removeLadderState(); changed = true; }
+        }
+    }
+    ImGui::TextWrapped("Rates an engine from real games against Stockfish 11 set to fixed strength levels (UCI_Elo), "
+                       "several games at a time. Much slower than the estimate from positions, but it measures "
+                       "everything that counts in games, time management included, at the time control you choose.");
+    ImGui::SeparatorText("Engine");
+    ImGui::SetNextItemWidth(-1);
+    changed |= ui::engineCombo("##ladderEngine", app_.registry(), st.ladderEngine);
+    const EngineConfig* eng = ui::findEngine(app_.registry(), st.ladderEngine);
+
+    ImGui::SeparatorText("Opponent");
+    const std::string& bundled = bundledReference();
+    if (ImGui::RadioButton("Stockfish 11 (bundled)", !st.ladderOwnReference)){ st.ladderOwnReference = false; changed = true; }
+    ImGui::SameLine();
+    if (ImGui::RadioButton("Another engine", st.ladderOwnReference)){ st.ladderOwnReference = true; changed = true; }
+    const EngineConfig* refEng = nullptr;
+    if (st.ladderOwnReference){
+        ImGui::SetNextItemWidth(-1);
+        changed |= ui::engineCombo("##ladderRef", app_.registry(), st.ladderReference);
+        refEng = ui::findEngine(app_.registry(), st.ladderReference);
+        ImGui::TextDisabled("It must offer UCI_LimitStrength and UCI_Elo (Stockfish does).");
+    } else if (bundled.empty()){
+        ImGui::PushStyleColor(ImGuiCol_Text, ui::kWarn);
+        ImGui::TextWrapped("Stockfish 11 is not installed here (Resources/reference): build it with "
+                           "tools/build_reference_engines.py, or choose another engine with UCI_Elo.");
+        ImGui::PopStyleColor();
+    } else {
+        ImGui::TextDisabled("Levels 1350-2850, anchored to CCRL (Goldfish 1.13 = 2000), fitted at 60+0.6.");
+    }
+
+    ImGui::SeparatorText("Time control");
+    struct Preset { const char* label; double base, inc; };
+    static const Preset presets[] = {{"Bullet 10+0.1", 10, 0.1}, {"Blitz 60+0.6", 60, 0.6}, {"Blitz 180+2", 180, 2},
+                                     {"Rapid 600+5", 600, 5}};
+    for (size_t i = 0; i < sizeof presets / sizeof presets[0]; i++){
+        if (i) ImGui::SameLine();
+        bool on = st.ladderBaseSec == presets[i].base && st.ladderIncSec == presets[i].inc;
+        if (on) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+        if (ImGui::SmallButton(presets[i].label)){ st.ladderBaseSec = presets[i].base; st.ladderIncSec = presets[i].inc; changed = true; }
+        if (on) ImGui::PopStyleColor();
+    }
+    ImGui::SetNextItemWidth(em * 7);
+    changed |= ImGui::InputDouble("base (s)", &st.ladderBaseSec, 1, 10, "%.2f");
+    ImGui::SameLine(); ImGui::SetNextItemWidth(em * 7);
+    changed |= ImGui::InputDouble("increment (s)", &st.ladderIncSec, 0.01, 0.1, "%.3f");
+    st.ladderBaseSec = std::max(0.05, st.ladderBaseSec); st.ladderIncSec = std::max(0.0, st.ladderIncSec);
+    ImGui::PushStyleColor(ImGuiCol_Text, ui::kDim);
+    ImGui::TextWrapped("Each level picks its move from a search of a fixed depth, so its strength hardly depends on the "
+                       "time control as long as it gets that deep. Your engine's does, so the rating is for this time "
+                       "control: compare engines or versions at the same one. At bullet the strongest levels may not get "
+                       "deep enough; the Short column and a warning then say so. "
+                       "The levels' Elo values were measured at 60+0.6.");
+    ImGui::PopStyleColor();
+
+    ImGui::SeparatorText("Games");
+    ImGui::SetNextItemWidth(em * 7);
+    changed |= ImGui::InputInt("games in all", &st.ladderGames, 20, 100);
+    st.ladderGames = std::max(2, std::min(100000, st.ladderGames));
+    ImGui::SetNextItemWidth(em * 7);
+    changed |= ImGui::InputInt("in parallel", &st.ladderConcurrency);
+    st.ladderConcurrency = std::max(0, std::min(256, st.ladderConcurrency));
+    if (st.ladderConcurrency == 0){ ImGui::SameLine(); ImGui::TextDisabled("(0: half the cores, %d)", halfTheCores()); }
+    if (ImGui::RadioButton("Automatic levels", st.ladderAutoLevels)){ st.ladderAutoLevels = true; changed = true; }
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("About 30%% of the games (at least a pair per level) at %d levels spread over the\n"
+                          "whole range, the rest at levels around that first estimate, where a game says the most.", kLadderSpread);
+    ImGui::SameLine();
+    if (ImGui::RadioButton("These levels:", !st.ladderAutoLevels)){ st.ladderAutoLevels = false; changed = true; }
+    std::vector<int> given;
+    bool levelsOk = true;
+    if (!st.ladderAutoLevels){
+        ImGui::SameLine(); ImGui::SetNextItemWidth(-1);
+        changed |= ImGui::InputText("##ladderLevels", &st.ladderLevels);
+        levelsOk = parseLadderLevels(st.ladderLevels, given);
+        if (!levelsOk) ImGui::TextColored(ui::kBad, "Levels: Elo values separated by commas, e.g. 1500, 1800, 2100");
+        else {
+            LadderStage g = ladderGivenStage(given, st.ladderGames);
+            std::string t;
+            for (size_t i = 0; i < g.levels.size(); i++)
+                t += (i ? ", " : "") + std::to_string(g.games[i]) + " against " + std::to_string(g.levels[i]);
+            ImGui::TextDisabled("Games: %s.", t.c_str());
+        }
+    } else if (st.ladderGames < kLadderMinAutoGames){
+        levelsOk = false;
+        ImGui::TextColored(ui::kBad, "Automatic levels need at least %d games.", kLadderMinAutoGames);
+    }
+
+    ImGui::SeparatorText("Openings");
+    ImGui::SetNextItemWidth(-1);
+    changed |= ui::pathInput("ladderBook", st.ladderBook, "opening book (empty: the bundled 50 openings)", [&](){
+        return filedialog::openFile("Open opening book", st.lastOpeningsDir,
+                                    {"Opening books", "*.epd *.pgn *.fen *.txt", "All files", "*"}); });
+    changed |= ImGui::Checkbox("Save the games (PGN)", &st.ladderSavePgn);
+    if (changed) app_.saveSettings();
+
+    int conc = st.ladderConcurrency > 0 ? st.ladderConcurrency : halfTheCores();
+    double gameSec = 2 * (st.ladderBaseSec + 50 * st.ladderIncSec);       // both clocks used up over 50 moves each
+    double minutes = std::ceil((double)st.ladderGames / conc) * gameSec / 60;
+    ImGui::PushStyleColor(ImGuiCol_Text, ui::kDim);
+    if (minutes < 1.5) ImGui::TextWrapped("Up to about a minute (games that use the whole clock).");
+    else if (minutes < 120) ImGui::TextWrapped("Up to about %.0f minutes (games that use the whole clock).", minutes);
+    else ImGui::TextWrapped("Up to about %.1f hours (games that use the whole clock).", minutes / 60);
+    ImGui::PopStyleColor();
+
+    bool refOk = st.ladderOwnReference ? refEng != nullptr : !bundled.empty();
+    ImGui::BeginDisabled(busy() || !eng || !refOk || !levelsOk);
+    if (ImGui::Button("Play the games")) startLadder(false);
+    if (st.ladderUnfinished){
+        ImGui::SameLine();
+        if (ImGui::Button("Resume the stopped run")) startLadder(true);
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Plays the games the last run didn't get to. With other settings than that run's,\n"
+                              "it starts again from scratch.");
+    }
+    ImGui::EndDisabled();
+    ImGui::TextDisabled("Stop it with Abort below the log: the games so far are kept, and the run can be resumed.");
+}
+
+void ToolsScreen::startLadder(bool resume){
+    Settings& st = app_.settings();
+    const EngineConfig* eng = ui::findEngine(app_.registry(), st.ladderEngine);
+    const EngineConfig* refEng = st.ladderOwnReference ? ui::findEngine(app_.registry(), st.ladderReference) : nullptr;
+    if (!eng || (st.ladderOwnReference && !refEng) || (!st.ladderOwnReference && bundledReference().empty())) return;
+    LadderSettings s;
+    s.engine = *eng;
+    if (refEng) s.reference = *refEng;
+    else { s.reference.name = "Stockfish 11"; s.reference.path = bundledReference(); }
+    s.tc.baseMs = (int)std::lround(st.ladderBaseSec * 1000);
+    s.tc.incMs = (int)std::lround(st.ladderIncSec * 1000);
+    s.games = st.ladderGames;
+    s.concurrency = st.ladderConcurrency > 0 ? st.ladderConcurrency : halfTheCores();
+    if (!st.ladderAutoLevels && !parseLadderLevels(st.ladderLevels, s.levels)) return;
+    s.bookPath = st.ladderBook;
+    s.statePath = ladderStatePath();
+    if (!resume){
+        removeLadderState();
+        st.ladderSeed = (long long)(std::chrono::system_clock::now().time_since_epoch().count() % 1000000007LL);
+        st.ladderPgnPath = st.ladderSavePgn ? ui::saveDir(st) + "/elo_games_" + ui::timeStamp() + ".pgn" : "";
+    }
+    s.seed = (uint64_t)st.ladderSeed;
+    s.pgnPath = st.ladderPgnPath;
+    st.ladderUnfinished = true;
+    app_.saveSettings();
+    runLadder(s);
+}
+
+void ToolsScreen::runLadder(const LadderSettings& s){
+    view_ = View::Ladder;
+    { std::lock_guard<std::mutex> lk(resMx_); ladder_ = LadderResult{}; ladderProgress_ = LadderProgress{}; ladderRunning_ = true; }
+    job_.start("Elo from games: " + s.engine.name + ", " + s.tc.label(), [this, s](ui::Job& j){
+        j.log("Seed " + std::to_string(s.seed) + (s.pgnPath.empty() ? "" : ", games to " + s.pgnPath));
+        LadderOptions o;
+        o.abort = &j.abortFlag();
+        o.log = [&](const std::string& line){ j.log(line); };
+        int lastLogged = 0;
+        o.progress = [&](const LadderProgress& p){
+            { std::lock_guard<std::mutex> lk(resMx_); ladderProgress_ = p; }
+            if (p.gamesDone - lastLogged >= std::max(10, p.gamesPlanned / 20)){
+                j.log("Games " + std::to_string(p.gamesDone) + "/" + std::to_string(p.gamesPlanned) + ": " + ladderHeadline(p.fit));
+                lastLogged = p.gamesDone;
+            }
+        };
+        LadderResult r = runEloLadder(s, o);
+        if (!r.error.empty()) j.log("FAIL: " + r.error);
+        else if (r.aborted) j.log("Stopped after " + std::to_string(r.gamesPlayed) + " games: " + ladderHeadline(r.fit));
+        for (auto& w : r.warnings) j.log("?? " + w);
+        if (!s.pgnPath.empty() && r.gamesPlayed) j.log("Games saved to " + s.pgnPath);
+        if (!r.ok) j.log("The run can be resumed: Resume the stopped run.");
+        std::lock_guard<std::mutex> lk(resMx_);
+        ladder_ = r;
+        ladderRunning_ = false;
+        ladderEnded_ = true;
+    });
+}
+
+void ToolsScreen::drawLadderChart(const std::vector<LadderLevel>& levels, const LadderFit& fit){
+    float em = ImGui::GetFontSize();
+    double lo = 1e9, hi = -1e9;
+    for (auto& l : levels) if (l.wdl.games()){ lo = std::min(lo, (double)l.elo); hi = std::max(hi, (double)l.elo); }
+    if (lo > hi) return;
+    bool haveFit = fit.status != LadderStatus::NoGames, number = fit.status == LadderStatus::Ok;
+    double ciLo = fit.extrapolated ? fit.low95 : fit.elo - fit.ci95, ciHi = fit.extrapolated ? fit.high95 : fit.elo + fit.ci95;
+    if (number){ lo = std::min(lo, ciLo); hi = std::max(hi, ciHi); }
+    else if (haveFit){ lo = std::min(lo, fit.bound); hi = std::max(hi, fit.bound); }
+    lo -= 100; hi += 100;
+    ImVec2 p0 = ImGui::GetCursorScreenPos();
+    float w = ImGui::GetContentRegionAvail().x, h = em * 9;
+    ImGui::InvisibleButton("ladder-chart", ImVec2(w, h));
+    bool hovered = ImGui::IsItemHovered();
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    float left = p0.x + em * 2.2f, right = p0.x + w - em * 0.5f, top = p0.y + em * 0.3f, bottom = p0.y + h - em * 1.4f;
+    auto x = [&](double e){ return left + (float)((e - lo) / (hi - lo)) * (right - left); };
+    auto y = [&](double s){ return bottom - (float)s * (bottom - top); };
+    ImU32 dim = ImGui::GetColorU32(ui::kDim), acc = ImGui::GetColorU32(ui::kAccent);
+    dl->AddLine(ImVec2(left, bottom), ImVec2(right, bottom), dim);
+    dl->AddLine(ImVec2(left, top), ImVec2(left, bottom), dim);
+    for (double s : {0.0, 0.5, 1.0}){
+        char b[8]; std::snprintf(b, sizeof b, "%d%%", (int)(s * 100));
+        dl->AddText(ImVec2(p0.x, y(s) - em * 0.5f), dim, b);
+        if (s == 0.5) dl->AddLine(ImVec2(left, y(s)), ImVec2(right, y(s)), (dim & 0x00FFFFFF) | 0x40000000);
+    }
+    int step = hi - lo > 1200 ? 500 : hi - lo > 500 ? 200 : 100;
+    for (int t = (int)std::ceil(lo / step) * step; t <= hi; t += step){
+        dl->AddLine(ImVec2(x(t), bottom), ImVec2(x(t), bottom + 3), dim);
+        char b[16]; std::snprintf(b, sizeof b, "%d", t);
+        dl->AddText(ImVec2(x(t) - em, bottom + 3), dim, b);
+    }
+    // the fitted curve: expected score against a level, and the rating with its interval
+    if (number){
+        ImVec2 prev;
+        for (int i = 0; i <= 80; i++){
+            double e = lo + (hi - lo) * i / 80;
+            ImVec2 pt(x(e), y(ladderExpectedScore(fit.elo, e)));
+            if (i) dl->AddLine(prev, pt, (acc & 0x00FFFFFF) | 0x90000000, 2);
+            prev = pt;
+        }
+        dl->AddRectFilled(ImVec2(x(ciLo), top), ImVec2(x(ciHi), bottom), (acc & 0x00FFFFFF) | 0x28000000);
+        dl->AddLine(ImVec2(x(fit.elo), top), ImVec2(x(fit.elo), bottom), acc, 2.0f);
+    } else if (haveFit){                                      // a bound: shade the side the rating is on
+        bool above = fit.status == LadderStatus::Above;
+        dl->AddRectFilled(ImVec2(above ? x(fit.bound) : left, top), ImVec2(above ? right : x(fit.bound), bottom),
+                          (acc & 0x00FFFFFF) | 0x28000000);
+        dl->AddLine(ImVec2(x(fit.bound), top), ImVec2(x(fit.bound), bottom), acc, 1.0f);
+    }
+    // the levels: the score with a 95% bar, the dot's size by the number of games
+    std::string tip;
+    ImVec2 mouse = ImGui::GetIO().MousePos;
+    for (auto& l : levels){
+        int g = l.wdl.games();
+        if (!g) continue;
+        double s = l.score() / g;
+        double half = 1.96 * std::sqrt(std::max(0.0, s * (1 - s)) / g);
+        float cx = x(l.elo);
+        dl->AddLine(ImVec2(cx, y(std::min(1.0, s + half))), ImVec2(cx, y(std::max(0.0, s - half))), dim);
+        float rad = em * (0.18f + 0.04f * (float)std::min(8.0, std::sqrt((double)g)));
+        dl->AddCircleFilled(ImVec2(cx, y(s)), rad, ImGui::GetColorU32(ImGuiCol_Text));
+        if (hovered && std::fabs(mouse.x - cx) < em * 0.5f){
+            char b[160];
+            std::snprintf(b, sizeof b, "Level %d: %d games, +%d =%d -%d, %.1f%%", l.elo, g, l.wdl.wins, l.wdl.draws,
+                          l.wdl.losses, 100 * s);
+            tip = b;
+        }
+    }
+    if (!tip.empty()) ImGui::SetTooltip("%s", tip.c_str());
+    ImGui::TextDisabled(number ? "Dots: the score against each level (bar: 95%%). Curve: the score the fitted rating predicts."
+                               : "Dots: the score against each level (bar: 95%%). Shaded: where the rating is.");
+}
+
+void ToolsScreen::drawLadderResult(){
+    LadderResult r; LadderProgress p; bool running;
+    { std::lock_guard<std::mutex> lk(resMx_); r = ladder_; p = ladderProgress_; running = ladderRunning_; }
+    float em = ImGui::GetFontSize();
+    bool done = !running && (r.ok || r.aborted);
+    const std::vector<LadderLevel>& levels = done ? r.levels : p.levels;
+    const LadderFit& fit = done ? r.fit : p.fit;
+    ImGui::PushFont(ui::fonts().large);
+    if (r.ok) ImGui::Text("Rating: %s (95%%)", ladderHeadline(r.fit).c_str());
+    else if (r.aborted && r.gamesPlayed == 0) ImGui::Text("Stopped before a game finished");
+    else if (r.aborted) ImGui::Text("Stopped after %d games: %s", r.gamesPlayed, ladderHeadline(r.fit).c_str());
+    else if (running && p.gamesDone) ImGui::Text("Games %d / %d: %s", p.gamesDone, p.gamesPlanned, ladderHeadline(p.fit).c_str());
+    else if (running) ImGui::Text("Starting the engines...");
+    else ImGui::TextColored(ui::kBad, "%s", r.error.empty() ? "No result" : r.error.c_str());
+    ImGui::PopFont();
+    if (running && p.gamesPlanned){
+        char ov[48]; std::snprintf(ov, sizeof ov, "stage %d of %d", p.stage, p.stages);
+        ImGui::ProgressBar(std::min(1.0f, (float)p.gamesDone / p.gamesPlanned), ImVec2(-1, em * 1.1f), ov);
+    }
+    int gamesShown = 0;
+    for (auto& l : levels) gamesShown += l.wdl.games();
+    if (done && gamesShown){
+        const LadderSettings& s = r.settings;
+        ImGui::PushStyleColor(ImGuiCol_Text, ui::kDim);
+        ImGui::TextWrapped("%s at %s on this computer: %d games against %s, on its UCI_Elo scale%s. The interval is "
+                           "statistical only: how far the levels are from their nominal Elo is not included.",
+                           r.engineId.empty() ? s.engine.name.c_str() : r.engineId.c_str(), s.tc.label().c_str(),
+                           r.gamesPlayed, r.referenceId.empty() ? s.reference.name.c_str() : r.referenceId.c_str(),
+                           s.reference.path == bundledReference() ? " (anchored to CCRL, Goldfish 1.13 = 2000, fitted at 60+0.6)" : "");
+        ImGui::PopStyleColor();
+        if (r.gamesReplayed) ImGui::TextDisabled("%d games were replayed because the computer slept during them.", r.gamesReplayed);
+        ImGui::PushStyleColor(ImGuiCol_Text, ui::kWarn);
+        for (auto& w : r.warnings) ImGui::TextWrapped("Warning: %s", w.c_str());
+        ImGui::PopStyleColor();
+    }
+    if (gamesShown){
+        ImGui::SeparatorText("Score against each level");
+        drawLadderChart(levels, fit);
+        bool depth = false;                            // Stockfish 11: moves short of the calibrated depth
+        for (auto& l : levels) if (l.refMoves) depth = true;
+        if (ImGui::BeginTable("ladder-levels", depth ? 7 : 6, ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit)){
+            ImGui::TableSetupColumn("Level"); ImGui::TableSetupColumn("Games"); ImGui::TableSetupColumn("+ = -");
+            ImGui::TableSetupColumn("Score"); ImGui::TableSetupColumn("Expected");
+            if (depth) ImGui::TableSetupColumn("Short");
+            ImGui::TableSetupColumn("Performance", ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableHeadersRow();
+            for (auto& l : levels){
+                int g = l.wdl.games();
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn(); ImGui::Text("%d", l.elo);
+                ImGui::TableNextColumn(); ImGui::Text("%d", g);
+                ImGui::TableNextColumn(); ImGui::Text("%d %d %d", l.wdl.wins, l.wdl.draws, l.wdl.losses);
+                ImGui::TableNextColumn(); if (g) ImGui::Text("%.1f%%", 100 * l.score() / g); else ImGui::TextDisabled("-");
+                ImGui::TableNextColumn();
+                if (fit.status == LadderStatus::Ok) ImGui::Text("%.0f%%", 100 * ladderExpectedScore(fit.elo, l.elo));
+                else ImGui::TextDisabled("-");
+                if (depth){
+                    ImGui::TableNextColumn();
+                    if (!l.refMoves) ImGui::TextDisabled("-");
+                    else {
+                        double share = (double)l.refShallowMoves / l.refMoves;
+                        if (share > kLadderShallowWarn) ImGui::TextColored(ui::kWarn, "%.0f%%", 100 * share);
+                        else ImGui::Text("%.0f%%", 100 * share);
+                    }
+                }
+                ImGui::TableNextColumn();
+                std::string perf = ladderPerformance(l);
+                if (perf.empty()) ImGui::TextDisabled("-"); else ImGui::TextUnformatted(perf.c_str());
+            }
+            ImGui::EndTable();
+        }
+        ImGui::TextDisabled("Expected: the score the rating predicts. Performance: from that level's games alone (%d or more).",
+                            kLadderMinPerformanceGames);
+        if (depth)
+            ImGui::TextDisabled("Short: Stockfish's moves whose search stopped short of the depth its Elo was calibrated with.");
+    }
+    if (running && !p.live.empty()){
+        ImGui::SeparatorText("Playing now");
+        for (auto& g : p.live)
+            ImGui::TextDisabled("Game %d: %s - %s, move %d", g.index + 1, g.whiteName.c_str(), g.blackName.c_str(),
+                                (int)g.sans.size() / 2 + 1);
+    }
+    if (done && gamesShown){
+        if (ImGui::Button("Export JSON...")){
+            std::string path = filedialog::saveFile("Save the result", ui::saveDir(app_.settings()) + "/elo_games_"
+                                                    + ui::timeStamp() + ".json", {"JSON", "*.json"});
+            if (path.empty() && !filedialog::available()) path = ui::saveDir(app_.settings()) + "/elo_games_" + ui::timeStamp() + ".json";
+            if (!path.empty()){
+                std::ofstream f(fs::u8path(path)); f << ladderResultJson(r);
+                app_.toast(f ? "Saved " + path : "Could not write " + path);
+            }
+        }
     }
     ImGui::Separator();
 }

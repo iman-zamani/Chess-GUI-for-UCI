@@ -1,5 +1,6 @@
 /* Chess-GUI-for-UCI — headless command-line tool (chess-cli). GPL-2.0 */
 #include "elo_estimator.hpp"
+#include "elo_ladder.hpp"
 #include "engine_config.hpp"
 #include "perft_bisect.hpp"
 #include "uci_check.hpp"
@@ -51,6 +52,11 @@ Usage:
   chess-cli elo-estimate --engine E [--quick | --full] [--model FILE] [--factor F] [--no-placement]
                          [--markdown FILE]
                                 estimate the engine's Elo from test positions (not from games)
+  chess-cli elo-games --engine E [--reference E] [--tc BASE[+INC]] [--games N] [--levels auto|L,L...]
+                      [--concurrency N] [--book FILE] [--book-plies N] [--seed S] [--margin MS] [--pgn FILE]
+                      [--state FILE]
+                                rate the engine from games against Stockfish 11 at fixed UCI_Elo levels
+                                (much slower than elo-estimate; see "Elo from games" below)
   chess-cli bench [--runs N]    single-threaded speed (internal perft, best of N runs)
   chess-cli help | --version
 
@@ -81,6 +87,18 @@ Games:
   --pgn FILE                    append finished games to FILE
   --state FILE                  resumable state; an existing matching file is resumed
 
+Elo from games (elo-games):
+  --reference E                 the opponent: any engine with UCI_LimitStrength and UCI_Elo
+                                (default: the bundled Stockfish 11, levels 1350-2850)
+  --tc BASE[+INC]               the time control to rate the engine at (default 60+0.6, the one
+                                Stockfish 11's levels were fitted at)
+  --games N                     games in all (200)
+  --levels auto|L,L...          automatic (a spread of levels, then levels near the first estimate),
+                                or these UCI_Elo levels, the games shared equally
+  --book FILE                   default: the bundled 50 openings (Resources/books/openings.pgn)
+  --state FILE                  resumable state (FILE.stage1, FILE.stage2); the same command
+                                resumes a stopped run (the seed is then 1 unless --seed is given)
+
 SPRT (sprt only):
   --elo0 E --elo1 E             hypotheses (0 and 5)
   --alpha A --beta B            error rates (0.05 and 0.05)
@@ -93,9 +111,9 @@ Output:
 
 Exit codes: 0 success (sprt: H1 accepted), 1 a check failed (perft mismatch, movegen bug found,
 UCI check FAIL; sprt: H0 accepted), 2 usage or start error, 3 sprt: games ran out before a
-decision, 4 elo-estimate: no estimate (the run failed a check), 5 match/sprt: the run stopped on
-an error (an engine could not be started, a file could not be written), 130 interrupted (the
-match state file can resume it).
+decision, 4 elo-estimate: no estimate (the run failed a check), 5 match/sprt/elo-games: the run stopped on
+an error (an engine crashed at start, a file could not be written), 130 interrupted (the
+match state file can resume a match; elo-games prints the partial result).
 )";
 
 static bool parseDouble(const std::string& s, double& v){
@@ -670,6 +688,128 @@ static int cmdEloEstimate(const std::vector<std::string>& args){
     return code;
 }
 
+// ---------------------------------------------------------------- Elo from games
+static void printLadderLevels(FILE* out, const std::vector<LadderLevel>& levels, const LadderFit& fit){
+    bool depth = false;                              // Stockfish 11: its moves short of the calibrated depth
+    for (auto& l : levels) if (l.refMoves) depth = true;
+    std::fprintf(out, "  %-6s %6s %13s %7s %9s %s %s\n", "Level", "Games", "W-D-L", "Score", "Expected",
+                 depth ? " Short" : "", " Performance");
+    for (auto& l : levels){
+        int g = l.wdl.games();
+        char wdl[40]; std::snprintf(wdl, sizeof wdl, "%d-%d-%d", l.wdl.wins, l.wdl.draws, l.wdl.losses);
+        char score[16] = "-";
+        if (g) std::snprintf(score, sizeof score, "%.1f%%", 100.0 * l.score() / g);
+        std::string expect = fit.status != LadderStatus::Ok ? "-"
+                           : std::to_string((int)std::lround(100 * ladderExpectedScore(fit.elo, l.elo))) + "%";
+        char shortText[16] = "";
+        if (depth){
+            if (l.refMoves) std::snprintf(shortText, sizeof shortText, "%5.0f%%", 100.0 * l.refShallowMoves / l.refMoves);
+            else std::snprintf(shortText, sizeof shortText, "%6s", "-");
+        }
+        std::string perf = ladderPerformance(l);
+        std::fprintf(out, "  %-6d %6d %13s %7s %9s %s  %s\n", l.elo, g, wdl, score, expect.c_str(), shortText,
+                     perf.empty() ? "-" : perf.c_str());
+    }
+    if (depth) std::fprintf(out, "  Short: Stockfish's moves whose search stopped short of the depth its Elo was calibrated with\n");
+}
+
+static int cmdEloGames(const std::vector<std::string>& a){
+    LadderSettings s;
+    s.reference.name = "Stockfish 11";
+    s.reference.path = defaultLadderReference();
+    s.concurrency = std::max(1, (int)std::thread::hardware_concurrency() / 2);
+    bool hasEngine = false, js = false, verbose = false, seedSet = false;
+    EngineRegistry reg;
+    bool regLoaded = false;
+    auto need = [&](size_t& i, std::string& v) -> bool {
+        if (i + 1 >= a.size()) return false;
+        v = a[++i]; return true;
+    };
+    for (size_t i = 0; i < a.size(); i++){
+        const std::string& k = a[i];
+        std::string v;
+        if (k == "--engine" || k == "--reference"){
+            if (k == "--engine" && hasEngine) return fail("elo-games rates one engine: give --engine once");
+            EngineConfig c;
+            int r = parseEngine(a, i, c, reg, regLoaded);
+            if (r >= 0) return r;
+            if (k == "--engine"){ s.engine = c; hasEngine = true; } else s.reference = c;
+        }
+        else if (k == "--tc"){ if (!need(i, v) || !parseTc(v, s.tc)) return fail("bad --tc (use seconds, e.g. 60+0.6)"); }
+        else if (k == "--games"){ if (!need(i, v) || !parseInt(v, s.games) || s.games < 2) return fail("bad --games"); }
+        else if (k == "--levels"){
+            if (!need(i, v)) return fail("--levels needs auto or a list of Elo values");
+            if (v == "auto") s.levels.clear();
+            else if (!parseLadderLevels(v, s.levels)) return fail("bad --levels (auto, or Elo values like 1500,1800,2100)");
+        }
+        else if (k == "--concurrency"){ if (!need(i, v) || !parseInt(v, s.concurrency) || s.concurrency < 1) return fail("bad --concurrency"); }
+        else if (k == "--book"){ if (!need(i, v)) return fail("--book needs a file"); s.bookPath = v; }
+        else if (k == "--book-plies"){ if (!need(i, v) || !parseInt(v, s.bookPlies) || s.bookPlies < 0) return fail("bad --book-plies"); }
+        else if (k == "--seed"){
+            if (!need(i, v)) return fail("--seed needs a value");
+            char* end = nullptr; s.seed = std::strtoull(v.c_str(), &end, 10);
+            if (!end || *end) return fail("bad --seed");
+            seedSet = true;
+        }
+        else if (k == "--margin"){ if (!need(i, v) || !parseInt(v, s.timeMarginMs) || s.timeMarginMs < 0) return fail("bad --margin"); }
+        else if (k == "--pgn"){ if (!need(i, v)) return fail("--pgn needs a file"); s.pgnPath = v; }
+        else if (k == "--state"){ if (!need(i, v)) return fail("--state needs a file"); s.statePath = v; }
+        else if (k == "--json") js = true;
+        else if (k == "--verbose") verbose = true;
+        else return fail("elo-games: unknown option '" + k + "'");
+    }
+    if (!hasEngine) return fail("elo-games needs --engine");
+    // a resumable run must play the same openings when it is run again
+    if (!seedSet) s.seed = !s.statePath.empty() ? 1 : (uint64_t)std::chrono::system_clock::now().time_since_epoch().count() % 1000000007ULL;
+    std::string bad = s.validate();
+    if (!bad.empty()) return fail(bad);
+
+    FILE* out = js ? stderr : stdout;
+    std::fprintf(out, "Elo from games: %s against %s, %s, %d games, %d in parallel, levels %s, seed %llu\n",
+                 s.engine.name.c_str(), s.reference.name.c_str(), s.tc.label().c_str(), s.games, s.concurrency,
+                 s.levels.empty() ? "automatic" : "given", (unsigned long long)s.seed);
+    std::signal(SIGINT, onSignal);
+    std::signal(SIGTERM, onSignal);
+    std::atomic<bool> abortFlag{false};
+    LadderOptions o;
+    o.abort = &abortFlag;
+    int lastShown = 0;
+    o.log = [&](const std::string& line){
+        if (line.rfind(">>>", 0) == 0) return;          // the result is printed below
+        std::fprintf(out, "%s\n", line.c_str()); std::fflush(out);
+    };
+    o.progress = [&](const LadderProgress& p){
+        if (g_interrupted) abortFlag = true;
+        int step = std::max(10, p.gamesPlanned / 20);
+        if (p.gamesDone - lastShown >= step || (verbose && p.gamesDone != lastShown)){
+            std::fprintf(out, "Games %d/%d (stage %d of %d): %s\n", p.gamesDone, p.gamesPlanned, p.stage, p.stages,
+                         ladderHeadline(p.fit).c_str());
+            std::fflush(out);
+            lastShown = p.gamesDone;
+        }
+    };
+    LadderResult r = runEloLadder(s, o);
+    if (!r.levels.empty()){
+        std::fprintf(out, "\n%s at %s, %d games%s:\n", r.engineId.empty() ? s.engine.name.c_str() : r.engineId.c_str(),
+                     s.tc.label().c_str(), r.gamesPlayed, r.aborted ? " (stopped early)" : !r.error.empty() ? " (stopped by an error)" : "");
+        printLadderLevels(out, r.levels, r.fit);
+    }
+    if (!r.error.empty()){
+        if (!r.levels.empty()) std::fprintf(out, "\nRating so far: %s\n", ladderHeadline(r.fit).c_str());
+        std::fprintf(stderr, "chess-cli: %s\n", r.error.c_str());
+        if (js) std::printf("%s\n", ladderResultJson(r).c_str());
+        return r.stages.empty() ? EXIT_USAGE : EXIT_RUN_ERROR;
+    }
+    std::fprintf(out, "\nRating: %s on the UCI_Elo scale of %s (95%%, statistical only)\n", ladderHeadline(r.fit).c_str(),
+                 r.referenceId.empty() ? s.reference.name.c_str() : r.referenceId.c_str());
+    if (r.gamesReplayed) std::fprintf(out, "%d games were replayed because the computer slept during them\n", r.gamesReplayed);
+    for (auto& w : r.warnings) std::fprintf(out, "Warning: %s\n", w.c_str());
+    std::fflush(out);
+    if (js) std::printf("%s\n", ladderResultJson(r).c_str());
+    if (r.aborted || g_interrupted) return EXIT_INTERRUPTED;
+    return EXIT_OK;
+}
+
 int main(int argc, char** argv){
     std::vector<std::string> args = utf8Args(argc, argv);
     if (!args.empty() && (args[0] == "--version" || args[0] == "version")){
@@ -697,6 +837,7 @@ int main(int argc, char** argv){
         return EXIT_OK;
     }
     if (cmd == "elo-estimate") return cmdEloEstimate(args);
+    if (cmd == "elo-games") return cmdEloGames(args);
     if (cmd == "perft") return cmdPerft(args);
     if (cmd == "perft-bisect") return cmdPerftBisect(args);
     if (cmd == "uci-check") return cmdUciCheck(args);

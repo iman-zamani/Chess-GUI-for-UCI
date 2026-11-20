@@ -60,6 +60,8 @@ struct MatchSettings {
     TimeControl tc{10000, 100};
     int timeMarginMs = 100;      // a move may overrun the clock by this much before it's a loss
     int gamesPerPairing = 2;     // rounded up to an even number: games are played in colour-swapped pairs
+    std::vector<int> pairingGames;   // games per pairing, in pairing order (rounded up to even; 0 = none),
+                                     // instead of gamesPerPairing for all (empty: gamesPerPairing)
     int concurrency = 1;         // games in parallel
     std::string bookPath;        // "" = startFens, or the standard start position
     BookFormat bookFormat = BookFormat::Auto;
@@ -132,6 +134,9 @@ public:
         SprtOutcome sprtOutcome = SprtOutcome::Continue;
         std::vector<GameRecord> recent;        // last finished games, newest last
         std::vector<std::string> warnings;     // found when the run started (e.g. unreadable book entries)
+        // per engine: its moves in finished games by the search depth it last reported
+        // (depthCounts[e][d]; d capped at 127; games resumed from a state file are not included)
+        std::vector<std::vector<int>> depthCounts;
         std::string error;                     // why the run stopped by itself ("" = it didn't)
         std::vector<std::string> log;          // the last 200 lines
         long long logTotal = 0;                // lines logged so far (to follow the log)
@@ -176,7 +181,8 @@ private:
     struct Job { int index; int white, black; int opening; int pairing; };
     void workerLoop(int w);
     void playGame(int w, const Job& job, std::vector<std::unique_ptr<UciEngine>>& engines);
-    void recordGame(const Job& job, const Game& g, const std::string& pgn, bool timeLoss, bool crash);
+    void recordGame(const Job& job, const Game& g, const std::string& pgn, bool timeLoss, bool crash,
+                    const std::vector<int>* whiteDepths = nullptr, const std::vector<int>* blackDepths = nullptr);
     void log(const std::string& s);
     void failRun(const std::string& why);     // an error the run can't go on after: stops it, sets Snapshot::error
     void failRunLocked(const std::string& why);   // mx_ held

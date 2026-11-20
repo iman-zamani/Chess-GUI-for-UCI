@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(ChessGUIForUCI VERSION 1.2.1 LANGUAGES CXX)
+project(ChessGUIForUCI VERSION 1.3.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -191,6 +191,7 @@ add_library(chesscore STATIC
     src/analysis.cpp
     src/chess.cpp
     src/elo_estimator.cpp
+    src/elo_ladder.cpp
     src/elo_speed.cpp
     src/engine_config.cpp
     src/game_tree.cpp

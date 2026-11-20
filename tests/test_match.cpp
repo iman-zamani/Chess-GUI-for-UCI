@@ -346,6 +346,35 @@ TEST_CASE("match/gauntlet-and-round-robin"){
     CHECK_EQ(rr.snapshot().gamesDone, 6);
 }
 
+TEST_CASE("match/games-per-pairing-and-depth-counts"){
+    MatchSettings s = base();
+    s.engines = {mock("Seed"), mock("B"), mock("C")};
+    s.mode = TournamentMode::Gauntlet;
+    s.pairingGames = {2, 3};                  // rounded up to even: 2 and 4
+    s.concurrency = 3;
+    MatchRunner r;
+    REQUIRE(r.start(s));
+    waitDone(r);
+    auto snap = r.snapshot();
+    CHECK_EQ(snap.gamesTotal, 6);
+    CHECK_EQ(snap.gamesDone, 6);
+    CHECK_EQ(snap.pairings[0].wdl.games(), 2);
+    CHECK_EQ(snap.pairings[1].wdl.games(), 4);
+    CHECK_EQ(snap.pairings[1].penta.pairs(), 2);
+    // every engine move is counted by the depth it reported
+    REQUIRE(snap.depthCounts.size() == 3);
+    int seedMoves = 0;
+    for (size_t d = 0; d < snap.depthCounts[0].size(); d++) seedMoves += snap.depthCounts[0][d];
+    CHECK(seedMoves > 0);
+    CHECK(snap.depthCounts[0].size() > 1);    // the mock reports depths above 0
+    // a count for every pairing, or none
+    s.pairingGames = {2};
+    MatchRunner bad;
+    std::string err;
+    CHECK(!bad.start(s, &err));
+    CHECK_MSG(err.find("pairings") != std::string::npos, err);
+}
+
 TEST_CASE("match/game-interrupted-by-sleep-is-replayed"){
     MatchSettings s = base();
     s.gamesPerPairing = 4;

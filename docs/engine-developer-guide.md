@@ -122,11 +122,27 @@ Run the same command again to resume. Other options: `--mode roundrobin|gauntlet
 on test positions and estimates its CCRL-Blitz-equivalent rating from which
 positions it solves. It takes minutes instead of the thousands of games a real
 rating needs, but it is an estimate from positions, not a rating from games:
-time management, for example, is not measured. This version does not ship the
-calibrated model yet, so the tab and the command report that; see
-[elo-estimator.md](elo-estimator.md) for the method and the status.
+time management, for example, is not measured. See
+[elo-estimator.md](elo-estimator.md) for the method and its accuracy.
 
-## 6. In CI
+## 6. Rating your engine from games
+
+**Tools > Elo from games** (or `chess-cli elo-games`) plays your engine against the bundled
+Stockfish 11 at fixed `UCI_Elo` levels, several games at a time, at the time control you
+choose, and fits one rating to the scores at every level:
+
+```
+chess-cli elo-games --engine cmd=./myengine --tc 10+0.1 --games 300 --concurrency 8
+chess-cli elo-games --engine cmd=./myengine --tc 60+0.6 --games 300 --concurrency 8
+```
+
+It takes an hour or more instead of minutes, but it measures everything that counts in games,
+time management included, at the time control you care about. Against these levels every
+engine rates higher with more time, so compare engines or versions at the same time control.
+At bullet, Stockfish's strongest levels may not search deep enough to play at their Elo; the
+**Short** column shows how often, and the run warns. See [elo-from-games.md](elo-from-games.md).
+
+## 7. In CI
 
 [github-action.md](github-action.md) shows how to run the UCI checks, perft
 and the Elo estimate in your engine's GitHub Actions workflow.

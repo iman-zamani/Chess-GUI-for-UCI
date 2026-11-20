@@ -69,7 +69,8 @@ def main():
     exe = ".exe" if key.startswith("windows") else ""
     work = a.work or tempfile.mkdtemp(prefix="chessgui-ref-")
     os.makedirs(a.out, exist_ok=True)
-    notes = ["Reference engines for the Elo estimator's speed measurement (src/elo_speed.hpp).",
+    notes = ["Reference engines for the Elo estimator's speed measurement (src/elo_speed.hpp);",
+             "Stockfish 11 is also the default opponent of Elo from games (src/elo_ladder.hpp).",
              "Separate programs, run over UCI; built from these sources for " + key + ":", ""]
     for e in ENGINES:
         d = os.path.join(work, e["id"])
