@@ -57,6 +57,11 @@ if(TARGET chess-cli)
     cli_test(cli_usage 2 "unknown option" "${cli}|match|--engine|${mock}|--engine|${mock}|--bogus")
     cli_test(cli_match 0 "\"gamesPlayed\": 8"
              "${cli}|match|--engine|${mock}|name=A|--engine|${mock}|name=B|--tc|1+0.01|--games|8|--concurrency|2|--json")
+    set(mockref "cmd=$<TARGET_FILE:mock_engine>|name=Ref|args=--think-ms 2 --uci-elo 1000:2000 --weak-below 1500")
+    cli_test(cli_elo_games 0 "1000 +4 +4-0-0.*Rating: "
+             "${cli}|elo-games|--engine|${mock}|args=--think-ms 2|--reference|${mockref}|--tc|1+0.01|--levels|1000,2000|--games|8|--concurrency|4|--seed|1")
+    cli_test(cli_elo_games_no_uci_elo 2 "UCI_Elo"
+             "${cli}|elo-games|--engine|${mock}|--reference|${mock}|--levels|1500|--games|2")
     cli_test(cli_chess960 0 "960 openings.*4 of 4 games played"
              "${cli}|match|--chess960|--random|--seed|7|--engine|${mock}|name=A|--engine|${mock}|name=B|--tc|1+0.01|--games|4|--concurrency|2|--verbose")
     cli_test(cli_rr 0 "Standings"
