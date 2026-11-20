@@ -29,7 +29,7 @@ namespace fs = std::filesystem;
 
 // Exit codes (documented in --help).
 enum Exit { EXIT_OK = 0, EXIT_H0 = 1, EXIT_FAILED = 1, EXIT_USAGE = 2, EXIT_INCONCLUSIVE = 3, EXIT_NO_ESTIMATE = 4,
-            EXIT_INTERRUPTED = 130 };
+            EXIT_RUN_ERROR = 5, EXIT_INTERRUPTED = 130 };
 
 static std::atomic<bool> g_interrupted{false};
 static void onSignal(int){ g_interrupted = true; }
@@ -93,8 +93,9 @@ Output:
 
 Exit codes: 0 success (sprt: H1 accepted), 1 a check failed (perft mismatch, movegen bug found,
 UCI check FAIL; sprt: H0 accepted), 2 usage or start error, 3 sprt: games ran out before a
-decision, 4 elo-estimate: no estimate (the run failed a check), 130 interrupted (the match state
-file can resume it).
+decision, 4 elo-estimate: no estimate (the run failed a check), 5 match/sprt: the run stopped on
+an error (an engine could not be started, a file could not be written), 130 interrupted (the
+match state file can resume it).
 )";
 
 static bool parseDouble(const std::string& s, double& v){
@@ -339,7 +340,7 @@ static int runMatch(const std::vector<std::string>& args, bool sprt){
     follow(s);
     printFinal(out, s, o.s);
     if (o.json) std::printf("%s\n", runner.resultsJson().c_str());
-    if (!s.error.empty()){ std::fprintf(stderr, "chess-cli: %s\n", s.error.c_str()); return EXIT_USAGE; }
+    if (!s.error.empty()){ std::fprintf(stderr, "chess-cli: %s\n", s.error.c_str()); return EXIT_RUN_ERROR; }
     if (g_interrupted){
         if (!o.s.statePath.empty()) std::fprintf(out, "Interrupted; run the same command again to resume.\n");
         return EXIT_INTERRUPTED;

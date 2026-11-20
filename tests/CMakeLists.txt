@@ -60,6 +60,9 @@ if(TARGET chess-cli)
              "${cli}|match|--chess960|--random|--seed|7|--engine|${mock}|name=A|--engine|${mock}|name=B|--tc|1+0.01|--games|4|--concurrency|2|--verbose")
     cli_test(cli_rr 0 "Standings"
              "${cli}|match|--mode|roundrobin|--engine|${mock}|name=A|--engine|${mock}|name=B|--engine|${mock}|name=C|--tc|1+0.01|--games|2|--concurrency|3")
+    # an engine that can't be started once the run is under way: the run stops (exit code 5)
+    cli_test(cli_run_error 5 "could not be started"
+             "${cli}|match|--engine|${mock}|name=A|--engine|${mock}|name=B|args=--exit-at-start 3|--tc|1+0.01|--games|2|--concurrency|1")
     # an engine that forfeits every game: the SPRT accepts H0 (exit code 1)
     cli_test(cli_sprt_h0 1 "H0 accepted"
              "${cli}|sprt|--engine|${mock}|name=Bad|args=--illegal-bestmove|--engine|${mock}|name=B|--tc|1+0.01|--games|200|--concurrency|4|--elo1|50|--model|logistic")

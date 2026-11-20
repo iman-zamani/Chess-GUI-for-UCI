@@ -104,7 +104,9 @@ still sleeps it), and a game interrupted by a system sleep is replayed rather
 than scored. Games are written to a PGN file as they finish,
 with `[%eval]` and `[%clk]` comments.
 
-Command line (exit code 0 for H1, 1 for H0, 3 if the game limit was reached):
+Command line (exit code 0 for H1, 1 for H0, 3 if the game limit was reached, 5 if the run
+stopped on an error such as an engine that could not be started or a file that could not be
+written):
 ```
 chess-cli sprt --engine cmd=./dev name=dev --engine cmd=./base name=base \
   --tc 10+0.1 --book UHO_Lichess_4852_v1.epd --random --concurrency 4 \
