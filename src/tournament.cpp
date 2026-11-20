@@ -437,10 +437,22 @@ void MatchRunner::playGame(int w, const Job& job, std::vector<std::unique_ptr<Uc
         long long deadline = clock[side] + s_.timeMarginMs + kDeadlineSlackMs;
         std::string bm = e.goClock((int)std::max(1LL, clock[0]), (int)std::max(1LL, clock[1]), s_.tc.incMs, s_.tc.incMs,
                                    (int)deadline, &stop_);
-        // the time from writing "go" to the reader thread receiving "bestmove"
-        long long spent = !bm.empty() || !e.searching() ? e.lastSearchWallMs()
-                        : std::chrono::duration_cast<std::chrono::milliseconds>(clk::now() - t0).count();
         if (stop_) return;                                   // aborted: the game doesn't count
+        bool overdue = bm.empty() && e.searching(), stopped = true;
+        if (overdue){
+            // End the search, so the engine is in step for its next move or game. Its bestmove
+            // may have arrived in time and only been read late (this thread was delayed): what
+            // counts is when the reader thread received it.
+            std::string late;
+            stopped = e.stopSearch(1000, &late);
+            if (stopped && !late.empty() && e.lastSearchWallMs() <= clock[side] + s_.timeMarginMs){
+                bm = late == "(none)" ? "" : late;
+                overdue = false;
+            }
+        }
+        // the time from writing "go" to the reader thread receiving "bestmove"
+        long long spent = !e.searching() ? e.lastSearchWallMs()
+                        : std::chrono::duration_cast<std::chrono::milliseconds>(clk::now() - t0).count();
         if (long long slept = suspendedMsSince(asleep); slept > 500){
             // the clocks are meaningless across a system sleep: play the game again
             log("Game " + std::to_string(job.index + 1) + " was interrupted: the computer slept for "
@@ -452,13 +464,11 @@ void MatchRunner::playGame(int w, const Job& job, std::vector<std::unique_ptr<Uc
         }
         clock[side] -= spent;
         GameResult loss = side == 0 ? GameResult::BLACK_WINS : GameResult::WHITE_WINS;
-        if (clock[side] < -s_.timeMarginMs || (bm.empty() && e.searching())){
+        if (clock[side] < -s_.timeMarginMs || overdue){
             g.result = loss; g.reason = ResultReason::TIMEOUT; timeLoss = true;
             std::string who = side == 0 ? g.whiteName : g.blackName;
-            if (!e.searching()) log(who + " lost on time (" + std::to_string(-clock[side]) + " ms over)");
+            if (!overdue) log(who + " lost on time (" + std::to_string(-clock[side]) + " ms over)");
             else {
-                // still searching: end the search, so the engine is in step for its next game
-                bool stopped = e.stopSearch(1000);
                 log(who + " lost on time (no move " + std::to_string(std::max(0LL, -clock[side])) + " ms after its clock ran out; "
                     + (stopped ? "it stopped when told to)" : "it did not answer \"stop\" either and was ended)"));
                 if (!stopped) e.quit();

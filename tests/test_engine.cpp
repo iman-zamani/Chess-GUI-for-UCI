@@ -210,6 +210,26 @@ TEST_CASE("engine/search-time-is-taken-when-the-reply-arrives"){
     CHECK(!e.searching());
 }
 
+TEST_CASE("engine/a-reply-read-late-keeps-its-arrival-time"){
+    // The caller gives up before the reply (as a delayed match worker would), the bestmove
+    // arrives meanwhile and waits in the queue: stopSearch() returns it, timed when it
+    // arrived (about 120 ms), not when it was read (after 600 ms).
+    EngineConfig c; c.path = kMock; c.args = {"--think-ms", "120"};
+    UciEngine e;
+    REQUIRE(e.start(c));
+    e.setPosition(Position::startpos().toFEN(), {});
+    CHECK(e.goClock(5000, 5000, 0, 0, 1).empty());
+    CHECK(e.searching());
+    std::this_thread::sleep_for(std::chrono::milliseconds(600));
+    std::string bm;
+    CHECK(e.stopSearch(1000, &bm));
+    Move m;
+    CHECK(Position::startpos().uciToMove(bm, m));
+    CHECK(e.lastSearchWallMs() >= 100);
+    CHECK_MSG(e.lastSearchWallMs() < 500, "measured " << e.lastSearchWallMs() << " ms");
+    CHECK(!e.searching());
+}
+
 TEST_CASE("engine/user-data-dir"){
     // (the default, a folder in the user's Documents, is not touched by the tests)
     fs::path own = scratchDir("data-dir") / "sub";

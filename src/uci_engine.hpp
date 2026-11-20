@@ -162,8 +162,10 @@ public:
     bool searching() const { return searching_; }
     // Ends a search that is still running: "stop", then up to waitMs for the bestmove.
     // False if none came: the engine is out of step with us and must not be used again
-    // (the next command would kill it, see ensureIdle).
-    bool stopSearch(int waitMs = 1000);
+    // (the next command would kill it, see ensureIdle). The bestmove read, if any, goes to
+    // *bestmove ("(none)" as is), and lastSearchWallMs() is the time it arrived, which can
+    // be before the "stop" if it was already waiting to be read.
+    bool stopSearch(int waitMs = 1000, std::string* bestmove = nullptr);
     // infinite analysis: call goInfinite, poll lastInfo(), then stopAndWait()
     void goInfinite();
     std::string stopAndWait(int timeoutMs = 3000);

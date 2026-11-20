@@ -627,14 +627,21 @@ void UciEngine::newGame(){
     sendRaw("ucinewgame");
     isReady(10000);
 }
-bool UciEngine::stopSearch(int waitMs){
+bool UciEngine::stopSearch(int waitMs, std::string* bestmove){
     if (!searching_) return true;
     if (alive()){
         sendRaw("stop");
         auto t0 = clk::now();
         while (searching_ && msSince(t0) < waitMs && alive()){
             std::string ln = readLine(std::max(1, (int)std::min<long long>(50, waitMs - msSince(t0))));
-            if (!ln.empty()) parseInfo(ln);
+            if (ln.empty()) continue;
+            parseInfo(ln);
+            if (ln.rfind("bestmove", 0) == 0){       // (readLine has set lastWallMs_)
+                std::istringstream ss(ln);
+                std::string a, b, c2, d; ss >> a >> b >> c2 >> d;
+                if (c2 == "ponder"){ std::lock_guard<std::mutex> lk(infoMx); ponder_ = d; }
+                if (bestmove) *bestmove = b;
+            }
         }
     }
     return !searching_;
