@@ -132,6 +132,7 @@ public:
         SprtOutcome sprtOutcome = SprtOutcome::Continue;
         std::vector<GameRecord> recent;        // last finished games, newest last
         std::vector<std::string> warnings;     // found when the run started (e.g. unreadable book entries)
+        std::string error;                     // why the run stopped by itself ("" = it didn't)
         std::vector<std::string> log;          // the last 200 lines
         long long logTotal = 0;                // lines logged so far (to follow the log)
         std::string status;
@@ -163,7 +164,9 @@ public:
 
     // Exposed for tests: the pairings (engine index pairs) a mode produces.
     static std::vector<std::pair<int, int>> pairingsFor(TournamentMode m, int engines, int seeds);
-    // Adjudication decision after a move, from White-POV scores of the last plies.
+    // Adjudication decision after a move, from White-POV scores of the last plies
+    // (kNoScore for a move the engine gave no score for: it counts for neither side).
+    static constexpr int kNoScore = 1 << 30;
     static bool adjudicate(const AdjudicationConfig& a, const std::vector<int>& whiteScores,
                            int fullMove, GameResult& result);
     // Tablebase adjudication of a position (Syzygy tables must be loaded).
@@ -175,10 +178,12 @@ private:
     void playGame(int w, const Job& job, std::vector<std::unique_ptr<UciEngine>>& engines);
     void recordGame(const Job& job, const Game& g, const std::string& pgn, bool timeLoss, bool crash);
     void log(const std::string& s);
+    void failRun(const std::string& why);     // an error the run can't go on after: stops it, sets Snapshot::error
+    void failRunLocked(const std::string& why);   // mx_ held
     void logLocked(const std::string& s);     // mx_ held
     bool nextJob(Job& j);
     void loadState();
-    void saveState();
+    bool saveState();                         // false if the file could not be written
 
     MatchSettings s_;
     std::vector<Opening> book_;
