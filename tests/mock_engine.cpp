@@ -38,6 +38,9 @@
  *   --real-time                   with a speed scale, "go nodes" / "go depth" take the time they report
  *   --movetime-scale F            under "go movetime T", think F x T (0.01: ignores it, 1.6: needs a stop)
  *   --busy-idle                   keep a CPU busy while waiting for commands (a busy-waiting input loop)
+ *   --uci-elo MIN:MAX             offer UCI_LimitStrength and UCI_Elo (MIN..MAX), like Stockfish
+ *   --weak-below E                with UCI_LimitStrength on and UCI_Elo below E, answer every go
+ *                                 with an illegal move (loses every game: a level the tests can see)
  *
  * Flags can also come from the MOCK_ENGINE_FLAGS environment variable, separated
  * by '|' (for engines the program starts without arguments, e.g. reference engines);
@@ -79,7 +82,10 @@ struct Flags {
     std::string speedFile;
     int slowUciok = 0, slowReadyok = 0, crashOnGo = 0, thinkMs = -1;
     double speedScale = 0;
+    int eloMin = 0, eloMax = 0, weakBelow = 0;
 } F;
+std::atomic<bool> limitStrength{false};
+std::atomic<int> uciElo{0};
 
 std::mutex outMx;
 void out(const std::string& s){
@@ -269,6 +275,7 @@ void runSearch(GoParams g, Position p){
     std::string bm;
     if (!have || F.noneBestmove) bm = "(none)";
     else if (F.illegalBestmove) bm = "a1a1";
+    else if (F.weakBelow && limitStrength && uciElo < F.weakBelow) bm = "a1a1";
     else bm = p.moveToUCI(best);
     out("bestmove " + bm);
     searching = false;
@@ -374,6 +381,14 @@ int main(int argc, char** argv){
         else if (a == "--real-time") F.realTime = true;
         else if (a == "--movetime-scale") F.movetimeScale = std::atof(next().c_str());
         else if (a == "--busy-idle") F.busyIdle = true;
+        else if (a == "--uci-elo"){
+            std::string v = next();
+            size_t c = v.find(':');
+            F.eloMin = std::atoi(v.substr(0, c).c_str());
+            F.eloMax = c == std::string::npos ? 0 : std::atoi(v.substr(c + 1).c_str());
+            uciElo = F.eloMin;
+        }
+        else if (a == "--weak-below") F.weakBelow = std::atoi(next().c_str());
         else if (a == "--exit-at-start"){ std::cerr << "mock_engine: exiting at start" << std::endl;
                                           return std::atoi(next().c_str()); }
         else { std::cerr << "mock_engine: unknown flag " << a << "\n"; }
@@ -401,6 +416,11 @@ int main(int argc, char** argv){
             out("option name EvalFile type string default <empty>");
             out("option name Clear Hash type button");
             out("option name UCI_Chess960 type check default false");
+            if (F.eloMax > F.eloMin){
+                out("option name UCI_LimitStrength type check default false");
+                out("option name UCI_Elo type spin default " + std::to_string(F.eloMin) + " min "
+                    + std::to_string(F.eloMin) + " max " + std::to_string(F.eloMax));
+            }
             if (F.reportEnv){
                 std::error_code ec;
                 // u8string: on Windows string() throws for a folder name outside the code page
@@ -422,7 +442,19 @@ int main(int argc, char** argv){
         else if (cmd == "go") handleGo(ss);
         else if (cmd == "stop") stopSearch();
         else if (cmd == "ponderhit") ponderhitFlag = true;
-        else if (cmd == "setoption" || cmd == "debug" || cmd == "register") {}
+        else if (cmd == "setoption"){
+            // setoption name <id> [value <x>] (names may contain spaces)
+            std::string tok, name, value; bool inValue = false;
+            ss >> tok;                                   // "name"
+            while (ss >> tok){
+                if (!inValue && tok == "value"){ inValue = true; continue; }
+                std::string& to = inValue ? value : name;
+                to += (to.empty() ? "" : " ") + tok;
+            }
+            if (name == "UCI_LimitStrength") limitStrength = value == "true";
+            else if (name == "UCI_Elo") uciElo = std::atoi(value.c_str());
+        }
+        else if (cmd == "debug" || cmd == "register") {}
         else if (cmd == "quit"){
             if (F.noQuit) continue;
             break;
