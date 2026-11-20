@@ -4,6 +4,7 @@
 #include "engine_config.hpp"
 #include "uci_engine.hpp"
 #include "settings.hpp"
+#include <atomic>
 #include <chrono>
 #include <thread>
 #include <filesystem>
@@ -142,6 +143,73 @@ TEST_CASE("engine/quit-kills-unresponsive-engine"){
     CHECK(std::chrono::steady_clock::now() - t0 < std::chrono::seconds(3));
 }
 
+TEST_CASE("engine/search-that-never-answers-is-not-left-running"){
+    auto ms = [](std::chrono::steady_clock::time_point t){
+        return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t).count(); };
+    const std::string start = Position::startpos().toFEN();
+    // an engine that thinks far beyond the time we give the call, but obeys "stop"
+    { EngineConfig c; c.path = kMock; c.args = {"--think-ms", "20000"};
+      UciEngine e;
+      REQUIRE(e.start(c));
+      e.setPosition(start, {});
+      auto t0 = std::chrono::steady_clock::now();
+      CHECK(e.goClock(1000, 1000, 0, 0, 150).empty());           // gives up after 150 ms...
+      CHECK(ms(t0) < 1000);
+      CHECK(e.searching());                                      // ...and says the search is still on
+      CHECK(e.stopSearch(1000));
+      CHECK(!e.searching());
+      // the old bestmove was consumed: the next search gets its own answer
+      e.setPosition("4k3/8/8/8/8/8/8/4K2R b - - 0 1", {});
+      e.sendRaw("setoption name Clear Hash");
+      std::string bm = e.goDepth(1, 3000);
+      Move m;
+      CHECK(Position::fromFEN("4k3/8/8/8/8/8/8/4K2R b - - 0 1").uciToMove(bm, m));
+      CHECK(e.alive()); }
+    // forgetting to stop it: the next command does, before anything else is sent
+    { EngineConfig c; c.path = kMock; c.args = {"--think-ms", "20000"};
+      UciEngine e;
+      REQUIRE(e.start(c));
+      e.setPosition(start, {});
+      CHECK(e.goClock(1000, 1000, 0, 0, 100).empty());
+      e.setPosition("4k3/8/8/8/8/8/8/4K2R b - - 0 1", {});
+      CHECK(!e.searching());
+      CHECK(e.alive()); }
+    // an engine that ignores "stop" as well can't be brought back in step: it is ended
+    { EngineConfig c; c.path = kMock; c.args = {"--think-ms", "20000", "--ignore-stop"};
+      UciEngine e;
+      REQUIRE(e.start(c));
+      e.setPosition(start, {});
+      CHECK(e.goClock(1000, 1000, 0, 0, 100).empty());
+      CHECK(!e.stopSearch(300));
+      CHECK(e.searching());
+      auto t0 = std::chrono::steady_clock::now();
+      e.newGame();                                               // stop (2 s), then quit / kill (1 s)
+      CHECK(!e.alive());                                         // (also with unread output left in the queue)
+      CHECK(ms(t0) < 5000); }
+    // a caller can cancel the wait
+    { EngineConfig c; c.path = kMock; c.args = {"--think-ms", "20000"};
+      UciEngine e;
+      REQUIRE(e.start(c));
+      e.setPosition(start, {});
+      std::atomic<bool> cancel{false};
+      std::thread t([&]{ std::this_thread::sleep_for(std::chrono::milliseconds(150)); cancel = true; });
+      auto t0 = std::chrono::steady_clock::now();
+      CHECK(e.goClock(60000, 60000, 0, 0, -1, &cancel).empty());
+      CHECK(ms(t0) < 1500);
+      t.join(); }
+}
+
+TEST_CASE("engine/search-time-is-taken-when-the-reply-arrives"){
+    EngineConfig c; c.path = kMock; c.args = {"--think-ms", "120"};
+    UciEngine e;
+    REQUIRE(e.start(c));
+    e.setPosition(Position::startpos().toFEN(), {});
+    CHECK(!e.goClock(5000, 5000, 0, 0).empty());
+    CHECK(e.lastSearchWallMs() >= 100);
+    CHECK(e.lastSearchWallMs() < 1000);
+    CHECK(!e.searching());
+}
+
 TEST_CASE("engine/user-data-dir"){
     // (the default, a folder in the user's Documents, is not touched by the tests)
     fs::path own = scratchDir("data-dir") / "sub";
@@ -157,7 +225,6 @@ TEST_CASE("engine/user-data-dir"){
     unsetenv("CHESSGUI_DATA_DIR");
 #endif
 }
-
 
 TEST_CASE("engine/paths-outside-ascii"){
     // An engine, its working folder and data files in a folder whose name no single-byte
@@ -195,7 +262,6 @@ TEST_CASE("engine/paths-outside-ascii"){
     unsetenv("CHESSGUI_DATA_DIR");
 #endif
 }
-
 
 TEST_CASE("engine/info-line-parsing"){
     EngineInfo inf; std::vector<PvLine> pvs;
