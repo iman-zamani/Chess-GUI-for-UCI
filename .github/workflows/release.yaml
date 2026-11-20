@@ -120,7 +120,12 @@ jobs:
           # chess-cli finds the Elo model in Resources/ next to itself
           mkdir "$STAGING/chess-cli" && cp build/chess-cli "$STAGING/chess-cli/" && cp -R Resources "$STAGING/chess-cli/Resources"
           ln -s /Applications "$STAGING/Applications"
-          hdiutil create -volname "ChessGUI" -srcfolder "$STAGING" -ov -format UDZO "$DMG_NAME"
+          # hdiutil fails now and then on the CI runners ("Resource busy"): try again a few times
+          for attempt in 1 2 3 4 5; do
+            if hdiutil create -volname "ChessGUI" -srcfolder "$STAGING" -ov -format UDZO "$DMG_NAME"; then break; fi
+            if [ "$attempt" = 5 ]; then echo "hdiutil create failed 5 times"; exit 1; fi
+            echo "hdiutil create failed (attempt $attempt), retrying in 10 s"; sleep 10
+          done
           # the command-line tool on its own (fixed name: the GitHub Action downloads it)
           mkdir chess-cli && cp build/chess-cli LICENSE chess-cli/ && cp -R Resources chess-cli/Resources
           tar -czf "chess-cli-macos-${{ matrix.target_arch }}.tar.gz" -C chess-cli .
