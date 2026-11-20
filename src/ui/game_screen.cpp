@@ -407,7 +407,8 @@ void GameScreen::startReview(){
         int N = (int)moves.size();
         // per position (0..N): best and second-best score for the side to move, and the best move
         std::vector<int> best(N + 1, 0), second(N + 1, 0), mate(N + 1, 0);
-        std::vector<bool> hasSecond(N + 1, false), isMate(N + 1, false), ok(N + 1, false);
+        // (char, not bool: the workers write neighbouring entries, and vector<bool> packs them into shared words)
+        std::vector<char> hasSecond(N + 1, 0), isMate(N + 1, 0), ok(N + 1, 0);
         std::vector<std::string> bestMove(N + 1);
         std::atomic<int> done{0};
         std::string engineName;
@@ -446,7 +447,7 @@ void GameScreen::startReview(){
         bool wtm = startWhite;
         for (int i = 0; i <= N; i++){                          // White's point of view of each position
             out.cpW[i] = wtm ? best[i] : -best[i];
-            out.isMate[i] = isMate[i];
+            out.isMate[i] = isMate[i] != 0;
             out.mateW[i] = wtm ? mate[i] : -mate[i];
             wtm = !wtm;
         }
@@ -458,7 +459,7 @@ void GameScreen::startReview(){
             if (!ok[i] || !ok[i + 1]){ if (!wtm) num++; wtm = !wtm; continue; }
             double before = win(best[i]), after = win(-best[i + 1]);   // the mover's winning chances
             double drop = std::max(0.0, before - after);
-            int nag = reviewMark(before, after, moves[i] == bestMove[i], hasSecond[i], hasSecond[i] ? win(second[i]) : 0);
+            int nag = reviewMark(before, after, moves[i] == bestMove[i], hasSecond[i] != 0, hasSecond[i] ? win(second[i]) : 0);
             out.nag[i] = nag;
             cnt[nag]++;
             double acc = moveAccuracyFromWinDrop(drop);
