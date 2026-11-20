@@ -1,5 +1,44 @@
 # Changelog
 
+## Unreleased
+
+Fixes from a full code review. Nothing here changes how a correct engine is tested; it changes
+what happens when something goes wrong.
+
+### Matches
+- An engine that does not answer is given up on as soon as its clock (plus the margin) has run
+  out, told to `stop`, and ended and restarted if it ignores that too. The wait used to be both
+  clocks plus 20 seconds, and the engine was left searching into its next game.
+- Stop takes effect at once instead of after the move in progress.
+- The time of a move is taken when the engine's reply arrives. On Windows engine output is read
+  with blocking reads instead of polling, which could add up to a timer tick (about 15 ms) to
+  every move.
+- PGN and state files go to a per-user folder by default (Documents/Chess-GUI-for-UCI) instead
+  of the program's own folder, which can't be written inside an app bundle, an AppImage or
+  Program Files. Every write is checked: a run whose files can't be written stops with an error
+  instead of finishing without a record.
+- A run stops when an engine can't be started, instead of counting every remaining game as a
+  forfeit. A book line ends at its first move that can't be played. A move without a score no
+  longer counts as 0.00 for adjudication. Engines are never sent a clock of 0.
+- `chess-cli` runs half the CPU cores' worth of games in parallel by default, as its help said.
+
+### Rules and files
+- Threefold repetition: an en-passant square that nobody can capture on no longer makes a
+  position different (the draw came one repetition late).
+- FEN: ranks must have eight squares, the side to move must be `w` or `b`, and an en-passant
+  square must sit behind a pawn that can just have moved. Such input used to be accepted.
+- PGN: comments that continue on a line starting with `[`, `;` comments and `%` lines are read
+  correctly (games used to be cut short without a message); `0-0`, promotions without `=` and
+  extra disambiguation are understood. Opening books read only the plies they use (a book of
+  full-length games loaded about 45 times faster in a test) and report games they had to cut short.
+- Saved games with an invalid `Result` tag can be read back; huge FEN move counters and perft
+  counts no longer overflow.
+- Windows: paths and command-line arguments outside the ANSI code page work.
+
+### Build
+- Compiler warnings (`-Wall -Wextra`) are on for the project's own code; CI builds and tests it
+  under AddressSanitizer, UndefinedBehaviorSanitizer and ThreadSanitizer, and fuzzes the parsers.
+
 ## 1.2.0 (2026-11-02)
 
 ### Elo estimator
