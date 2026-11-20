@@ -48,6 +48,10 @@ std::string MatchSettings::fingerprint() const{
     o << tournamentModeName(mode) << "|" << gauntletSeeds << "|" << tc.baseMs << "+" << tc.incMs << "|"
       << ((gamesPerPairing + 1) / 2 * 2) << "|" << bookPath << "|" << (int)bookFormat << "|" << bookPlies << "|"
       << bookRandom << "|" << seed << "|" << startFens.size() << (chess960 ? "|960" : "");
+    if (!pairingGames.empty()){
+        o << "|pg";
+        for (int g : pairingGames) o << ":" << (std::max(0, g) + 1) / 2 * 2;
+    }
     for (auto& e : engines){
         o << "|" << e.name << "=" << e.path;
         for (auto& a : e.args) o << " " << a;
@@ -236,11 +240,18 @@ bool MatchRunner::start(const MatchSettings& settings, std::string* err){
     }
     schedule_ = std::make_unique<OpeningSchedule>(book_.size(), s_.bookRandom, s_.seed);
     pairings_ = pairingsFor(s_.mode, n, s_.gauntletSeeds);
+    if (!s_.pairingGames.empty() && s_.pairingGames.size() != pairings_.size())
+        return fail("games per pairing: " + std::to_string(s_.pairingGames.size()) + " values for "
+                    + std::to_string(pairings_.size()) + " pairings");
+    for (int& g : s_.pairingGames) g = (std::max(0, g) + 1) / 2 * 2;
+    auto roundsOf = [&](size_t p){ return (s_.pairingGames.empty() ? s_.gamesPerPairing : s_.pairingGames[p]) / 2; };
     // jobs: round r of every pairing, then the next round; each round is a colour-swapped pair
     jobs_.clear();
-    int rounds = s_.gamesPerPairing / 2, idx = 0;
+    int rounds = 0, idx = 0;
+    for (size_t p = 0; p < pairings_.size(); p++) rounds = std::max(rounds, roundsOf(p));
     for (int r = 0; r < rounds; r++)
         for (size_t p = 0; p < pairings_.size(); p++){
+            if (r >= roundsOf(p)) continue;
             int opening = book_.empty() ? -1 : (int)schedule_->forPair((size_t)r);
             auto [a, b] = pairings_[p];
             jobs_.push_back({idx++, a, b, opening, (int)p});
@@ -257,6 +268,7 @@ bool MatchRunner::start(const MatchSettings& settings, std::string* err){
         snap_.gamesTotal = snap_.totalGames = (int)jobs_.size();
         for (auto& nm : engineNames_){ Standing st; st.name = nm; snap_.standings.push_back(st); }
         for (auto& pr : pairings_){ PairingStats ps; ps.a = pr.first; ps.b = pr.second; snap_.pairings.push_back(ps); }
+        snap_.depthCounts.assign(n, {});
         snap_.sprt = s_.sprtEnabled;
         snap_.llrLower = s_.sprt.lowerBound(); snap_.llrUpper = s_.sprt.upperBound();
         snap_.live.resize(s_.concurrency);
@@ -403,6 +415,7 @@ void MatchRunner::playGame(int w, const Job& job, std::vector<std::unique_ptr<Uc
     g.blackName = engineNames_[job.black];
     std::vector<std::string> comments(ucis.size());
     std::vector<int> whiteScores;
+    std::vector<int> depths[2];                         // moves by reported search depth, White and Black
     bool timeLoss = false, crash = false;
     long long clock[2] = {s_.tc.baseMs, s_.tc.baseMs};
     auto post = [&](const std::function<void(LiveGame&)>& f){
@@ -498,6 +511,12 @@ void MatchRunner::playGame(int w, const Job& job, std::vector<std::unique_ptr<Uc
         }
         EngineInfo inf = e.lastInfo();
         MoveStat ms = MoveStat::from(inf, (int)g.moves.size(), side == 0, spent);
+        {
+            size_t d = (size_t)std::max(0, std::min(127, inf.depth));
+            std::vector<int>& h = depths[side];
+            if (h.size() <= d) h.resize(d + 1, 0);
+            h[d]++;
+        }
         int ws = whitePov(inf, side == 0);
         whiteScores.push_back(inf.hasScore ? ws : kNoScore);
         char cm[160];
@@ -528,11 +547,20 @@ void MatchRunner::playGame(int w, const Job& job, std::vector<std::unique_ptr<Uc
     if (stop_ && g.result == GameResult::ONGOING) return;
     int pair = job.index / 2;
     std::string pgn = matchGamePgn(g, s_, pair + 1, job.index % 2 + 1, comments, terminationTag(g.reason), bookPlies);
-    recordGame(job, g, pgn, timeLoss, crash);
+    recordGame(job, g, pgn, timeLoss, crash, &depths[0], &depths[1]);
 }
 
-void MatchRunner::recordGame(const Job& job, const Game& g, const std::string& pgn, bool timeLoss, bool crash){
+void MatchRunner::recordGame(const Job& job, const Game& g, const std::string& pgn, bool timeLoss, bool crash,
+                             const std::vector<int>* whiteDepths, const std::vector<int>* blackDepths){
     std::lock_guard<std::mutex> lk(mx_);
+    auto addDepths = [&](int engine, const std::vector<int>* d){
+        if (!d || engine < 0 || engine >= (int)snap_.depthCounts.size()) return;
+        std::vector<int>& to = snap_.depthCounts[engine];
+        if (to.size() < d->size()) to.resize(d->size(), 0);
+        for (size_t i = 0; i < d->size(); i++) to[i] += (*d)[i];
+    };
+    addDepths(job.white, whiteDepths);
+    addDepths(job.black, blackDepths);
     if (job.index < (int)done_.size()) done_[job.index] = true;
     GameRecord rec;
     rec.index = job.index; rec.white = job.white; rec.black = job.black; rec.opening = job.opening;
