@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### Elo from games
+- New: **Tools > Elo from games** and `chess-cli elo-games` rate an engine from games against
+  the bundled Stockfish 11 at fixed `UCI_Elo` levels (1350-2850, anchored to CCRL), games in
+  parallel, at the time control and number of games you choose. Automatic levels spread the
+  first games over the whole range, then play near the first estimate; or give the levels
+  yourself. The rating is a maximum-likelihood fit over all levels, with a 95% interval from
+  the pair scores, a bound instead of a number for an engine past the levels, a check that
+  the levels agree, and each level's own performance. At time controls faster than the
+  levels' calibration (60+0.6) it warns when a Stockfish level could not search as deep as its
+  Elo assumes. Runs can be resumed (`--state`, or Resume in the GUI). Any engine with `UCI_Elo`
+  can be the opponent. See docs/elo-from-games.md.
+- Matches: games per pairing can differ between pairings, and the runner counts every
+  engine's moves by the search depth it reported.
+- A bundled book of 50 well-known openings (`Resources/books/openings.pgn`), used by default.
+
 ## 1.2.1 (2026-11-20)
 
 Fixes from a full code review. Nothing here changes how a correct engine is tested; it changes

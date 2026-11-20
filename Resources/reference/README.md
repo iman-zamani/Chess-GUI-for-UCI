@@ -2,7 +2,9 @@
 
 The Elo estimator measures how fast this computer runs chess engines by
 replaying searches that two calibration engines made on the calibration
-machine (see `src/elo_speed.hpp` and `docs/elo-estimator.md`). The engines are
+machine (see `src/elo_speed.hpp` and `docs/elo-estimator.md`). Stockfish 11 is
+also the default opponent of Elo from games, at its `UCI_Elo` levels (see
+`src/elo_ladder.hpp` and `docs/elo-from-games.md`). The engines are
 separate programs, run over UCI, and are built from pinned source tags by
 
     python3 tools/build_reference_engines.py

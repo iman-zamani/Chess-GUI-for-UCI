@@ -20,6 +20,7 @@ GPL-2.0 · C++17 · Windows, macOS, Linux
 | **Perft bisection** | Your engine's `go perft` against a verified generator; on a mismatch it walks down to the position where your generator lists the wrong moves and names them. |
 | **UCI compliance** | 13 protocol checks (handshake, `isready` during search, `stop`, go modes, mates, no legal moves, ponder, time management, ...) with an explanation and the engine log for each. |
 | **Elo estimate** | Estimates a CCRL-Blitz-equivalent rating from test positions in minutes. Cross-validated error 76 Elo (mean, whole engine family left out) for the calibration engines rated 2000-3487; much less accurate below 2000, and past 3487 it reports a bound instead of a number (see below). |
+| **Elo from games** | Rates the engine from games against Stockfish 11 at fixed `UCI_Elo` levels (1350-2850, anchored to CCRL), in parallel, at the time control you choose: slower than the estimate from positions, but it measures time management and everything else a game needs. |
 | **UCI console** | Every running engine, live, with a command line (Ctrl+U). |
 | **Search statistics** | Depth, seldepth, nodes, NPS, hash and time per move, with graphs. |
 | **CLI and CI** | `chess-cli` runs all of the above headless with `--json` and exit codes; a GitHub Action runs it in your engine's workflow. |
@@ -83,6 +84,7 @@ chess-cli perft-bisect --engine cmd=./myengine --fen "<FEN>" --depth 5
 chess-cli sprt --engine cmd=./dev name=dev --engine cmd=./base name=base --tc 10+0.1 \
                --book book.epd --random --concurrency 4 --elo0 0 --elo1 5
 chess-cli elo-estimate --engine cmd=./myengine --quick
+chess-cli elo-games --engine cmd=./myengine --tc 60+0.6 --games 300   # slower, from real games
 ```
 
 Every command takes `--json`; exit codes are non-zero when a check fails or the SPRT
@@ -148,6 +150,7 @@ Method, full results and limits: [docs/elo-estimator.md](docs/elo-estimator.md).
 
 - [Engine developer guide](docs/engine-developer-guide.md): UCI checks, perft bisection, SPRT how-to
 - [Elo estimator](docs/elo-estimator.md): method, protocol and accuracy
+- [Elo from games](docs/elo-from-games.md): rating an engine against Stockfish's strength levels
 - [GitHub Action](docs/github-action.md)
 - [Building from source](docs/building.md), [Contributing](CONTRIBUTING.md), [Changelog](CHANGELOG.md)
 
