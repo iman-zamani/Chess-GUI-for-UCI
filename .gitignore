@@ -6,3 +6,8 @@ Resources/engines
 __pycache__/
 Resources/reference/*
 !Resources/reference/README.md
+
+# Sanitizer and fuzzer build trees (CHESSGUI_SANITIZE / CHESSGUI_FUZZ)
+build-asan/
+build-tsan/
+build-fuzz/

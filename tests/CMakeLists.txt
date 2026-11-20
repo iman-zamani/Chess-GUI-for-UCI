@@ -1,5 +1,6 @@
 add_executable(mock_engine mock_engine.cpp)
 target_link_libraries(mock_engine PRIVATE chesscore)
+chessgui_warnings(mock_engine)
 
 add_executable(core_tests
     test_chess.cpp
@@ -14,16 +15,18 @@ add_executable(core_tests
     test_chess960.cpp
     test_elo.cpp
     test_game_tree.cpp
+    test_fuzz.cpp
     test_main.cpp
 )
 target_link_libraries(core_tests PRIVATE chesscore)
+chessgui_warnings(core_tests)
 target_compile_definitions(core_tests PRIVATE
     CHESSGUI_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
     MOCK_ENGINE_PATH="$<TARGET_FILE:mock_engine>")
 add_dependencies(core_tests mock_engine)
 
 # One CTest entry per test group (name prefix understood by the runner).
-foreach(group perft fen san pgn game uci engine bisect ucicheck stats openings match syzygy chess960 elo tree)
+foreach(group perft fen san pgn game uci engine bisect ucicheck stats openings match syzygy chess960 elo tree fuzz)
     add_test(NAME ${group} COMMAND core_tests ${group}/)
 endforeach()
 set_tests_properties(perft PROPERTIES TIMEOUT 600)
@@ -73,4 +76,12 @@ if(TARGET chess-cli)
              "${cli}|elo-estimate|--engine|${mock}|args=--burn-cpu|--model|${CMAKE_CURRENT_SOURCE_DIR}/data/elo_test_model.json|--factor|1")
     cli_test(cli_analyse 0 "\"bestmove\"" "${cli}|analyse|--engine|${mock}|--depth|2|--json")
     add_dependencies(core_tests chess-cli)
+endif()
+
+# libFuzzer harness (-DCHESSGUI_FUZZ=ON, Clang): ./fuzz_parsers -seed=1 -runs=200000
+if(CHESSGUI_FUZZ)
+    add_executable(fuzz_parsers fuzz/fuzz_parsers.cpp)
+    target_link_libraries(fuzz_parsers PRIVATE chesscore)
+    target_link_options(fuzz_parsers PRIVATE -fsanitize=fuzzer)
+    chessgui_warnings(fuzz_parsers)
 endif()

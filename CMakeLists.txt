@@ -30,6 +30,48 @@ if(MSVC)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
+# Warnings for our own targets only; third-party code keeps its own flags.
+function(chessgui_warnings target)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(${target} PRIVATE -Wall -Wextra)
+    endif()
+endfunction()
+
+# Sanitizer builds (GCC/Clang): -DCHESSGUI_SANITIZE=address (ASan + UBSan) or
+# thread (TSan). Applied to everything, third-party code included, so that
+# every allocation and every lock is seen by the runtime.
+set(CHESSGUI_SANITIZE "" CACHE STRING "Sanitizer build: address, thread or empty")
+set_property(CACHE CHESSGUI_SANITIZE PROPERTY STRINGS "" address thread)
+if(CHESSGUI_SANITIZE)
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        message(FATAL_ERROR "CHESSGUI_SANITIZE needs GCC or Clang")
+    endif()
+    if(CHESSGUI_SANITIZE STREQUAL "address")
+        set(CHESSGUI_SAN_FLAGS -fsanitize=address,undefined -fno-sanitize-recover=undefined)
+    elseif(CHESSGUI_SANITIZE STREQUAL "thread")
+        set(CHESSGUI_SAN_FLAGS -fsanitize=thread)
+    else()
+        message(FATAL_ERROR "CHESSGUI_SANITIZE must be address or thread, not '${CHESSGUI_SANITIZE}'")
+    endif()
+    add_compile_options(${CHESSGUI_SAN_FLAGS} -fno-omit-frame-pointer)
+    add_link_options(${CHESSGUI_SAN_FLAGS})
+    message(STATUS "Sanitizer build: ${CHESSGUI_SANITIZE}")
+endif()
+
+# libFuzzer harness for the parsers (tests/fuzz). Clang only; everything is
+# instrumented for coverage, and only the harness links the fuzzer's main().
+option(CHESSGUI_FUZZ "Build the libFuzzer parser harness (Clang)" OFF)
+if(CHESSGUI_FUZZ)
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        message(FATAL_ERROR "CHESSGUI_FUZZ needs Clang")
+    endif()
+    if(CHESSGUI_SANITIZE)
+        message(FATAL_ERROR "CHESSGUI_FUZZ brings its own sanitizers; leave CHESSGUI_SANITIZE empty")
+    endif()
+    add_compile_options(-fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=address,undefined)
+endif()
+
 if(CHESSGUI_BUILD_GUI)
     if(CHESSGUI_USE_SYSTEM_SFML)
         find_package(SFML 3 CONFIG REQUIRED COMPONENTS Graphics Window System)
@@ -165,6 +207,7 @@ add_library(chesscore STATIC
     src/tournament.cpp
 )
 target_include_directories(chesscore PUBLIC src)
+chessgui_warnings(chesscore)
 target_compile_definitions(chesscore PUBLIC CHESSGUI_VERSION="${PROJECT_VERSION}")
 target_link_libraries(chesscore PUBLIC Threads::Threads nlohmann_json::nlohmann_json PRIVATE fathom)
 if(APPLE)
@@ -177,6 +220,7 @@ endif()
 # Headless command-line tool: core only, no SFML.
 add_executable(chess-cli src/cli.cpp)
 target_link_libraries(chess-cli PRIVATE chesscore)
+chessgui_warnings(chess-cli)
 
 # Resources next to the binaries (fonts, pieces, the Elo model, the reference
 # engines, ...). A target of its own, run on every build, so a changed file
@@ -203,9 +247,15 @@ set(CHESS_SOURCES
     ${imgui_SOURCE_DIR}/misc/cpp/imgui_stdlib.cpp
 )
 
+if(NOT MSVC)
+    # ImGui's own file: not ours, so not under chessgui_warnings.
+    set_source_files_properties(${imgui_SOURCE_DIR}/misc/cpp/imgui_stdlib.cpp PROPERTIES COMPILE_OPTIONS -w)
+endif()
+
 add_executable(chess-gui ${CHESS_SOURCES})
 target_link_libraries(chess-gui PRIVATE chesscore ${SFML_LIBS} ${AUDIO_LIBS})
-target_include_directories(chess-gui PRIVATE ${pfd_SOURCE_DIR} ${nanosvg_SOURCE_DIR}/src ${miniaudio_SOURCE_DIR})
+chessgui_warnings(chess-gui)
+target_include_directories(chess-gui SYSTEM PRIVATE ${pfd_SOURCE_DIR} ${nanosvg_SOURCE_DIR}/src ${miniaudio_SOURCE_DIR})
 
 
 # =============================================================================
@@ -224,7 +274,8 @@ if(APPLE)
     # Path B (guaranteed): a real bundle -> "Chess GUI for UCI.app".
     add_executable(chess-gui-app MACOSX_BUNDLE ${CHESS_SOURCES})
     target_link_libraries(chess-gui-app PRIVATE chesscore ${SFML_LIBS} ${AUDIO_LIBS})
-    target_include_directories(chess-gui-app PRIVATE ${pfd_SOURCE_DIR} ${nanosvg_SOURCE_DIR}/src ${miniaudio_SOURCE_DIR})
+    chessgui_warnings(chess-gui-app)
+    target_include_directories(chess-gui-app SYSTEM PRIVATE ${pfd_SOURCE_DIR} ${nanosvg_SOURCE_DIR}/src ${miniaudio_SOURCE_DIR})
     set_target_properties(chess-gui-app PROPERTIES
         OUTPUT_NAME "Chess GUI for UCI"
         MACOSX_BUNDLE_BUNDLE_NAME "Chess GUI for UCI"

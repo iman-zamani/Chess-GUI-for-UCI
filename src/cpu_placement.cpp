@@ -41,6 +41,8 @@ CpuPlacement noPlacement(){
     return p;
 }
 
+// Only Windows and Linux pin engines to a core (macOS has no affinity API).
+#if defined(_WIN32) || defined(__linux__)
 namespace {
 
 // The lock file of one physical core, held while the placement lives (flock /
@@ -77,6 +79,7 @@ std::shared_ptr<void> lockCore(int group, int core, bool& taken){
 }
 
 } // namespace
+#endif
 
 void chooseCpu(std::vector<CpuCandidate> c, const CoreLock& lock, CpuPlacement& p){
     if (c.empty()) return;

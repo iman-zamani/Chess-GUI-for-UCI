@@ -31,6 +31,8 @@ Platform packages:
 | `CHESSGUI_BUILD_GUI` | `ON` | `OFF` builds only the core library, `chess-cli` and the tests (no SFML, no display needed) |
 | `CHESSGUI_USE_SYSTEM_SFML` | `OFF` | use an installed SFML 3 instead of the pinned copy |
 | `CHESSGUI_GUI_TESTS` | `OFF` | register the scripted GUI tests with CTest (they need a display; CI runs them under Xvfb) |
+| `CHESSGUI_SANITIZE` | empty | `address` (AddressSanitizer + UndefinedBehaviorSanitizer) or `thread` (ThreadSanitizer), GCC and Clang; use a build directory of its own, without the GUI |
+| `CHESSGUI_FUZZ` | `OFF` | build the libFuzzer harness for the parsers, `tests/fuzz_parsers` (Clang with libFuzzer) |
 
 ## Dependencies (all pinned)
 
